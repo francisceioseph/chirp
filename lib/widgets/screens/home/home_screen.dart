@@ -1,10 +1,7 @@
 import 'package:chirp/widgets/components/app_header.dart';
-import 'package:chirp/widgets/components/glass_panel.dart';
 import 'package:chirp/widgets/components/stacked_orbs.dart';
 import 'package:chirp/widgets/screens/home/widgets/chat_panel.dart';
 import 'package:chirp/widgets/screens/home/widgets/flock_panel.dart';
-import 'package:chirp/widgets/components/liquid_orb.dart';
-import 'package:chirp/widgets/screens/home/widgets/column_label.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
