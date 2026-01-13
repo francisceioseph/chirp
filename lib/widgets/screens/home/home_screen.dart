@@ -2,6 +2,8 @@ import 'package:chirp/controllers/chirp_controller.dart';
 import 'package:chirp/widgets/components/app_header.dart';
 import 'package:chirp/widgets/components/flock_list.dart';
 import 'package:chirp/widgets/components/glass_panel.dart';
+import 'package:chirp/widgets/screens/home/widgets/liquid_orb.dart';
+import 'package:chirp/widgets/screens/home/widgets/column_label.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             top: -100,
             right: -50,
-            child: _LiquidOrb(
+            child: LiquidOrb(
               color: isDark
                   ? colorScheme.primary.withValues(alpha: 0.3)
                   : colorScheme.onSurface.withValues(alpha: 0.3),
@@ -39,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             bottom: -150,
             left: 200,
-            child: _LiquidOrb(
+            child: LiquidOrb(
               color: isDark
                   ? colorScheme.secondary.withValues(alpha: 0.2)
                   : colorScheme.primary.withValues(alpha: 0.3),
@@ -51,11 +53,12 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               top: 200,
               left: -100,
-              child: _LiquidOrb(
+              child: LiquidOrb(
                 color: colorScheme.onSurface.withValues(alpha: 0.05),
                 size: 300,
               ),
             ),
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -63,7 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const AppHeader(),
-                  const SizedBox(height: 8),
                   Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -80,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const _ColumnLabel(label: "Bando"),
+                                    const ColumnLabel(label: "Bando"),
 
                                     Expanded(child: FlockList(tiels: tiels)),
                                   ],
@@ -92,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Expanded(
                           flex: 8,
                           child: GlassPanel(
-                            child: _ColumnLabel(label: "Mensagens"),
+                            child: ColumnLabel(label: "Mensagens"),
                           ),
                         ),
                       ],
@@ -103,50 +105,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _LiquidOrb extends StatelessWidget {
-  final Color color;
-  final double size;
-
-  const _LiquidOrb({required this.color, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
-      ),
-    );
-  }
-}
-
-class _ColumnLabel extends StatelessWidget {
-  final String label;
-
-  const _ColumnLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: colorScheme.onSurface.withValues(alpha: 0.9),
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.8,
-        ),
       ),
     );
   }
