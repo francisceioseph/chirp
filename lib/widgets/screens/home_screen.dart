@@ -1,6 +1,9 @@
+import 'package:chirp/controllers/chirp_controller.dart';
 import 'package:chirp/widgets/components/app_header.dart';
+import 'package:chirp/widgets/components/flock_list.dart';
 import 'package:chirp/widgets/components/glass_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+
+    final chirpCtrl = context.watch<ChirpController>();
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -58,22 +63,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const AppHeader(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Expanded(
-                          flex: 3,
+                        Expanded(
+                          flex: 2,
                           child: GlassPanel(
-                            child: _ColumnLabel(icon: "🐦", label: "Bando"),
+                            child: ListenableBuilder(
+                              listenable: chirpCtrl,
+                              builder: (context, _) {
+                                final tiels = chirpCtrl.nearbyTiels;
+
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const _ColumnLabel(label: "Bando"),
+
+                                    Expanded(child: FlockList(tiels: tiels)),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 12),
                         const Expanded(
-                          flex: 7,
+                          flex: 8,
                           child: GlassPanel(
-                            child: _ColumnLabel(icon: "💬", label: "Mensagens"),
+                            child: _ColumnLabel(label: "Mensagens"),
                           ),
                         ),
                       ],
@@ -109,10 +128,9 @@ class _LiquidOrb extends StatelessWidget {
 }
 
 class _ColumnLabel extends StatelessWidget {
-  final String icon;
   final String label;
 
-  const _ColumnLabel({required this.icon, required this.label});
+  const _ColumnLabel({required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -120,22 +138,15 @@ class _ColumnLabel extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Row(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 24)),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              // Uso do onSurface para garantir leitura no Lutino (escuro) e Grey (claro)
-              color: colorScheme.onSurface.withValues(alpha: 0.9),
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.all(12.0),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: colorScheme.onSurface.withValues(alpha: 0.9),
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.8,
+        ),
       ),
     );
   }

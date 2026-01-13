@@ -25,6 +25,6 @@ class IdentityService {
 
     final milis = DateTime.now().millisecondsSinceEpoch;
 
-    return "${clean}_Chirp_$milis";
+    return "${clean}_$milis";
   }
 }

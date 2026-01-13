@@ -1,17 +1,21 @@
+enum TielStatus { searching, connected, disconnected, error }
+
 class Tiel {
   final String id;
+  final String name;
   final String address;
   final DateTime lastSeen;
 
-  final String? name;
   final String? avatar;
+  final TielStatus status;
 
   Tiel({
     required this.id,
     required this.address,
     required this.lastSeen,
+    required this.name,
+    this.status = TielStatus.searching,
     this.avatar,
-    this.name,
   });
 
   @override

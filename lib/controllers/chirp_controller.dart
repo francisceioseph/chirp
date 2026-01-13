@@ -17,7 +17,7 @@ class ChirpController extends ChangeNotifier {
   final List<String> _messages = [];
 
   String get tielId => _tielId;
-  List<String> get nearbyTiels => _nearbyTiels.keys.toList();
+  List<Tiel> get nearbyTiels => _nearbyTiels.values.toList();
   List<String> get messages => _messages;
 
   ChirpController(this._flockDiscovery, this._flockManager, this._tielId) {
@@ -76,7 +76,8 @@ class ChirpController extends ChangeNotifier {
 
     if (!_nearbyTiels.containsKey(name)) {
       _nearbyTiels[name] = Tiel(
-        id: name,
+        id: name.hashCode.toString(),
+        name: name,
         address: address,
         lastSeen: DateTime.now(),
       );
@@ -91,7 +92,7 @@ class ChirpController extends ChangeNotifier {
     final initialLength = _nearbyTiels.length;
 
     _nearbyTiels.removeWhere((key, tiel) {
-      return now.difference(tiel.lastSeen).inSeconds > 15;
+      return now.difference(tiel.lastSeen).inSeconds > 60;
     });
 
     if (initialLength != _nearbyTiels.length) {
