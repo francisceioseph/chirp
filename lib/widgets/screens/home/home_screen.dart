@@ -1,6 +1,6 @@
 import 'package:chirp/controllers/chirp_controller.dart';
 import 'package:chirp/widgets/components/app_header.dart';
-import 'package:chirp/widgets/components/flock_list.dart';
+import 'package:chirp/widgets/screens/home/widgets/flock_list.dart';
 import 'package:chirp/widgets/components/glass_panel.dart';
 import 'package:chirp/widgets/screens/home/widgets/liquid_orb.dart';
 import 'package:chirp/widgets/screens/home/widgets/column_label.dart';
