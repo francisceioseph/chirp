@@ -6,6 +6,8 @@ import 'package:chirp/themes/theme.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   await setupLocator();
 
   runApp(

@@ -81,7 +81,7 @@ class ChirpController extends ChangeNotifier {
         lastSeen: DateTime.now(),
       );
 
-      log.i("🐦 Nova calopsita detectada: $name em $address");
+      log.i("🐦 New Tiel found: $name em $address");
       notifyListeners();
     }
   }
