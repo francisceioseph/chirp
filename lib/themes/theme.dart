@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 abstract class ChirpThemes {
-  static const Color _lutinoYellow = Color(0xFFFFD700);
-  static const Color _lutinoCheek = Color(0xFFFF7043);
-  static const Color _lutinoWhite = Color(0xFFF9F9F9);
-  static const Color _lutinoText = Color(0xFF424242);
+  static const Color _lutinoCheek = Color(0xFFF57C00);
+  static const Color _lutinoWhite = Color(0xFFFDFDF5);
+  static const Color _lutinoText = Color(0xFF42210B);
 
   static const Color _wildYellow = Color(0xFFFBC02D);
   static const Color _wildCheek = Color(0xFFE64A19);
@@ -20,8 +19,8 @@ abstract class ChirpThemes {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: _lutinoYellow,
-        primary: _lutinoYellow,
+        seedColor: _lutinoCheek,
+        primary: _lutinoCheek,
         onPrimary: Colors.white,
         secondary: _lutinoCheek,
         surface: _lutinoWhite,
@@ -31,7 +30,7 @@ abstract class ChirpThemes {
       textTheme: GoogleFonts.urbanistTextTheme(base.textTheme),
       appBarTheme: _baseAppBar(_lutinoWhite, _lutinoText),
       cardTheme: _baseCardTheme(Colors.white.withOpacity(0.8)),
-      elevatedButtonTheme: _baseButtonTheme(_lutinoYellow, Colors.white),
+      elevatedButtonTheme: _baseButtonTheme(_lutinoCheek, Colors.white),
     );
   }
 

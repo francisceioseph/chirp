@@ -32,7 +32,7 @@ class MainApp extends StatelessWidget {
       title: "Chirp Talk",
       theme: ChirpThemes.sunnyLutino,
       darkTheme: ChirpThemes.greyWild,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       home: HomeScreen(),
     );
   }
