@@ -1,6 +1,7 @@
 import 'package:chirp/controllers/chirp_controller.dart';
 import 'package:chirp/widgets/components/glass_panel.dart';
 import 'package:chirp/widgets/screens/home/widgets/column_label.dart';
+import 'package:chirp/widgets/screens/home/widgets/message_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,11 +10,10 @@ class ChatPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeId = context.select<ChirpController, String?>(
-      (ctrl) => ctrl.activeChatId,
-    );
+    final chirpCtrl = context.watch<ChirpController>();
+    final activeChatId = chirpCtrl.activeChatId;
 
-    if (activeId == null) {
+    if (activeChatId == null) {
       return const GlassPanel(
         child: Center(
           child: Column(
@@ -28,10 +28,15 @@ class ChatPanel extends StatelessWidget {
       );
     }
 
+    final messages = chirpCtrl.getMessagesFor(activeChatId);
+
     return GlassPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [const ColumnLabel(label: "Mensagens")],
+        children: [
+          const ColumnLabel(label: "Mensagens"),
+          Expanded(child: MessageList(messages: messages)),
+        ],
       ),
     );
   }

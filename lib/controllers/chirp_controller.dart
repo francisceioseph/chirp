@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:chirp/models/identity.dart';
 import 'package:chirp/models/message.dart';
 import 'package:chirp/models/tiel.dart';
 import 'package:chirp/services/flock_discovery.dart';
@@ -8,33 +9,42 @@ import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
-enum ChatType { individual, flock }
-
 class ChirpController extends ChangeNotifier {
+  final uuid = Uuid();
+
   final FlockDiscovery _flockDiscovery;
   final FlockManager _flockManager;
-  final String _tielId;
-
-  final uuid = Uuid();
+  final Identity _me;
 
   Timer? _cleanupTimer;
   String? _activeChatId;
 
-  final Map<String, Tiel> _nearbyTiels = {};
+  final Map<String, Tiel> _tiels = {};
+  final Map<String, Flock> _flocks = {};
+
   final Map<String, List<ChirpMessage>> _conversations = {};
-  final Map<String, ChatType> _chatMetadata = {};
 
-  String get tielId => _tielId;
-  List<Tiel> get nearbyTiels => _nearbyTiels.values.toList();
-
+  String get tielId => _me.id;
   String? get activeChatId => _activeChatId;
 
-  ChirpController(this._flockDiscovery, this._flockManager, this._tielId) {
+  List<Conversation> get allConversations => [
+    ..._tiels.values,
+    ..._flocks.values,
+  ];
+
+  ChirpController(this._flockDiscovery, this._flockManager, this._me) {
     _setupListeners();
   }
 
+  // ### MESSAGE MANAGEMENT ###
+
   List<ChirpMessage> getMessagesFor(String chatId) =>
       _conversations[chatId] ?? [];
+
+  void selectChat(String? chatId) {
+    _activeChatId = chatId;
+    notifyListeners();
+  }
 
   Future<void> startServices() async {
     log.d("🚀 Stretching the tiel wings...");
@@ -42,48 +52,46 @@ class ChirpController extends ChangeNotifier {
     try {
       _flockManager.init();
 
-      await _flockDiscovery.advertise(_tielId);
-      await _flockDiscovery.discover((String name, String address) {
-        _onPeerFound(name, address);
+      await _flockDiscovery.advertise(_me.id, _me.name);
+      await _flockDiscovery.discover((String id, String name, String address) {
+        _onPeerFound(id, name, address);
       });
 
       _cleanupTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-        removeInactiveTiels();
+        updateTielsStatus();
       });
     } catch (e) {
       log.e("❌ Erro ao iniciar serviços", error: e);
     }
   }
 
-  void selectChat(String? chatId) {
-    _activeChatId = chatId;
-    notifyListeners();
-  }
-
-  void sendChirp(
-    String targetId,
-    String text, {
-    ChatType type = ChatType.individual,
-  }) {
+  void sendChirp(String targetId, String text) {
     try {
       _flockManager.send(targetId, text);
 
       final message = ChirpMessage(
         id: uuid.v4(),
-        senderId: _tielId,
+        senderId: _me.id,
         body: text,
         dateCreated: DateTime.now(),
         isFromMe: true,
       );
 
-      _chatMetadata[targetId] = type;
       _addMessageToConversation(targetId, message);
-
-      notifyListeners();
     } catch (e) {
       log.e("⚠️ Falha ao enviar chirp para $targetId", error: e);
     }
   }
+
+  void _addMessageToConversation(String chatId, ChirpMessage message) {
+    _conversations.putIfAbsent(chatId, () => []);
+    _conversations[chatId]!.add(message);
+
+    log.d("📩 Mensagem organizada para o chat: $chatId");
+    notifyListeners();
+  }
+
+  //  ### DISCOVERY LOGIC ###
 
   @override
   void dispose() {
@@ -100,39 +108,48 @@ class ChirpController extends ChangeNotifier {
     });
   }
 
-  void _addMessageToConversation(String chatId, ChirpMessage message) {
-    _conversations.putIfAbsent(chatId, () => []);
-    _conversations[chatId]!.add(message);
+  void _onPeerFound(String tielId, String tielName, String tielAddress) {
+    if (tielId == _me.id) return;
 
-    log.d("📩 Mensagem organizada para o chat: $chatId");
+    _tiels.update(
+      tielName,
+      (existing) => existing.copyWith(
+        name: tielName,
+        address: tielAddress,
+        lastSeen: DateTime.now(),
+        status: .online,
+      ),
+      ifAbsent: () => Tiel(
+        id: tielId,
+        name: tielName,
+        address: tielAddress,
+        lastSeen: DateTime.now(),
+        status: .online,
+      ),
+    );
+
     notifyListeners();
   }
 
-  void _onPeerFound(String name, String address) {
-    if (name == _tielId) return;
-
-    if (!_nearbyTiels.containsKey(name)) {
-      _nearbyTiels[name] = Tiel(
-        id: name.hashCode.toString(),
-        name: name,
-        address: address,
-        lastSeen: DateTime.now(),
-      );
-
-      log.i("🐦 New Tiel found: $name em $address");
-      notifyListeners();
-    }
-  }
-
-  void removeInactiveTiels() {
+  void updateTielsStatus() {
     final now = DateTime.now();
-    final initialLength = _nearbyTiels.length;
+    var changed = false;
 
-    _nearbyTiels.removeWhere((key, tiel) {
-      return now.difference(tiel.lastSeen).inSeconds > 60;
+    _tiels.updateAll((name, tiel) {
+      if (now.difference(tiel.lastSeen).inSeconds > 120) {
+        changed = true;
+        return tiel.copyWith(status: .disconnected);
+      }
+
+      if (now.difference(tiel.lastSeen).inSeconds > 120) {
+        changed = true;
+        return tiel.copyWith(status: .away);
+      }
+
+      return tiel;
     });
 
-    if (initialLength != _nearbyTiels.length) {
+    if (changed) {
       notifyListeners();
     }
   }

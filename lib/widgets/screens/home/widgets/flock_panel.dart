@@ -21,7 +21,7 @@ class FlockPanel extends StatelessWidget {
             child: ListenableBuilder(
               listenable: chirpCtrl,
               builder: (context, _) {
-                return FlockList(tiels: chirpCtrl.nearbyTiels);
+                return FlockList(conversations: chirpCtrl.allConversations);
               },
             ),
           ),

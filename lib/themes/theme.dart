@@ -24,12 +24,11 @@ abstract class ChirpThemes {
         onPrimary: Colors.white,
         secondary: _lutinoCheek,
         surface: _lutinoWhite,
-        background: _lutinoWhite,
       ),
       scaffoldBackgroundColor: _lutinoWhite,
       textTheme: GoogleFonts.urbanistTextTheme(base.textTheme),
       appBarTheme: _baseAppBar(_lutinoWhite, _lutinoText),
-      cardTheme: _baseCardTheme(Colors.white.withOpacity(0.8)),
+      cardTheme: _baseCardTheme(Colors.white.withValues(alpha: 0.8)),
       elevatedButtonTheme: _baseButtonTheme(_lutinoCheek, Colors.white),
     );
   }
@@ -46,18 +45,17 @@ abstract class ChirpThemes {
         onPrimary: _wildGrey,
         secondary: _wildCheek,
         surface: _wildSurface,
-        background: _wildGrey,
       ),
       scaffoldBackgroundColor: _wildGrey,
       textTheme: GoogleFonts.urbanistTextTheme(base.textTheme),
       appBarTheme: _baseAppBar(_wildGrey, _wildText),
-      cardTheme: _baseCardTheme(_wildSurface.withOpacity(0.6)),
+      cardTheme: _baseCardTheme(_wildSurface.withValues(alpha: 0.6)),
       elevatedButtonTheme: _baseButtonTheme(_wildYellow, _wildGrey),
     );
   }
 
   static AppBarTheme _baseAppBar(Color bg, Color fg) => AppBarTheme(
-    backgroundColor: bg.withOpacity(0.1),
+    backgroundColor: bg.withValues(alpha: 0.1),
     foregroundColor: fg,
     elevation: 0,
     centerTitle: true,
@@ -73,7 +71,7 @@ abstract class ChirpThemes {
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(24),
-      side: BorderSide(color: Colors.white.withOpacity(0.1), width: 1),
+      side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
     ),
   );
 

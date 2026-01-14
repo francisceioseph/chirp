@@ -1,12 +1,29 @@
-enum TielStatus { searching, connected, disconnected, error }
+enum TielStatus { online, connected, away, disconnected, error }
 
-class Tiel {
+enum ConversationType { individual, group }
+
+abstract class Conversation {
+  String get id;
+  String get name;
+  String get avatar;
+  ConversationType get type;
+}
+
+class Tiel implements Conversation {
+  @override
   final String id;
+
+  @override
   final String name;
+
+  @override
+  String get avatar => "https://api.dicebear.com/7.x/adventurer/png?seed=$name";
+
+  @override
+  ConversationType get type => .individual;
+
   final String address;
   final DateTime lastSeen;
-
-  final String? avatar;
   final TielStatus status;
 
   Tiel({
@@ -14,8 +31,7 @@ class Tiel {
     required this.address,
     required this.lastSeen,
     required this.name,
-    this.status = TielStatus.searching,
-    this.avatar,
+    this.status = .online,
   });
 
   @override
@@ -28,4 +44,39 @@ class Tiel {
 
   @override
   String toString() => 'Tiel(id: $id, ip: $address)';
+
+  Tiel copyWith({
+    String? id,
+    String? name,
+    String? address,
+    DateTime? lastSeen,
+    TielStatus? status,
+  }) {
+    return Tiel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      address: address ?? this.address,
+      lastSeen: lastSeen ?? this.lastSeen,
+      status: status ?? this.status,
+    );
+  }
+}
+
+class Flock implements Conversation {
+  @override
+  final String id;
+
+  @override
+  final String name;
+
+  @override
+  String get avatar =>
+      "https://api.dicebear.com/7.x/identicon/png?seed=$id&backgroundColor=ffdf00";
+
+  @override
+  ConversationType get type => .group;
+
+  final List<String> tielIds;
+
+  Flock({required this.id, required this.name, required this.tielIds});
 }
