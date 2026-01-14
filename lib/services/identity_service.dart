@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:chirp/models/identity.dart';
+import 'package:chirp/services/secure_chirp.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import 'package:crypton/crypton.dart';
 
 class IdentityService {
   static const _suffix = String.fromEnvironment("TIEL_ID", defaultValue: "");
@@ -26,9 +26,9 @@ class IdentityService {
     String? privKey = prefs.getString(_keyPrivate);
 
     if (pubKey == null || privKey == null) {
-      final keyPair = RSAKeypair.fromRandom();
-      pubKey = keyPair.publicKey.toString();
-      privKey = keyPair.privateKey.toString();
+      final keyPair = SecureChirp.makeKeys();
+      pubKey = keyPair.pubKey;
+      privKey = keyPair.privKey;
 
       await prefs.setString(_keyPublic, pubKey);
       await prefs.setString(_keyPrivate, privKey);

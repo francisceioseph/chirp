@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:encrypt/encrypt.dart' as enc;
-import 'package:crypton/crypton.dart';
+import 'package:chirp/models/secure_envelope.dart';
+import 'package:chirp/services/secure_chirp.dart';
 
 import 'package:chirp/models/identity.dart';
 import 'package:chirp/models/message.dart';
@@ -47,22 +47,10 @@ class P2PFlockManager implements FlockManager {
       return;
     }
 
-    final aesKey = enc.Key.fromSecureRandom(32);
-    final iv = enc.IV.fromSecureRandom(16);
-    final encrypter = enc.Encrypter(enc.AES(aesKey));
+    final payload = jsonEncode(message.toJson());
+    final envelope = SecureChirp.encrypt(targetPubKey, payload);
 
-    final payload = encrypter.encrypt(jsonEncode(message.toJson()), iv: iv);
-
-    final rsaPubKey = RSAPublicKey.fromString(targetPubKey);
-    final encKey = rsaPubKey.encrypt(aesKey.base64);
-
-    final envelope = {
-      'payload': payload.base64,
-      'key': encKey,
-      'iv': iv.base64,
-    };
-
-    _send(target, jsonEncode(envelope));
+    _send(target, jsonEncode(envelope.toJson()));
   }
 
   void _send(String target, String message) {
@@ -87,19 +75,12 @@ class P2PFlockManager implements FlockManager {
   void _setupConnectionListeners(DataConnection conn) {
     conn.on<dynamic>("data").listen((rawData) {
       try {
-        final envelope = jsonDecode(rawData);
-
-        final rsaPrivKey = RSAPrivateKey.fromString(_me.privateKey!);
-        final aesKeyBase64 = rsaPrivKey.decrypt(envelope['key']);
-
-        final aesKey = enc.Key.fromBase64(aesKeyBase64);
-        final iv = enc.IV.fromBase64(envelope['iv']);
-        final encrypter = enc.Encrypter(enc.AES(aesKey));
-
-        final decriptedJson = encrypter.decrypt64(envelope['payload'], iv: iv);
+        final data = jsonDecode(rawData);
+        final envelope = SecureEnvelope.fromJson(data);
+        final decryptedJson = SecureChirp.decrypt(_me.privateKey!, envelope);
 
         SchedulerBinding.instance.addPostFrameCallback((_) {
-          _msgsCtrl.add(decriptedJson);
+          _msgsCtrl.add(decryptedJson);
         });
       } catch (e) {
         log.w("🦜🛡️ Zero Trust: Bloqueado pacote suspeito ou mal formatado.");
