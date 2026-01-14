@@ -1,37 +1,40 @@
 import 'dart:async';
 
+import 'package:chirp/models/message.dart';
 import 'package:chirp/models/tiel.dart';
 import 'package:chirp/services/flock_discovery.dart';
 import 'package:chirp/services/flock_manager.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+
+enum ChatType { individual, flock }
 
 class ChirpController extends ChangeNotifier {
   final FlockDiscovery _flockDiscovery;
   final FlockManager _flockManager;
   final String _tielId;
 
+  final uuid = Uuid();
+
   Timer? _cleanupTimer;
+  String? _activeChatId;
 
   final Map<String, Tiel> _nearbyTiels = {};
-  final List<String> _messages = [];
+  final Map<String, List<ChirpMessage>> _conversations = {};
+  final Map<String, ChatType> _chatMetadata = {};
 
   String get tielId => _tielId;
   List<Tiel> get nearbyTiels => _nearbyTiels.values.toList();
-  List<String> get messages => _messages;
+
+  String? get activeChatId => _activeChatId;
 
   ChirpController(this._flockDiscovery, this._flockManager, this._tielId) {
     _setupListeners();
   }
 
-  void _setupListeners() {
-    _flockManager.messages.listen((msg) {
-      _messages.add(msg);
-
-      log.d("📩 Mensagem recebida no Controller: $msg");
-      notifyListeners();
-    });
-  }
+  List<ChirpMessage> getMessagesFor(String chatId) =>
+      _conversations[chatId] ?? [];
 
   Future<void> startServices() async {
     log.d("🚀 Stretching the tiel wings...");
@@ -52,10 +55,30 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
-  void sendChirp(String targetId, String text) {
+  void selectChat(String? chatId) {
+    _activeChatId = chatId;
+    notifyListeners();
+  }
+
+  void sendChirp(
+    String targetId,
+    String text, {
+    ChatType type = ChatType.individual,
+  }) {
     try {
       _flockManager.send(targetId, text);
-      _messages.add("Você: $text");
+
+      final message = ChirpMessage(
+        id: uuid.v4(),
+        senderId: _tielId,
+        body: text,
+        dateCreated: DateTime.now(),
+        isFromMe: true,
+      );
+
+      _chatMetadata[targetId] = type;
+      _addMessageToConversation(targetId, message);
+
       notifyListeners();
     } catch (e) {
       log.e("⚠️ Falha ao enviar chirp para $targetId", error: e);
@@ -69,6 +92,20 @@ class ChirpController extends ChangeNotifier {
     _cleanupTimer?.cancel();
 
     super.dispose();
+  }
+
+  void _setupListeners() {
+    _flockManager.messages.listen((dynamic incoming) {
+      _addMessageToConversation(incoming.senderId, incoming);
+    });
+  }
+
+  void _addMessageToConversation(String chatId, ChirpMessage message) {
+    _conversations.putIfAbsent(chatId, () => []);
+    _conversations[chatId]!.add(message);
+
+    log.d("📩 Mensagem organizada para o chat: $chatId");
+    notifyListeners();
   }
 
   void _onPeerFound(String name, String address) {
