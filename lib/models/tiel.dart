@@ -16,6 +16,8 @@ class Tiel implements Conversation {
   @override
   final String name;
 
+  final String publicKey;
+
   @override
   String get avatar => "https://api.dicebear.com/7.x/adventurer/png?seed=$name";
 
@@ -31,6 +33,7 @@ class Tiel implements Conversation {
     required this.address,
     required this.lastSeen,
     required this.name,
+    required this.publicKey,
     this.status = .online,
   });
 
@@ -58,6 +61,7 @@ class Tiel implements Conversation {
       address: address ?? this.address,
       lastSeen: lastSeen ?? this.lastSeen,
       status: status ?? this.status,
+      publicKey: publicKey,
     );
   }
 }

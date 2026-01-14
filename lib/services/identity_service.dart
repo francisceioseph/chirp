@@ -3,46 +3,38 @@ import 'package:chirp/models/identity.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:crypton/crypton.dart';
 
 class IdentityService {
-  static String get _tielSuffix {
-    const suffix = String.fromEnvironment("TIEL_ID", defaultValue: "");
-    return suffix;
-  }
+  static const _suffix = String.fromEnvironment("TIEL_ID", defaultValue: "");
+
+  static String get _keyId => 'tiel_id$_suffix';
+  static String get _keyName => 'tiel_name$_suffix';
+  static String get _keyPublic => 'tiel_pub_key$_suffix';
+  static String get _keyPrivate => 'tiel_priv_key$_suffix';
 
   static Future<Identity> getIdentity() async {
-    final id = await _getTielId();
-    final name = await _getTielName();
-
-    return Identity(id: id, name: name);
-  }
-
-  static Future<String> _getTielId() async {
-    final String keyId = 'tiel_id$_tielSuffix';
     final prefs = await SharedPreferences.getInstance();
 
-    String? id = prefs.getString(keyId);
+    final id = prefs.getString(_keyId) ?? Uuid().v4();
+    if (!prefs.containsKey(_keyId)) await prefs.setString(_keyId, id);
 
-    if (id == null) {
-      id = Uuid().v4();
-      await prefs.setString(keyId, id);
+    final name = prefs.getString(_keyName) ?? await _buildTielName();
+    if (!prefs.containsKey(_keyName)) await prefs.setString(_keyName, id);
+
+    String? pubKey = prefs.getString(_keyPublic);
+    String? privKey = prefs.getString(_keyPrivate);
+
+    if (pubKey == null || privKey == null) {
+      final keyPair = RSAKeypair.fromRandom();
+      pubKey = keyPair.publicKey.toString();
+      privKey = keyPair.privateKey.toString();
+
+      await prefs.setString(_keyPublic, pubKey);
+      await prefs.setString(_keyPrivate, privKey);
     }
 
-    return id;
-  }
-
-  static Future<String> _getTielName() async {
-    final String keyName = 'tiel_name$_tielSuffix';
-    final prefs = await SharedPreferences.getInstance();
-
-    String? name = prefs.getString(keyName);
-
-    if (name == null) {
-      name = await _buildTielName();
-      await prefs.setString(keyName, name);
-    }
-
-    return name;
+    return Identity(id: id, name: name, publicKey: pubKey, privateKey: privKey);
   }
 
   static Future<String> _buildTielName() async {
@@ -66,8 +58,7 @@ class IdentityService {
         .replaceAll(RegExp(r'[^\w\s]+'), '')
         .replaceAll(' ', '_');
 
-    final milis = DateTime.now().millisecondsSinceEpoch;
-
-    return "${clean}_$milis";
+    final label = _suffix.isNotEmpty ? "_#$_suffix" : "";
+    return "$clean$label";
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:chirp/models/identity.dart';
 import 'package:chirp/models/message.dart';
@@ -52,9 +53,14 @@ class ChirpController extends ChangeNotifier {
     try {
       _flockManager.init();
 
-      await _flockDiscovery.advertise(_me.id, _me.name);
-      await _flockDiscovery.discover((String id, String name, String address) {
-        _onPeerFound(id, name, address);
+      await _flockDiscovery.advertise(_me.id, _me.name, _me.publicKey);
+      await _flockDiscovery.discover((
+        String id,
+        String name,
+        String pubKey,
+        String address,
+      ) {
+        _onPeerFound(id, name, pubKey, address);
       });
 
       _cleanupTimer = Timer.periodic(const Duration(seconds: 10), (_) {
@@ -67,15 +73,16 @@ class ChirpController extends ChangeNotifier {
 
   void sendChirp(String targetId, String text) {
     try {
-      _flockManager.send(targetId, text);
-
       final message = ChirpMessage(
         id: uuid.v4(),
         senderId: _me.id,
+        author: _me.name,
         body: text,
         dateCreated: DateTime.now(),
         isFromMe: true,
       );
+
+      _flockManager.chirp(targetId, message);
 
       _addMessageToConversation(targetId, message);
     } catch (e) {
@@ -103,12 +110,26 @@ class ChirpController extends ChangeNotifier {
   }
 
   void _setupListeners() {
-    _flockManager.messages.listen((dynamic incoming) {
-      _addMessageToConversation(incoming.senderId, incoming);
+    _flockManager.messages.listen((dynamic rawData) {
+      try {
+        final Map<String, dynamic> dataMap = jsonDecode(rawData);
+        final ChirpMessage incoming = ChirpMessage.fromJson(dataMap);
+
+        Future.microtask(() {
+          _addMessageToConversation(incoming.senderId, incoming);
+        });
+      } catch (e) {
+        log.e("Erro ao processar mensagem recebida $e");
+      }
     });
   }
 
-  void _onPeerFound(String tielId, String tielName, String tielAddress) {
+  void _onPeerFound(
+    String tielId,
+    String tielName,
+    String tielPubKey,
+    String tielAddress,
+  ) {
     if (tielId == _me.id) return;
 
     _tiels.update(
@@ -125,6 +146,7 @@ class ChirpController extends ChangeNotifier {
         address: tielAddress,
         lastSeen: DateTime.now(),
         status: .online,
+        publicKey: tielPubKey,
       ),
     );
 

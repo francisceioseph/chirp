@@ -1,6 +1,8 @@
 import 'package:chirp/controllers/chirp_controller.dart';
+import 'package:chirp/models/tiel.dart';
 import 'package:chirp/widgets/components/glass_panel.dart';
 import 'package:chirp/widgets/screens/home/widgets/column_label.dart';
+import 'package:chirp/widgets/screens/home/widgets/message_input.dart';
 import 'package:chirp/widgets/screens/home/widgets/message_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +31,9 @@ class ChatPanel extends StatelessWidget {
     }
 
     final messages = chirpCtrl.getMessagesFor(activeChatId);
+    final activeChat = chirpCtrl.allConversations.firstWhere(
+      (c) => c.id == activeChatId,
+    );
 
     return GlassPanel(
       child: Column(
@@ -36,8 +41,26 @@ class ChatPanel extends StatelessWidget {
         children: [
           const ColumnLabel(label: "Mensagens"),
           Expanded(child: MessageList(messages: messages)),
+          MessageInput(
+            isEnabled: _canSendChat(activeChat),
+            onSend: (text) {
+              chirpCtrl.sendChirp(activeChatId, text);
+            },
+          ),
         ],
       ),
     );
+  }
+
+  bool _canSendChat(Conversation conversation) {
+    if (conversation is Tiel) {
+      return conversation.status == .online;
+    }
+
+    if (conversation is Flock) {
+      return true;
+    }
+
+    return false;
   }
 }

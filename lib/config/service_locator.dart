@@ -10,9 +10,11 @@ final getIt = GetIt.instance;
 Future<void> setupLocator() async {
   final Identity myIdentity = await IdentityService.getIdentity();
 
-  getIt.registerLazySingleton<FlockDiscovery>(() => FlockDiscoveryService());
+  final discovery = FlockDiscoveryService();
+  getIt.registerLazySingleton<FlockDiscovery>(() => discovery);
+
   getIt.registerLazySingleton<FlockManager>(
-    () => P2PFlockManager(myIdentity.id),
+    () => P2PFlockManager(myIdentity, discovery.knownPublicKeys),
   );
 
   getIt.registerFactory(

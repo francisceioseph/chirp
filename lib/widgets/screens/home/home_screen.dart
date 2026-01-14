@@ -33,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(flex: 2, child: FlockPanel()),
-                        const Expanded(flex: 8, child: ChatPanel()),
+                        Expanded(flex: 3, child: FlockPanel()),
+                        const Expanded(flex: 7, child: ChatPanel()),
                       ],
                     ),
                   ),

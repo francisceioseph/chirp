@@ -5,9 +5,12 @@ import 'dart:io';
 import 'package:chirp/utils/app_logger.dart';
 
 abstract class FlockDiscovery {
-  Future<void> advertise(String id, String name);
+  Map<String, String> get knownPublicKeys;
+
+  Future<void> advertise(String id, String name, String pubKey);
   Future<void> discover(
-    Function(String id, String name, String address) onChirpFound,
+    Function(String id, String name, String pubKey, String address)
+    onChirpFound,
   );
   Future<void> stop();
 }
@@ -17,27 +20,32 @@ class FlockDiscoveryService implements FlockDiscovery {
   final _discoveryPort = 4545;
   final _advertisePort = 0;
   final _advertiseAddress = "255.255.255.255";
+  final Map<String, String> _knownPublicKeys = {};
 
   RawDatagramSocket? _socket;
   RawDatagramSocket? _receiver;
   StreamSubscription? _advertiseTimer;
 
   @override
-  Future<void> advertise(String id, String name) async {
+  Map<String, String> get knownPublicKeys => _knownPublicKeys;
+
+  @override
+  Future<void> advertise(String id, String name, String pubKey) async {
     _socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
       _advertisePort,
     );
+
     _socket!.broadcastEnabled = true;
 
     _advertiseTimer = Stream.periodic(const Duration(seconds: 5)).listen((_) {
-      _emitFlockCall(id, name);
+      _emitFlockCall(id, name, pubKey);
     });
   }
 
   @override
   Future<void> discover(
-    Function(String id, String name, String address) onFound,
+    Function(String id, String name, String pubKey, String address) onFound,
   ) async {
     _receiver = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
@@ -64,13 +72,16 @@ class FlockDiscoveryService implements FlockDiscovery {
         if (parts.length < 2) return;
 
         final identity = parts.split("|");
-        if (identity.length < 2) return;
+        if (identity.length < 3) return;
 
-        final peerId = identity[0];
-        final peerName = identity[1];
+        final String peerId = identity[0];
+        final String peerName = identity[1];
+        final String peerPubKey = identity[2];
         final String peerIp = datagram.address.address;
 
-        onFound(peerId, peerName, peerIp);
+        _knownPublicKeys.putIfAbsent(peerId, () => peerPubKey);
+
+        onFound(peerId, peerName, peerPubKey, peerIp);
       }
     });
   }
@@ -89,8 +100,8 @@ class FlockDiscoveryService implements FlockDiscovery {
     log.i('🦜🛑 Network services halted.');
   }
 
-  void _emitFlockCall(String id, String name) {
-    final message = "$_identityPrefix:$id|$name";
+  void _emitFlockCall(String id, String name, String pubKey) {
+    final message = "$_identityPrefix:$id|$name|$pubKey";
 
     _socket?.send(
       utf8.encode(message),
