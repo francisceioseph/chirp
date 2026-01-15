@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class EasterEgg extends StatelessWidget {
-  const EasterEgg({super.key});
+class ChirpEasterEgg extends StatelessWidget {
+  const ChirpEasterEgg({super.key});
 
   @override
   Widget build(BuildContext context) {

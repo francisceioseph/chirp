@@ -25,6 +25,11 @@ class FlockList extends StatelessWidget {
           onTap: () {
             chirpCtrl.selectChat(conversation.id);
           },
+          onAddFriendshipTap: () {
+            if (conversation is Tiel && conversation.status == .discovered) {
+              chirpCtrl.requestFriendship(conversation);
+            }
+          },
         );
       },
       separatorBuilder: (BuildContext context, int index) {

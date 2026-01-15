@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 class FlockListItem extends StatelessWidget {
   final Conversation conversation;
   final String? activeChatId;
-  final void Function()? onTap;
+  final void Function() onTap;
+  final void Function() onAddFriendshipTap;
 
   String get avatarUrl => conversation.avatar;
 
@@ -14,6 +15,7 @@ class FlockListItem extends StatelessWidget {
     required this.conversation,
     required this.activeChatId,
     required this.onTap,
+    required this.onAddFriendshipTap,
   });
 
   @override
@@ -74,7 +76,41 @@ class FlockListItem extends StatelessWidget {
             color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
+        trailing: _buildTrailingAction(context, theme),
       ),
     );
+  }
+
+  Widget? _buildTrailingAction(BuildContext context, ThemeData theme) {
+    if (conversation is! Tiel) {
+      return null;
+    }
+
+    final tiel = conversation as Tiel;
+
+    return switch (tiel.status) {
+      .discovered => IconButton(
+        onPressed: onAddFriendshipTap,
+        icon: Icon(Icons.person_add_alt_1_rounded),
+        tooltip: "Solicitar Amizade",
+      ),
+
+      .pending => const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation(Colors.orangeAccent),
+        ),
+      ),
+
+      .connected => Icon(
+        Icons.chat_bubble_outline_rounded,
+        color: theme.colorScheme.primary.withValues(alpha: 0.5),
+        size: 20,
+      ),
+
+      _ => null,
+    };
   }
 }

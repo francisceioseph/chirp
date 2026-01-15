@@ -30,8 +30,14 @@ class ChirpController extends ChangeNotifier {
 
   String get tielId => _me.id;
   String? get activeChatId => _activeChatId;
-  List<ChirpRequestPacket> get pendingRequests => _pendingRequests;
-  int get notificationCount => _pendingRequests.length;
+
+  List<ChirpRequestPacket> get pendingRequests {
+    return _pendingRequests
+        .where((packet) => _tiels.containsKey(packet.fromId))
+        .toList();
+  }
+
+  int get notificationCount => pendingRequests.length;
 
   List<Conversation> get allConversations => [
     ..._tiels.values,
@@ -78,8 +84,13 @@ class ChirpController extends ChangeNotifier {
 
     _flockManager.sendPacket(target.id, packet);
 
-    _tiels.update(target.id, (tiel) => tiel.copyWith(status: .pending));
-    notifyListeners();
+    if (_tiels.containsKey(target.id)) {
+      _tiels[target.id] = _tiels[target.id]!.copyWith(
+        status: TielStatus.pending,
+      );
+
+      notifyListeners();
+    }
   }
 
   void acceptFriendship(ChirpRequestPacket request) {
@@ -141,7 +152,7 @@ class ChirpController extends ChangeNotifier {
     final now = DateTime.now();
     var changed = false;
 
-    _tiels.updateAll((name, tiel) {
+    _tiels.updateAll((id, tiel) {
       if (now.difference(tiel.lastSeen).inSeconds > 120) {
         changed = true;
         return tiel.copyWith(status: .away);
@@ -223,7 +234,7 @@ class ChirpController extends ChangeNotifier {
     if (id == _me.id) return;
 
     _tiels.update(
-      name,
+      id,
       (existing) => existing.copyWith(
         name: name,
         address: address,

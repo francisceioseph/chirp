@@ -1,4 +1,5 @@
-import 'package:chirp/widgets/components/app_header.dart';
+import 'package:chirp/widgets/components/app_bar/chirp_app_bar.dart';
+import 'package:chirp/widgets/components/app_drawer/notification_drawer.dart';
 import 'package:chirp/widgets/components/stacked_orbs.dart';
 import 'package:chirp/widgets/screens/home/widgets/chat_panel.dart';
 import 'package:chirp/widgets/screens/home/widgets/flock_panel.dart';
@@ -18,7 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      appBar: ChirpAppBar(),
       backgroundColor: colorScheme.surface,
+      endDrawer: NotificationsDrawer(),
       body: Stack(
         children: [
           StackedOrbs(),
@@ -28,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppHeader(),
                   Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

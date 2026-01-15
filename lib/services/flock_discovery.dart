@@ -37,7 +37,7 @@ class FlockDiscoveryService implements FlockDiscovery {
 
     _socket!.broadcastEnabled = true;
 
-    _advertiseTimer = Stream.periodic(const Duration(seconds: 30)).listen((_) {
+    _advertiseTimer = Stream.periodic(const Duration(seconds: 10)).listen((_) {
       _emitFlockCall(id, name);
     });
   }
