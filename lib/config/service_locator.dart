@@ -13,9 +13,7 @@ Future<void> setupLocator() async {
   final discovery = FlockDiscoveryService();
   getIt.registerLazySingleton<FlockDiscovery>(() => discovery);
 
-  getIt.registerLazySingleton<FlockManager>(
-    () => P2PFlockManager(myIdentity, discovery.knownPublicKeys),
-  );
+  getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(myIdentity));
 
   getIt.registerFactory(
     () => ChirpController(

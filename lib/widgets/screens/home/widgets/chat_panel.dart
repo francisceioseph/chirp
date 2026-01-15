@@ -54,7 +54,7 @@ class ChatPanel extends StatelessWidget {
 
   bool _canSendChat(Conversation conversation) {
     if (conversation is Tiel) {
-      return conversation.status == .online;
+      return conversation.status == .connected;
     }
 
     if (conversation is Flock) {

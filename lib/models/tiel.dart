@@ -1,4 +1,6 @@
-enum TielStatus { online, connected, away, disconnected, error }
+import 'package:flutter/material.dart';
+
+enum TielStatus { discovered, pending, connected, away, blocked, error }
 
 enum ConversationType { individual, group }
 
@@ -7,6 +9,9 @@ abstract class Conversation {
   String get name;
   String get avatar;
   ConversationType get type;
+
+  String get statusText;
+  Color getStatusColor(ColorScheme colorScheme);
 }
 
 class Tiel implements Conversation {
@@ -16,7 +21,7 @@ class Tiel implements Conversation {
   @override
   final String name;
 
-  final String publicKey;
+  String? publicKey;
 
   @override
   String get avatar => "https://api.dicebear.com/7.x/adventurer/png?seed=$name";
@@ -24,17 +29,39 @@ class Tiel implements Conversation {
   @override
   ConversationType get type => .individual;
 
+  bool get isSecure => publicKey != null && status == .connected;
+
   final String address;
   final DateTime lastSeen;
   final TielStatus status;
+
+  @override
+  String get statusText => switch (status) {
+    TielStatus.discovered => "Pousou por perto",
+    TielStatus.pending => "Enviando pio...",
+    TielStatus.connected => "Voando juntos",
+    TielStatus.away => "Soneca...",
+    TielStatus.blocked => "Fora do bando",
+    TielStatus.error => "Asas tropeçaram!",
+  };
+
+  @override
+  Color getStatusColor(ColorScheme colorScheme) => switch (status) {
+    TielStatus.discovered => Colors.tealAccent,
+    TielStatus.pending => Colors.orangeAccent,
+    TielStatus.connected => colorScheme.primary,
+    TielStatus.away => Colors.blueGrey.shade300,
+    TielStatus.blocked => Colors.redAccent,
+    TielStatus.error => colorScheme.error,
+  };
 
   Tiel({
     required this.id,
     required this.address,
     required this.lastSeen,
     required this.name,
-    required this.publicKey,
-    this.status = .online,
+    this.publicKey,
+    this.status = .discovered,
   });
 
   @override
@@ -54,6 +81,7 @@ class Tiel implements Conversation {
     String? address,
     DateTime? lastSeen,
     TielStatus? status,
+    String? publicKey,
   }) {
     return Tiel(
       id: id ?? this.id,
@@ -61,7 +89,7 @@ class Tiel implements Conversation {
       address: address ?? this.address,
       lastSeen: lastSeen ?? this.lastSeen,
       status: status ?? this.status,
-      publicKey: publicKey,
+      publicKey: publicKey ?? this.publicKey,
     );
   }
 }
@@ -79,6 +107,12 @@ class Flock implements Conversation {
 
   @override
   ConversationType get type => .group;
+
+  @override
+  String get statusText => "${tielIds.length} tiels no bando";
+
+  @override
+  Color getStatusColor(ColorScheme colorScheme) => colorScheme.secondary;
 
   final List<String> tielIds;
 

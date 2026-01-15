@@ -16,32 +16,14 @@ class FlockListItem extends StatelessWidget {
     required this.onTap,
   });
 
-  String _getStatusText() {
-    if (conversation is Tiel) {
-      final tiel = conversation as Tiel;
-
-      return switch (tiel.status) {
-        .online => "Estou online",
-        .connected => "Voando juntos...",
-        .away => "Relaxing...",
-        .disconnected => "Asas paradas...",
-        .error => "Vish, algo deu errado!",
-      };
-    }
-
-    if (conversation is Flock) {
-      final flock = conversation as Flock;
-      return "${flock.tielIds.length} tiels no bando";
-    }
-
-    return "";
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isSelected = activeChatId == conversation.id;
+
+    final statusText = conversation.statusText;
+    final badgeColor = conversation.getStatusColor(theme.colorScheme);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -57,67 +39,39 @@ class FlockListItem extends StatelessWidget {
               : Colors.transparent,
         ),
       ),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12.0,
-              vertical: 8.0,
-            ),
-            child: Row(
-              children: [
-                // Avatar com borda sutil
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: colorScheme.primary.withValues(
-                        alpha: 0.2,
-                      ),
-                      backgroundImage: NetworkImage(avatarUrl),
-                    ),
-
-                    if (conversation is Tiel)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: TielStatusBadge(
-                          status: (conversation as Tiel).status,
-                        ),
-                      ),
-                  ],
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        conversation.name,
-                        style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-
-                      Text(
-                        _getStatusText(),
-                        style: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+      child: ListTile(
+        onTap: onTap,
+        leading: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: badgeColor.withValues(alpha: 0.4),
+                    blurRadius: 8,
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: CircleAvatar(
+                backgroundImage: NetworkImage(conversation.avatar),
+              ),
             ),
+            if (conversation is Tiel)
+              TielStatusBadge(
+                badgeColor: badgeColor,
+                status: (conversation as Tiel).status,
+              ),
+          ],
+        ),
+        title: Text(
+          conversation.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          statusText,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),

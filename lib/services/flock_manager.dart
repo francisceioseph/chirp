@@ -1,35 +1,30 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:chirp/models/secure_envelope.dart';
-import 'package:chirp/services/secure_chirp.dart';
+import 'package:chirp/models/chirp_packet.dart';
 
 import 'package:chirp/models/identity.dart';
-import 'package:chirp/models/message.dart';
 import 'package:chirp/utils/app_logger.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:peerdart/peerdart.dart';
 
 abstract class FlockManager {
-  Stream<String> get messages;
+  Stream<dynamic> get packets;
 
   void init();
   void dispose();
-  void chirp(String target, ChirpMessage message);
+  void sendPacket(String target, ChirpPacket packet);
 }
 
 class P2PFlockManager implements FlockManager {
   final Peer _peer;
   final Identity _me;
-  final Map<String, String> _pubKeys;
 
-  final _msgsCtrl = StreamController<String>.broadcast();
-
+  final _packetCtrl = StreamController<dynamic>.broadcast();
   final Map<String, DataConnection> _activeConnections = {};
 
   @override
-  Stream<String> get messages => _msgsCtrl.stream;
+  Stream<dynamic> get packets => _packetCtrl.stream;
 
-  P2PFlockManager(this._me, this._pubKeys) : _peer = Peer(id: _me.id);
+  P2PFlockManager(this._me) : _peer = Peer(id: _me.id);
 
   @override
   void init() {
@@ -39,25 +34,16 @@ class P2PFlockManager implements FlockManager {
   }
 
   @override
-  void chirp(String target, ChirpMessage message) {
-    final targetPubKey = _pubKeys[target];
-
-    if (targetPubKey == null) {
-      log.e("🦜❌ Não tenho a chave pública de $target para envio seguro.");
-      return;
-    }
-
-    final payload = jsonEncode(message.toJson());
-    final envelope = SecureChirp.encrypt(targetPubKey, payload);
-
-    _send(target, jsonEncode(envelope.toJson()));
+  void sendPacket(String target, ChirpPacket packet) {
+    final rawData = jsonEncode(packet.toJson());
+    _send(target, rawData);
   }
 
-  void _send(String target, String message) {
+  void _send(String target, String data) {
     DataConnection? conn = _activeConnections[target];
 
     if (conn != null && conn.open) {
-      conn.send(message);
+      conn.send(data);
       return;
     }
 
@@ -66,43 +52,28 @@ class P2PFlockManager implements FlockManager {
 
     conn.on("open").listen((_) {
       if (conn != null && conn.open) {
-        conn.send(message);
-        log.i("🦜✨ Chirp enviado após abrir conexão com $target");
+        conn.send(data);
+        log.i("🦜✨ Pacote enviado para $target");
       }
     });
   }
 
   void _setupConnectionListeners(DataConnection conn) {
     conn.on<dynamic>("data").listen((rawData) {
-      try {
-        final data = jsonDecode(rawData);
-        final envelope = SecureEnvelope.fromJson(data);
-        final decryptedJson = SecureChirp.decrypt(_me.privateKey!, envelope);
-
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          _msgsCtrl.add(decryptedJson);
-        });
-      } catch (e) {
-        log.w("🦜🛡️ Zero Trust: Bloqueado pacote suspeito ou mal formatado.");
-      }
+      _packetCtrl.add(rawData);
     });
 
     conn.on("open").listen((_) {
       log.i("🦜✅ Conexão aberta com: ${conn.peer}");
+      _activeConnections[conn.peer] = conn;
+    });
 
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        _activeConnections[conn.peer] = conn;
-      });
+    conn.on("close").listen((_) {
+      _activeConnections.remove(conn.peer);
     });
 
     conn.on("error").listen((err) {
       log.e("🦜❌ Erro na conexão: $err");
-    });
-
-    conn.on("close").listen((_) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        _activeConnections.remove(conn.peer);
-      });
     });
   }
 
@@ -113,6 +84,6 @@ class P2PFlockManager implements FlockManager {
     }
 
     _peer.dispose();
-    _msgsCtrl.close();
+    _packetCtrl.close();
   }
 }

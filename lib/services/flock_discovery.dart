@@ -2,21 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:chirp/models/chirp_packet.dart';
 import 'package:chirp/utils/app_logger.dart';
 
 abstract class FlockDiscovery {
   Map<String, String> get knownPublicKeys;
 
-  Future<void> advertise(String id, String name, String pubKey);
+  Future<void> advertise(String id, String name);
   Future<void> discover(
-    Function(String id, String name, String pubKey, String address)
-    onChirpFound,
+    Function(String id, String name, String address) onChirpFound,
   );
   Future<void> stop();
 }
 
 class FlockDiscoveryService implements FlockDiscovery {
-  final _identityPrefix = "chirp_identity";
   final _discoveryPort = 4545;
   final _advertisePort = 0;
   final _advertiseAddress = "255.255.255.255";
@@ -30,7 +29,7 @@ class FlockDiscoveryService implements FlockDiscovery {
   Map<String, String> get knownPublicKeys => _knownPublicKeys;
 
   @override
-  Future<void> advertise(String id, String name, String pubKey) async {
+  Future<void> advertise(String id, String name) async {
     _socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
       _advertisePort,
@@ -38,14 +37,14 @@ class FlockDiscoveryService implements FlockDiscovery {
 
     _socket!.broadcastEnabled = true;
 
-    _advertiseTimer = Stream.periodic(const Duration(seconds: 5)).listen((_) {
-      _emitFlockCall(id, name, pubKey);
+    _advertiseTimer = Stream.periodic(const Duration(seconds: 30)).listen((_) {
+      _emitFlockCall(id, name);
     });
   }
 
   @override
   Future<void> discover(
-    Function(String id, String name, String pubKey, String address) onFound,
+    Function(String id, String name, String address) onFound,
   ) async {
     _receiver = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
@@ -65,23 +64,16 @@ class FlockDiscoveryService implements FlockDiscovery {
         return;
       }
 
-      final String message = utf8.decode(datagram.data);
+      try {
+        final String rawMessage = utf8.decode(datagram.data);
+        final Map<String, dynamic> rawJson = jsonDecode(rawMessage);
+        final packet = ChirpPacket.fromJson(rawJson);
 
-      if (message.startsWith(_identityPrefix)) {
-        final String parts = message.split(":")[1];
-        if (parts.length < 2) return;
-
-        final identity = parts.split("|");
-        if (identity.length < 3) return;
-
-        final String peerId = identity[0];
-        final String peerName = identity[1];
-        final String peerPubKey = identity[2];
-        final String peerIp = datagram.address.address;
-
-        _knownPublicKeys.putIfAbsent(peerId, () => peerPubKey);
-
-        onFound(peerId, peerName, peerPubKey, peerIp);
+        if (packet is ChirpIdentityPacket) {
+          onFound(packet.fromId, packet.fromName, datagram.address.address);
+        }
+      } catch (e) {
+        log.w("🦜⚠️ Recebido pacote inválido ou de outro app: $e");
       }
     });
   }
@@ -100,11 +92,12 @@ class FlockDiscoveryService implements FlockDiscovery {
     log.i('🦜🛑 Network services halted.');
   }
 
-  void _emitFlockCall(String id, String name, String pubKey) {
-    final message = "$_identityPrefix:$id|$name|$pubKey";
+  void _emitFlockCall(String id, String name) {
+    final identity = ChirpIdentityPacket(fromId: id, fromName: name);
+    final rawJson = jsonEncode(identity.toJson());
 
     _socket?.send(
-      utf8.encode(message),
+      utf8.encode(rawJson),
       InternetAddress(_advertiseAddress),
       _discoveryPort,
     );
