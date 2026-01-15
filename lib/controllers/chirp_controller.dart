@@ -25,10 +25,12 @@ class ChirpController extends ChangeNotifier {
   final Map<String, Tiel> _tiels = {};
   final Map<String, Flock> _flocks = {};
 
-  final Map<String, List<ChirpMessage>> _conversations = {};
+  final Map<String, List<ChirpMessage>> _messagesByChatId = {};
   final List<ChirpRequestPacket> _pendingRequests = [];
 
-  String get tielId => _me.id;
+  String get myId => _me.id;
+  String get myName => _me.name;
+
   String? get activeChatId => _activeChatId;
 
   List<ChirpRequestPacket> get pendingRequests {
@@ -48,8 +50,14 @@ class ChirpController extends ChangeNotifier {
     _setupListeners();
   }
 
+  Conversation? getConversationFor(String conversationId) {
+    return allConversations
+        .where((conv) => conv.id == conversationId)
+        .firstOrNull;
+  }
+
   List<ChirpMessage> getMessagesFor(String chatId) =>
-      _conversations[chatId] ?? [];
+      _messagesByChatId[chatId] ?? [];
 
   void selectChat(String? chatId) {
     _activeChatId = chatId;
@@ -167,8 +175,8 @@ class ChirpController extends ChangeNotifier {
   }
 
   void _addMessageToConversation(String chatId, ChirpMessage message) {
-    _conversations.putIfAbsent(chatId, () => []);
-    _conversations[chatId]!.add(message);
+    _messagesByChatId.putIfAbsent(chatId, () => []);
+    _messagesByChatId[chatId]!.add(message);
 
     log.d("📩 Mensagem organizada para o chat: $chatId");
     notifyListeners();

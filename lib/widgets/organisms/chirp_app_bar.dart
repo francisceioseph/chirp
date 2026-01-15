@@ -1,6 +1,8 @@
 import 'package:chirp/controllers/chirp_controller.dart';
-import 'package:chirp/widgets/molecules/chirp_header_title.dart';
+import 'package:chirp/widgets/atoms/chirp_brand_identity.dart';
 import 'package:chirp/widgets/atoms/notification_bell.dart';
+import 'package:chirp/widgets/molecules/chirp_easter_egg.dart';
+import 'package:chirp/widgets/molecules/chirp_secret_touch.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,16 +17,35 @@ class ChirpAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Consumer<ChirpController>(
       builder: (context, controller, _) {
         return Container(
-          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8),
+          padding: EdgeInsets.symmetric(
+            vertical: MediaQuery.of(context).padding.top + 8,
+            horizontal: 16,
+          ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(child: ChirpHeaderTitle()),
+              ChirpSecretTouch(
+                onReveal: () => _showEasterEgg(context),
+                child: const ChirpBrandIdentity(
+                  alignment: CrossAxisAlignment.start,
+                ),
+              ),
               NotificationBell(notificationCount: controller.notificationCount),
             ],
           ),
         );
       },
+    );
+  }
+
+  void _showEasterEgg(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.9),
+        content: const ChirpEasterEgg(),
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ class SecurityBadge extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           Icons.verified_user_rounded,
