@@ -1,7 +1,7 @@
 import 'package:chirp/controllers/chirp_controller.dart';
-import 'package:chirp/widgets/components/app_bar/chirp_app_bar.dart';
-import 'package:chirp/widgets/components/app_drawer/notification_drawer.dart';
-import 'package:chirp/widgets/components/stacked_orbs.dart';
+import 'package:chirp/widgets/organisms/chirp_app_bar.dart';
+import 'package:chirp/widgets/organisms/notification_drawer.dart';
+import 'package:chirp/widgets/molecules/stacked_orbs.dart';
 import 'package:chirp/widgets/screens/home/widgets/chat_panel.dart';
 import 'package:chirp/widgets/screens/home/widgets/flock_panel.dart';
 import 'package:flutter/material.dart';

@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:chirp/widgets/components/app_drawer/invitation_item.dart';
+import 'package:chirp/widgets/molecules/invitation_item.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chirp/controllers/chirp_controller.dart';

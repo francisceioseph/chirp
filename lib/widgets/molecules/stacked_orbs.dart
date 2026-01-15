@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'liquid_orb.dart'; // Importe seu widget de esfera
+import '../atoms/liquid_orb.dart';
 
 class StackedOrbs extends StatelessWidget {
   const StackedOrbs({super.key});

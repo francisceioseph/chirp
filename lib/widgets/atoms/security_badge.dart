@@ -11,7 +11,7 @@ class SecurityBadge extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          Icons.verified_user_rounded, // Ícone sutil de escudo/verificado
+          Icons.verified_user_rounded,
           size: 10,
           color: colorScheme.primary.withValues(alpha: 0.6),
         ),

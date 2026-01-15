@@ -1,6 +1,6 @@
-import 'package:chirp/widgets/components/app_bar/chirp_easter_egg.dart';
-import 'package:chirp/widgets/components/app_bar/security_badge.dart';
-import 'package:chirp/widgets/components/app_bar/version_badge.dart';
+import 'package:chirp/widgets/molecules/chirp_easter_egg.dart';
+import 'package:chirp/widgets/atoms/security_badge.dart';
+import 'package:chirp/widgets/atoms/version_badge.dart';
 import 'package:flutter/material.dart';
 
 class ChirpHeaderTitle extends StatefulWidget {
