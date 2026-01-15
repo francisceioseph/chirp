@@ -1,18 +1,23 @@
-import 'package:chirp/controllers/chirp_controller.dart';
 import 'package:chirp/models/tiel.dart';
-import 'package:chirp/widgets/screens/home/widgets/flock_list_item.dart';
+import 'package:chirp/widgets/screens/home/widgets/molecules/flock_list_item.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class FlockList extends StatelessWidget {
   final List<Conversation> conversations;
+  final String? activeChatId;
+  final void Function(Conversation conversation) onItemTap;
+  final void Function(Tiel tiel) onRequestFriendship;
 
-  const FlockList({super.key, required this.conversations});
+  const FlockList({
+    super.key,
+    required this.conversations,
+    required this.activeChatId,
+    required this.onItemTap,
+    required this.onRequestFriendship,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final chirpCtrl = context.watch<ChirpController>();
-
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: conversations.length,
@@ -21,13 +26,13 @@ class FlockList extends StatelessWidget {
 
         return FlockListItem(
           conversation: conversation,
-          activeChatId: chirpCtrl.activeChatId,
+          activeChatId: activeChatId,
           onTap: () {
-            chirpCtrl.selectChat(conversation.id);
+            onItemTap(conversation);
           },
           onAddFriendshipTap: () {
             if (conversation is Tiel && conversation.status == .discovered) {
-              chirpCtrl.requestFriendship(conversation);
+              onRequestFriendship(conversation);
             }
           },
         );
