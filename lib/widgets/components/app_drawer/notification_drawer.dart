@@ -14,9 +14,12 @@ class NotificationsDrawer extends StatelessWidget {
     final controller = context.watch<ChirpController>();
     final requests = controller.pendingRequests;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
+
     return Drawer(
       backgroundColor: Colors.transparent,
-      width: MediaQuery.of(context).size.width * 0.3,
+      width: isMobile ? screenWidth * 0.8 : 400,
       child: Stack(
         children: [
           ClipRRect(
