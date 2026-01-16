@@ -1,11 +1,12 @@
-import 'package:chirp/models/message.dart';
-import 'package:chirp/repositories/secure_nest_repository.dart';
+import 'package:chirp/repositories/secure_nest_port.dart';
 
 abstract class ISecureNest {
   Future<void> setup();
-  Future<void> archiveChirp(ChirpMessage message);
-  Future<List<ChirpMessage>> getConversationHistory(String conversationId);
-  Future<void> wipeAllData();
+
+  Future<void> save(String boxName, String id, Map<String, dynamic> data);
+  Future<List<Map<String, dynamic>>> getAll(String boxName);
+  Future<void> delete(String boxName, String id);
+  Future<void> deleteAll(String boxName);
 }
 
 class SecureNestService implements ISecureNest {
@@ -19,22 +20,26 @@ class SecureNestService implements ISecureNest {
   }
 
   @override
-  Future<void> archiveChirp(ChirpMessage message) async {
-    await _port.saveMessage(message);
-  }
-
-  @override
-  Future<List<ChirpMessage>> getConversationHistory(
-    String conversationId,
+  Future<void> save(
+    String boxName,
+    String id,
+    Map<String, dynamic> data,
   ) async {
-    final history = await _port.getMessages(conversationId);
-    history.sort((a, b) => a.dateCreated.compareTo(b.dateCreated));
-
-    return history;
+    await _port.save(boxName, id, data);
   }
 
   @override
-  Future<void> wipeAllData() async {
-    await _port.deleteAll();
+  Future<List<Map<String, dynamic>>> getAll(String boxName) async {
+    return await _port.getAll(boxName);
+  }
+
+  @override
+  Future<void> delete(String boxName, String id) async {
+    await _port.delete(boxName, id);
+  }
+
+  @override
+  Future<void> deleteAll(String boxName) async {
+    await _port.deleteAll(boxName);
   }
 }

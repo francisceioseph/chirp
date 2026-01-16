@@ -44,6 +44,7 @@ class FlockListItem extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: Stack(
+          clipBehavior: Clip.none,
           children: [
             Container(
               decoration: BoxDecoration(
@@ -56,13 +57,18 @@ class FlockListItem extends StatelessWidget {
                 ],
               ),
               child: CircleAvatar(
+                radius: 20,
                 backgroundImage: NetworkImage(conversation.avatar),
               ),
             ),
             if (conversation is Tiel)
-              TielStatusBadge(
-                badgeColor: badgeColor,
-                status: (conversation as Tiel).status,
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: TielStatusBadge(
+                  badgeColor: badgeColor,
+                  status: (conversation as Tiel).status,
+                ),
               ),
           ],
         ),

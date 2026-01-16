@@ -92,6 +92,26 @@ class Tiel implements Conversation {
       publicKey: publicKey ?? this.publicKey,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'publicKey': publicKey,
+    'address': address,
+    'lastSeen': lastSeen.toIso8601String(),
+    'status': status.name,
+  };
+
+  factory Tiel.fromJson(Map<String, dynamic> json) => Tiel(
+    id: json['id'],
+    name: json['name'],
+    address: json['address'],
+    lastSeen: DateTime.parse(json['lastSeen']),
+    publicKey: json['publicKey'],
+    status: TielStatus.values.byName(
+      json['status'] ?? TielStatus.discovered.name,
+    ),
+  );
 }
 
 class Flock implements Conversation {

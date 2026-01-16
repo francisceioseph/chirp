@@ -5,10 +5,11 @@ import 'package:chirp/models/chirp_packet.dart';
 import 'package:chirp/models/identity.dart';
 import 'package:chirp/models/message.dart';
 import 'package:chirp/models/tiel.dart';
+import 'package:chirp/repositories/message_nest_repository.dart';
+import 'package:chirp/repositories/tiel_nest_repository.dart';
 import 'package:chirp/services/flock_discovery.dart';
 import 'package:chirp/services/flock_manager.dart';
 import 'package:chirp/services/secure_chirp.dart';
-import 'package:chirp/services/secure_nest.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -19,7 +20,9 @@ class ChirpController extends ChangeNotifier {
   final FlockDiscovery _flockDiscovery;
   final FlockManager _flockManager;
   final Identity _me;
-  final ISecureNest _secureNest;
+
+  final MessageNestRepository _messagesRepo;
+  final TielNestRepository _tielsRepo;
 
   Timer? _cleanupTimer;
   String? _activeChatId;
@@ -51,7 +54,8 @@ class ChirpController extends ChangeNotifier {
   ChirpController(
     this._flockDiscovery,
     this._flockManager,
-    this._secureNest,
+    this._messagesRepo,
+    this._tielsRepo,
     this._me,
   ) {
     _setupListeners();
@@ -77,9 +81,10 @@ class ChirpController extends ChangeNotifier {
     try {
       _flockManager.init();
 
-      await _secureNest.setup();
-
+      await _hydrateTiels();
       await _hydrateMessages();
+
+      notifyListeners();
 
       await _flockDiscovery.advertise(_me.id, _me.name);
       await _flockDiscovery.discover((String id, String name, String address) {
@@ -112,7 +117,7 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
-  void acceptFriendship(ChirpRequestPacket request) {
+  void acceptFriendship(ChirpRequestPacket request) async {
     final packet = ChirpAcceptPacket(
       fromId: _me.id,
       fromName: _me.name,
@@ -121,12 +126,18 @@ class ChirpController extends ChangeNotifier {
 
     _flockManager.sendPacket(request.fromId, packet);
 
-    _tiels.update(
-      request.fromId,
-      (tiel) => tiel.copyWith(publicKey: request.publicKey, status: .connected),
+    final tiel = _tiels[request.fromId];
+
+    final newTiel = tiel!.copyWith(
+      publicKey: request.publicKey,
+      status: .connected,
     );
 
+    _tiels[request.fromId] = newTiel;
     _pendingRequests.removeWhere((req) => req.fromId == request.fromId);
+
+    await _tielsRepo.save(newTiel);
+
     notifyListeners();
   }
 
@@ -159,7 +170,7 @@ class ChirpController extends ChangeNotifier {
 
       _flockManager.sendPacket(targetId, packet);
 
-      await _secureNest.archiveChirp(message);
+      await _messagesRepo.save(message);
 
       _addMessageToConversation(targetId, message);
 
@@ -189,14 +200,24 @@ class ChirpController extends ChangeNotifier {
 
   Future<void> _hydrateMessages() async {
     for (var chat in allConversations) {
-      final history = await _secureNest.getConversationHistory(chat.id);
+      final history = await _messagesRepo.list(chat.id);
 
       if (history.isNotEmpty) {
         _messagesByChatId[chat.id] = history;
       }
     }
+  }
 
-    notifyListeners();
+  Future<void> _hydrateTiels() async {
+    try {
+      final tiels = await _tielsRepo.list();
+
+      for (var tiel in tiels) {
+        _tiels[tiel.id] = tiel.copyWith(status: .away);
+      }
+    } catch (e) {
+      log.e("Error hydrating tiels: $e");
+    }
   }
 
   void _addMessageToConversation(String chatId, ChirpMessage message) {
@@ -265,9 +286,9 @@ class ChirpController extends ChangeNotifier {
       );
 
       final Map<String, dynamic> msgMap = jsonDecode(decryptedJson);
-      final message = ChirpMessage.fromJson(msgMap);
+      var message = ChirpMessage.fromJson(msgMap);
 
-      await _secureNest.archiveChirp(message);
+      await _messagesRepo.save(message);
 
       _addMessageToConversation(packet.fromId, message);
     } catch (e) {
@@ -280,11 +301,18 @@ class ChirpController extends ChangeNotifier {
 
     _tiels.update(
       id,
-      (existing) => existing.copyWith(
-        name: name,
-        address: address,
-        lastSeen: DateTime.now(),
-      ),
+      (existing) {
+        final newStatus = existing.publicKey != null
+            ? TielStatus.connected
+            : TielStatus.discovered;
+
+        return existing.copyWith(
+          name: name,
+          address: address,
+          lastSeen: DateTime.now(),
+          status: newStatus,
+        );
+      },
       ifAbsent: () => Tiel(
         id: id,
         name: name,

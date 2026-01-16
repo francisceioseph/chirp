@@ -21,8 +21,23 @@ class ChirpMessage {
     'author': author,
     'body': body,
     'dateCreated': dateCreated.toIso8601String(),
-    'isFromMe': isFromMe,
   };
+
+  ChirpMessage copyWith({
+    String? id,
+    String? senderId,
+    String? author,
+    String? body,
+    DateTime? dateCreated,
+    bool? isFromMe,
+  }) => ChirpMessage(
+    id: id ?? this.id,
+    senderId: senderId ?? this.senderId,
+    author: author ?? this.author,
+    body: body ?? this.body,
+    dateCreated: dateCreated ?? this.dateCreated,
+    isFromMe: isFromMe ?? this.isFromMe,
+  );
 
   factory ChirpMessage.fromJson(Map<String, dynamic> json) => ChirpMessage(
     id: json['id'],
