@@ -19,6 +19,8 @@ dependencies:
   shared_preferences: ^2.5.4
   crypton: ^2.2.1
   encrypt: ^5.0.3
+  hive_flutter: ^1.1.0
+  flutter_secure_storage: ^10.0.0
 
 dependency_overrides: 
   flutter_webrtc: ^0.12.0

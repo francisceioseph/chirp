@@ -8,6 +8,7 @@ import 'package:chirp/models/tiel.dart';
 import 'package:chirp/services/flock_discovery.dart';
 import 'package:chirp/services/flock_manager.dart';
 import 'package:chirp/services/secure_chirp.dart';
+import 'package:chirp/services/secure_nest.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -18,6 +19,7 @@ class ChirpController extends ChangeNotifier {
   final FlockDiscovery _flockDiscovery;
   final FlockManager _flockManager;
   final Identity _me;
+  final ISecureNest _secureNest;
 
   Timer? _cleanupTimer;
   String? _activeChatId;
@@ -46,7 +48,12 @@ class ChirpController extends ChangeNotifier {
     ..._flocks.values,
   ];
 
-  ChirpController(this._flockDiscovery, this._flockManager, this._me) {
+  ChirpController(
+    this._flockDiscovery,
+    this._flockManager,
+    this._secureNest,
+    this._me,
+  ) {
     _setupListeners();
   }
 
@@ -69,6 +76,10 @@ class ChirpController extends ChangeNotifier {
 
     try {
       _flockManager.init();
+
+      await _secureNest.setup();
+
+      await _hydrateMessages();
 
       await _flockDiscovery.advertise(_me.id, _me.name);
       await _flockDiscovery.discover((String id, String name, String address) {
@@ -119,7 +130,7 @@ class ChirpController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void sendChirp(String targetId, String text) {
+  Future<void> sendChirp(String targetId, String text) async {
     final tiel = _tiels[targetId];
 
     if (tiel == null || tiel.publicKey == null || tiel.status != .connected) {
@@ -148,6 +159,8 @@ class ChirpController extends ChangeNotifier {
 
       _flockManager.sendPacket(targetId, packet);
 
+      await _secureNest.archiveChirp(message);
+
       _addMessageToConversation(targetId, message);
 
       log.i("🦜🔐 Chirp criptografado e enviado para ${tiel.name}");
@@ -174,12 +187,34 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
+  Future<void> _hydrateMessages() async {
+    for (var chat in allConversations) {
+      final history = await _secureNest.getConversationHistory(chat.id);
+
+      if (history.isNotEmpty) {
+        _messagesByChatId[chat.id] = history;
+      }
+    }
+
+    notifyListeners();
+  }
+
   void _addMessageToConversation(String chatId, ChirpMessage message) {
     _messagesByChatId.putIfAbsent(chatId, () => []);
-    _messagesByChatId[chatId]!.add(message);
 
-    log.d("📩 Mensagem organizada para o chat: $chatId");
-    notifyListeners();
+    bool alreadyExists = _messagesByChatId[chatId]!.any(
+      (m) => m.id == message.id,
+    );
+
+    if (!alreadyExists) {
+      _messagesByChatId[chatId]!.add(message);
+      _messagesByChatId[chatId]!.sort(
+        (a, b) => a.dateCreated.compareTo(b.dateCreated),
+      );
+
+      log.d("📩 Chirp added to $chatId");
+      notifyListeners();
+    }
   }
 
   void _setupListeners() {
@@ -222,7 +257,7 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
-  void _handleIncomingMessage(ChirpMessagePacket packet) {
+  void _handleIncomingMessage(ChirpMessagePacket packet) async {
     try {
       final decryptedJson = SecureChirp.decrypt(
         _me.privateKey!,
@@ -230,9 +265,11 @@ class ChirpController extends ChangeNotifier {
       );
 
       final Map<String, dynamic> msgMap = jsonDecode(decryptedJson);
-      final incomingMessage = ChirpMessage.fromJson(msgMap);
+      final message = ChirpMessage.fromJson(msgMap);
 
-      _addMessageToConversation(packet.fromId, incomingMessage);
+      await _secureNest.archiveChirp(message);
+
+      _addMessageToConversation(packet.fromId, message);
     } catch (e) {
       log.e("Falha ao descriptografar mensagem: $e");
     }

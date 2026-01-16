@@ -1,8 +1,10 @@
 import 'package:chirp/controllers/chirp_controller.dart';
 import 'package:chirp/models/identity.dart';
+import 'package:chirp/repositories/secure_nest_repository.dart';
 import 'package:chirp/services/flock_discovery.dart';
 import 'package:chirp/services/identity_service.dart';
 import 'package:chirp/services/flock_manager.dart';
+import 'package:chirp/services/secure_nest.dart';
 import 'package:get_it/get_it.dart';
 
 final getIt = GetIt.instance;
@@ -10,15 +12,21 @@ final getIt = GetIt.instance;
 Future<void> setupLocator() async {
   final Identity myIdentity = await IdentityService.getIdentity();
 
-  final discovery = FlockDiscoveryService();
-  getIt.registerLazySingleton<FlockDiscovery>(() => discovery);
+  getIt.registerLazySingleton<FlockDiscovery>(() => FlockDiscoveryService());
 
   getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(myIdentity));
+
+  getIt.registerLazySingleton<SecureNestPort>(() => SecureNestHiveAdapter());
+
+  getIt.registerLazySingleton<ISecureNest>(
+    () => SecureNestService(getIt<SecureNestPort>()),
+  );
 
   getIt.registerFactory(
     () => ChirpController(
       getIt<FlockDiscovery>(),
       getIt<FlockManager>(),
+      getIt<ISecureNest>(),
       myIdentity,
     ),
   );

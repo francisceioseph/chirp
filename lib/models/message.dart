@@ -21,6 +21,7 @@ class ChirpMessage {
     'author': author,
     'body': body,
     'dateCreated': dateCreated.toIso8601String(),
+    'isFromMe': isFromMe,
   };
 
   factory ChirpMessage.fromJson(Map<String, dynamic> json) => ChirpMessage(
@@ -29,5 +30,6 @@ class ChirpMessage {
     author: json['author'],
     body: json['body'],
     dateCreated: DateTime.parse(json['dateCreated']),
+    isFromMe: json['isFromMe'] ?? false,
   );
 }
