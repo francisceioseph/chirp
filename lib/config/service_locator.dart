@@ -1,3 +1,4 @@
+import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
 import 'package:chirp/infrastructure/adapters/file_picker_adapter.dart';
@@ -56,6 +57,14 @@ Future<void> setupLocator() async {
     ),
   );
 
+  getIt.registerLazySingleton<SendChirpUseCase>(
+    () => SendChirpUseCase(
+      flockManager: getIt<FlockManager>(),
+      messagesRepo: getIt<MessageNestRepository>(),
+      me: myIdentity,
+    ),
+  );
+
   getIt.registerFactory(
     () => ChirpController(
       flockDiscovery: getIt<FlockDiscovery>(),
@@ -68,6 +77,7 @@ Future<void> setupLocator() async {
 
       requestFriendshipUseCase: getIt<RequestFriendshipUseCase>(),
       acceptFriendshipUseCase: getIt<AcceptFriendshipUseCase>(),
+      sendChirpUseCase: getIt<SendChirpUseCase>(),
     ),
   );
 }

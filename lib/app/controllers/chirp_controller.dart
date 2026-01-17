@@ -8,6 +8,7 @@ import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/entities/message.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/ports/file_picker_port.dart';
+import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
 import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
@@ -33,6 +34,7 @@ class ChirpController extends ChangeNotifier {
 
   final RequestFriendshipUseCase _requestFriendshipUseCase;
   final AcceptFriendshipUseCase _acceptFriendshipUseCase;
+  final SendChirpUseCase _sendChirpUseCase;
 
   Timer? _cleanupTimer;
   String? _activeChatId;
@@ -72,6 +74,7 @@ class ChirpController extends ChangeNotifier {
 
     required RequestFriendshipUseCase requestFriendshipUseCase,
     required AcceptFriendshipUseCase acceptFriendshipUseCase,
+    required SendChirpUseCase sendChirpUseCase,
   }) : _flockDiscovery = flockDiscovery,
        _flockManager = flockManager,
        _me = me,
@@ -79,7 +82,8 @@ class ChirpController extends ChangeNotifier {
        _messagesRepo = messagesRepository,
        _filePicker = filePicker,
        _requestFriendshipUseCase = requestFriendshipUseCase,
-       _acceptFriendshipUseCase = acceptFriendshipUseCase {
+       _acceptFriendshipUseCase = acceptFriendshipUseCase,
+       _sendChirpUseCase = sendChirpUseCase {
     _setupListeners();
   }
 
@@ -157,38 +161,15 @@ class ChirpController extends ChangeNotifier {
     final tiel = _tiels[targetId];
 
     if (tiel == null || tiel.publicKey == null || tiel.status != .connected) {
-      log.w("⚠️ Tentativa de envio para $targetId sem handshake completo.");
+      log.w("Tentativa de envio para $targetId sem handshake completo.");
       return;
     }
 
     try {
-      final message = ChirpMessage(
-        id: uuid.v4(),
-        senderId: _me.id,
-        author: _me.name,
-        body: text,
-        dateCreated: DateTime.now(),
-        isFromMe: true,
-      );
-
-      final jsonMessage = jsonEncode(message.toJson());
-      final envelope = SecureChirp.encrypt(tiel.publicKey!, jsonMessage);
-
-      final packet = ChirpMessagePacket(
-        fromId: _me.id,
-        fromName: _me.name,
-        envelope: envelope,
-      );
-
-      _flockManager.sendPacket(targetId, packet);
-
-      await _messagesRepo.save(message);
-
+      final message = await _sendChirpUseCase.execute(tiel, text);
       _addMessageToConversation(targetId, message);
-
-      log.i("🦜🔐 Chirp criptografado e enviado para ${tiel.name}");
     } catch (e) {
-      log.e("❌ Falha no mecanismo de envio seguro para $targetId", error: e);
+      log.e("Falha no mecanismo de envio seguro para $targetId", error: e);
     }
   }
 
@@ -214,7 +195,7 @@ class ChirpController extends ChangeNotifier {
     final tiel = _tiels[targetId];
 
     if (tiel == null || tiel.publicKey == null || tiel.status != .connected) {
-      log.w("⚠️ Tentativa de envio para $targetId sem handshake completo.");
+      log.w("Tentativa de envio para $targetId sem handshake completo.");
       return;
     }
 
