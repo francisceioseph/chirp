@@ -1,3 +1,5 @@
+import 'package:chirp/domain/usecases/chat/offer_file_use_case.dart';
+import 'package:chirp/domain/usecases/chat/open_file_picker_use_case.dart';
 import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
@@ -65,6 +67,14 @@ Future<void> setupLocator() async {
     ),
   );
 
+  getIt.registerLazySingleton<OpenFilePickerUseCase>(
+    () => OpenFilePickerUseCase(filePicker: getIt<FilePickerPort>()),
+  );
+
+  getIt.registerLazySingleton<OfferFileUseCase>(
+    () => OfferFileUseCase(flockManager: getIt<FlockManager>(), me: myIdentity),
+  );
+
   getIt.registerFactory(
     () => ChirpController(
       flockDiscovery: getIt<FlockDiscovery>(),
@@ -73,11 +83,12 @@ Future<void> setupLocator() async {
 
       messagesRepository: getIt<MessageNestRepository>(),
       tielsRepository: getIt<TielNestRepository>(),
-      filePicker: getIt<FilePickerPort>(),
 
       requestFriendshipUseCase: getIt<RequestFriendshipUseCase>(),
       acceptFriendshipUseCase: getIt<AcceptFriendshipUseCase>(),
       sendChirpUseCase: getIt<SendChirpUseCase>(),
+      offerFileUseCase: getIt<OfferFileUseCase>(),
+      openFilePickerUseCase: getIt<OpenFilePickerUseCase>(),
     ),
   );
 }

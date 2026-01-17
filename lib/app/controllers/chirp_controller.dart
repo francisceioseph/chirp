@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:chirp/domain/models/chirp_file_metadata.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/entities/message.dart';
 import 'package:chirp/domain/entities/tiel.dart';
-import 'package:chirp/domain/ports/file_picker_port.dart';
+import 'package:chirp/domain/usecases/chat/offer_file_use_case.dart';
+import 'package:chirp/domain/usecases/chat/open_file_picker_use_case.dart';
 import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
@@ -19,7 +18,6 @@ import 'package:chirp/infrastructure/services/secure_chirp.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'package:crypto/crypto.dart';
 
 class ChirpController extends ChangeNotifier {
   final uuid = Uuid();
@@ -30,11 +28,12 @@ class ChirpController extends ChangeNotifier {
 
   final MessageNestRepository _messagesRepo;
   final TielNestRepository _tielsRepo;
-  final FilePickerPort _filePicker;
 
   final RequestFriendshipUseCase _requestFriendshipUseCase;
   final AcceptFriendshipUseCase _acceptFriendshipUseCase;
   final SendChirpUseCase _sendChirpUseCase;
+  final OfferFileUseCase _offerFileUseCase;
+  final OpenFilePickerUseCase _openFilePickerUseCase;
 
   Timer? _cleanupTimer;
   String? _activeChatId;
@@ -70,20 +69,22 @@ class ChirpController extends ChangeNotifier {
 
     required TielNestRepository tielsRepository,
     required MessageNestRepository messagesRepository,
-    required FilePickerPort filePicker,
 
     required RequestFriendshipUseCase requestFriendshipUseCase,
     required AcceptFriendshipUseCase acceptFriendshipUseCase,
     required SendChirpUseCase sendChirpUseCase,
+    required OfferFileUseCase offerFileUseCase,
+    required OpenFilePickerUseCase openFilePickerUseCase,
   }) : _flockDiscovery = flockDiscovery,
        _flockManager = flockManager,
        _me = me,
        _tielsRepo = tielsRepository,
        _messagesRepo = messagesRepository,
-       _filePicker = filePicker,
        _requestFriendshipUseCase = requestFriendshipUseCase,
        _acceptFriendshipUseCase = acceptFriendshipUseCase,
-       _sendChirpUseCase = sendChirpUseCase {
+       _sendChirpUseCase = sendChirpUseCase,
+       _offerFileUseCase = offerFileUseCase,
+       _openFilePickerUseCase = openFilePickerUseCase {
     _setupListeners();
   }
 
@@ -199,40 +200,15 @@ class ChirpController extends ChangeNotifier {
       return;
     }
 
-    final file = await _filePicker.pickFile();
+    try {
+      final output = await _openFilePickerUseCase.execute();
 
-    if (file != null) {
-      log.d("File selected ${file.name}");
+      if (output.isNotEmpty) {
+        _offerFileUseCase.execute(tiel, output.metadata!);
+      }
+    } catch (e) {
+      log.e("Erro ao selecionar arquivos $e");
     }
-
-    final checksum = await _calculateChecksum(file!.path);
-
-    final metadata = ChirpFileMetadata(
-      id: Uuid().v4(),
-      name: file.name,
-      size: file.size,
-      checksum: checksum,
-      mimeType: file.extension,
-    );
-
-    final jsonData = jsonEncode(metadata.toJson());
-    final envelope = SecureChirp.encrypt(tiel.publicKey!, jsonData);
-
-    final packet = ChirpFileOfferPacket(
-      fromId: _me.id,
-      fromName: _me.name,
-      envelope: envelope,
-    );
-
-    _flockManager.sendPacket(targetId, packet);
-  }
-
-  Future<String> _calculateChecksum(String path) async {
-    final file = File(path);
-    final stream = file.openRead();
-    final hash = await sha256.bind(stream).first;
-
-    return hash.toString();
   }
 
   Future<void> _hydrateMessages() async {
