@@ -1,5 +1,5 @@
 import 'package:chirp/config/service_locator.dart';
-import 'package:chirp/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:chirp/themes/theme.dart';

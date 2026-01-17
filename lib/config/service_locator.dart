@@ -1,5 +1,5 @@
 import 'package:chirp/adapters/file_picker_adapter.dart';
-import 'package:chirp/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/models/identity.dart';
 import 'package:chirp/ports/file_picker_port.dart';
 import 'package:chirp/repositories/message_nest_repository.dart';

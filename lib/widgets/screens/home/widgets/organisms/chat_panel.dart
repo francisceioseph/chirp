@@ -1,4 +1,4 @@
-import 'package:chirp/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/models/tiel.dart';
 import 'package:chirp/widgets/atoms/glass_panel.dart';
 import 'package:chirp/widgets/screens/home/widgets/atoms/column_label.dart';

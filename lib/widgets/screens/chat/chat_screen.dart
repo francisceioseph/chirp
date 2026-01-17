@@ -1,4 +1,4 @@
-import 'package:chirp/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/widgets/atoms/glass_panel.dart';
 import 'package:chirp/widgets/molecules/stacked_orbs.dart';
 import 'package:chirp/widgets/screens/home/widgets/organisms/message_input.dart';

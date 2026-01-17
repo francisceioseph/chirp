@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:chirp/widgets/molecules/invitation_item.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chirp/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/chirp_controller.dart';
 
 class NotificationsDrawer extends StatelessWidget {
   const NotificationsDrawer({super.key});

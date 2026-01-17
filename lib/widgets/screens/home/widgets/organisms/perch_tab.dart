@@ -1,4 +1,4 @@
-import 'package:chirp/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/widgets/atoms/chirp_brand_identity.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
