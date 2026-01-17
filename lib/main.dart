@@ -2,7 +2,7 @@ import 'package:chirp/config/service_locator.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:chirp/themes/theme.dart';
+import 'package:chirp/app/themes/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
