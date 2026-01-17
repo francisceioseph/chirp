@@ -1,5 +1,5 @@
 import 'package:chirp/domain/entities/message.dart';
-import 'package:chirp/services/secure_nest.dart';
+import 'package:chirp/infrastructure/services/secure_nest.dart';
 
 class MessageNestRepository {
   final ISecureNest _nest;

@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:chirp/domain/entities/identity.dart';
-import 'package:chirp/services/secure_chirp.dart';
+import 'package:chirp/infrastructure/services/secure_chirp.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';

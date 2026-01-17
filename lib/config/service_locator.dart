@@ -1,15 +1,15 @@
-import 'package:chirp/adapters/file_picker_adapter.dart';
+import 'package:chirp/infrastructure/adapters/file_picker_adapter.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/ports/file_picker_port.dart';
-import 'package:chirp/repositories/message_nest_repository.dart';
-import 'package:chirp/adapters/secure_nest_hive_adapter.dart';
+import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
+import 'package:chirp/infrastructure/adapters/secure_nest_hive_adapter.dart';
 import 'package:chirp/domain/ports/secure_nest_port.dart';
-import 'package:chirp/repositories/tiel_nest_repository.dart';
-import 'package:chirp/services/flock_discovery.dart';
-import 'package:chirp/services/identity_service.dart';
-import 'package:chirp/services/flock_manager.dart';
-import 'package:chirp/services/secure_nest.dart';
+import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
+import 'package:chirp/infrastructure/services/flock_discovery.dart';
+import 'package:chirp/infrastructure/services/identity_service.dart';
+import 'package:chirp/infrastructure/services/flock_manager.dart';
+import 'package:chirp/infrastructure/services/secure_nest.dart';
 import 'package:get_it/get_it.dart';
 
 final getIt = GetIt.instance;
