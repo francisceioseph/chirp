@@ -3,9 +3,15 @@ import 'package:flutter/material.dart';
 
 class MessageInput extends StatefulWidget {
   final Function(String) onSend;
+  final VoidCallback? onAttachFile;
   final bool isEnabled;
 
-  const MessageInput({super.key, required this.onSend, this.isEnabled = true});
+  const MessageInput({
+    super.key,
+    required this.onSend,
+    this.onAttachFile,
+    this.isEnabled = true,
+  });
 
   @override
   State<MessageInput> createState() => _MessageInputState();
@@ -90,6 +96,19 @@ class _MessageInputState extends State<MessageInput> {
                 ),
 
                 const SizedBox(width: 8),
+
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: IconButton(
+                    onPressed: widget.isEnabled ? widget.onAttachFile : null,
+                    icon: const Icon(Icons.attach_file_rounded),
+                    color: colorScheme.primary,
+                    tooltip: "Enviar arquivo",
+                    style: IconButton.styleFrom(
+                      hoverColor: colorScheme.primary.withValues(alpha: 0.1),
+                    ),
+                  ),
+                ),
 
                 Padding(
                   padding: const EdgeInsets.only(bottom: 2),

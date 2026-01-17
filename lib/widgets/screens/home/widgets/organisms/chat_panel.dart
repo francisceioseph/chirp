@@ -46,6 +46,9 @@ class ChatPanel extends StatelessWidget {
             onSend: (text) {
               chirpCtrl.sendChirp(activeChatId, text);
             },
+            onAttachFile: () {
+              chirpCtrl.showFilePicker();
+            },
           ),
         ],
       ),

@@ -1,6 +1,13 @@
 import 'package:chirp/models/chirp_envelope.dart';
 
-enum ChirpPacketAction { identity, request, accept, message }
+enum ChirpPacketAction {
+  identity,
+  request,
+  accept,
+  message,
+  fileOffer,
+  fileAccept,
+}
 
 sealed class ChirpPacket {
   final String fromId;
@@ -22,6 +29,8 @@ sealed class ChirpPacket {
       'request' => ChirpRequestPacket.fromJson(json),
       'accept' => ChirpAcceptPacket.fromJson(json),
       'message' => ChirpMessagePacket.fromJson(json),
+      'fileOffer' => ChirpFileOfferPacket.fromJson(json),
+      'fileAccept' => ChirpFileAcceptPacket.fromJson(json),
       _ => throw Exception("Ação desconhecida"),
     };
   }
@@ -111,6 +120,56 @@ class ChirpMessagePacket extends ChirpPacket {
 
   factory ChirpMessagePacket.fromJson(Map<String, dynamic> json) =>
       ChirpMessagePacket(
+        fromId: json['fromId'],
+        fromName: json['fromName'],
+        envelope: ChirpEnvelope.fromJson(json['envelope']),
+      );
+}
+
+class ChirpFileOfferPacket extends ChirpPacket {
+  final ChirpEnvelope envelope;
+
+  ChirpFileOfferPacket({
+    required super.fromId,
+    required super.fromName,
+    required this.envelope,
+  }) : super(action: ChirpPacketAction.fileOffer);
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'action': action.name,
+    'fromId': fromId,
+    'fromName': fromName,
+    'envelope': envelope.toJson(),
+  };
+
+  factory ChirpFileOfferPacket.fromJson(Map<String, dynamic> json) =>
+      ChirpFileOfferPacket(
+        fromId: json['fromId'],
+        fromName: json['fromName'],
+        envelope: ChirpEnvelope.fromJson(json['envelope']),
+      );
+}
+
+class ChirpFileAcceptPacket extends ChirpPacket {
+  final ChirpEnvelope envelope;
+
+  ChirpFileAcceptPacket({
+    required super.fromId,
+    required super.fromName,
+    required this.envelope,
+  }) : super(action: ChirpPacketAction.fileAccept);
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'action': action.name,
+    'fromId': fromId,
+    'fromName': fromName,
+    'envelope': envelope.toJson(),
+  };
+
+  factory ChirpFileAcceptPacket.fromJson(Map<String, dynamic> json) =>
+      ChirpFileAcceptPacket(
         fromId: json['fromId'],
         fromName: json['fromName'],
         envelope: ChirpEnvelope.fromJson(json['envelope']),

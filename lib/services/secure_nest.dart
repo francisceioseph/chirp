@@ -1,4 +1,4 @@
-import 'package:chirp/repositories/secure_nest_port.dart';
+import 'package:chirp/ports/secure_nest_port.dart';
 
 abstract class ISecureNest {
   Future<void> setup();

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:chirp/repositories/secure_nest_port.dart';
+import 'package:chirp/ports/secure_nest_port.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 

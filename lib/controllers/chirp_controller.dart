@@ -5,6 +5,7 @@ import 'package:chirp/models/chirp_packet.dart';
 import 'package:chirp/models/identity.dart';
 import 'package:chirp/models/message.dart';
 import 'package:chirp/models/tiel.dart';
+import 'package:chirp/ports/file_picker_port.dart';
 import 'package:chirp/repositories/message_nest_repository.dart';
 import 'package:chirp/repositories/tiel_nest_repository.dart';
 import 'package:chirp/services/flock_discovery.dart';
@@ -23,6 +24,7 @@ class ChirpController extends ChangeNotifier {
 
   final MessageNestRepository _messagesRepo;
   final TielNestRepository _tielsRepo;
+  final FilePickerPort _filePicker;
 
   Timer? _cleanupTimer;
   String? _activeChatId;
@@ -56,6 +58,7 @@ class ChirpController extends ChangeNotifier {
     this._flockManager,
     this._messagesRepo,
     this._tielsRepo,
+    this._filePicker,
     this._me,
   ) {
     _setupListeners();
@@ -198,6 +201,14 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
+  Future<void> showFilePicker() async {
+    final file = await _filePicker.pickFile();
+
+    if (file != null) {
+      log.d("File selected ${file.name}");
+    }
+  }
+
   Future<void> _hydrateMessages() async {
     for (var chat in allConversations) {
       final history = await _messagesRepo.list(chat.id);
@@ -271,6 +282,14 @@ class ChirpController extends ChangeNotifier {
 
       case ChirpMessagePacket():
         _handleIncomingMessage(packet);
+        break;
+
+      case ChirpFileOfferPacket():
+        log.w("File offer not implemented");
+        break;
+
+      case ChirpFileAcceptPacket():
+        log.w("File accpet not implemented yet");
         break;
 
       case ChirpIdentityPacket():

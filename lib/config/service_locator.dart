@@ -1,8 +1,10 @@
+import 'package:chirp/adapters/file_picker_adapter.dart';
 import 'package:chirp/controllers/chirp_controller.dart';
 import 'package:chirp/models/identity.dart';
+import 'package:chirp/ports/file_picker_port.dart';
 import 'package:chirp/repositories/message_nest_repository.dart';
-import 'package:chirp/repositories/secure_nest_hive_adapter.dart';
-import 'package:chirp/repositories/secure_nest_port.dart';
+import 'package:chirp/adapters/secure_nest_hive_adapter.dart';
+import 'package:chirp/ports/secure_nest_port.dart';
 import 'package:chirp/repositories/tiel_nest_repository.dart';
 import 'package:chirp/services/flock_discovery.dart';
 import 'package:chirp/services/identity_service.dart';
@@ -34,12 +36,15 @@ Future<void> setupLocator() async {
     () => MessageNestRepository(getIt<ISecureNest>()),
   );
 
+  getIt.registerLazySingleton<FilePickerPort>(() => FilePickerAdapter());
+
   getIt.registerFactory(
     () => ChirpController(
       getIt<FlockDiscovery>(),
       getIt<FlockManager>(),
       getIt<MessageNestRepository>(),
       getIt<TielNestRepository>(),
+      getIt<FilePickerPort>(),
       myIdentity,
     ),
   );
