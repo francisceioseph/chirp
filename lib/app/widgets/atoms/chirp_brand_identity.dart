@@ -1,5 +1,5 @@
-import 'package:chirp/widgets/atoms/security_badge.dart';
-import 'package:chirp/widgets/atoms/version_badge.dart';
+import 'package:chirp/app/widgets/atoms/security_badge.dart';
+import 'package:chirp/app/widgets/atoms/version_badge.dart';
 import 'package:flutter/material.dart';
 
 class ChirpBrandIdentity extends StatelessWidget {

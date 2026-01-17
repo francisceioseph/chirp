@@ -1,5 +1,5 @@
 import 'package:chirp/models/tiel.dart';
-import 'package:chirp/widgets/screens/home/widgets/atoms/tiel_status_badge.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/atoms/tiel_status_badge.dart';
 import 'package:flutter/material.dart';
 
 class FlockListItem extends StatelessWidget {

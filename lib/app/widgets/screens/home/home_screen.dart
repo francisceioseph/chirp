@@ -1,5 +1,5 @@
-import 'package:chirp/widgets/screens/home/widgets/templates/desktop_home_template.dart';
-import 'package:chirp/widgets/screens/home/widgets/templates/mobile_home_template.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/templates/desktop_home_template.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/templates/mobile_home_template.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {

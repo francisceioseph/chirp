@@ -1,8 +1,8 @@
-import 'package:chirp/widgets/molecules/stacked_orbs.dart';
-import 'package:chirp/widgets/organisms/chirp_app_bar.dart';
-import 'package:chirp/widgets/organisms/notification_drawer.dart';
-import 'package:chirp/widgets/screens/home/widgets/organisms/chat_panel.dart';
-import 'package:chirp/widgets/screens/home/widgets/organisms/flock_panel.dart';
+import 'package:chirp/app/widgets/molecules/stacked_orbs.dart';
+import 'package:chirp/app/widgets/organisms/chirp_app_bar.dart';
+import 'package:chirp/app/widgets/organisms/notification_drawer.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/organisms/chat_panel.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/organisms/flock_panel.dart';
 import 'package:flutter/material.dart';
 
 class DesktopHomeTemplate extends StatelessWidget {

@@ -1,5 +1,5 @@
-import 'package:chirp/widgets/screens/chat/chat_screen.dart';
-import 'package:chirp/widgets/screens/home/home_screen.dart';
+import 'package:chirp/app/widgets/screens/chat/chat_screen.dart';
+import 'package:chirp/app/widgets/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class ChirpRoutes {

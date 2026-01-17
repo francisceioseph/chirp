@@ -1,5 +1,5 @@
 import 'package:chirp/models/tiel.dart';
-import 'package:chirp/widgets/screens/home/widgets/molecules/flock_list_item.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/molecules/flock_list_item.dart';
 import 'package:flutter/material.dart';
 
 class FlockList extends StatelessWidget {

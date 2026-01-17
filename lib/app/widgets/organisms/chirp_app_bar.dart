@@ -1,8 +1,8 @@
 import 'package:chirp/app/controllers/chirp_controller.dart';
-import 'package:chirp/widgets/atoms/chirp_brand_identity.dart';
-import 'package:chirp/widgets/atoms/notification_bell.dart';
-import 'package:chirp/widgets/molecules/chirp_easter_egg.dart';
-import 'package:chirp/widgets/molecules/chirp_secret_touch.dart';
+import 'package:chirp/app/widgets/atoms/chirp_brand_identity.dart';
+import 'package:chirp/app/widgets/atoms/notification_bell.dart';
+import 'package:chirp/app/widgets/molecules/chirp_easter_egg.dart';
+import 'package:chirp/app/widgets/molecules/chirp_secret_touch.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
