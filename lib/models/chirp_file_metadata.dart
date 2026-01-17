@@ -1,20 +1,32 @@
 class ChirpFileMetadata {
-  final String fileId;
-  final String fileName;
-  final int fileSize;
+  final String id;
+  final String name;
+  final int size;
   final String checksum;
+  final String? mimeType;
 
   ChirpFileMetadata({
-    required this.fileId,
-    required this.fileName,
-    required this.fileSize,
+    required this.id,
+    required this.name,
+    required this.size,
     required this.checksum,
+    this.mimeType,
   });
 
   Map<String, dynamic> toJson() => {
-    'fileId': fileId,
-    'fileName': fileName,
-    'fileSize': fileSize,
+    'id': id,
+    'name': name,
+    'size': size,
     'checksum': checksum,
+    'mimeType': mimeType,
   };
+
+  factory ChirpFileMetadata.fromJson(Map<String, dynamic> json) =>
+      ChirpFileMetadata(
+        id: json['id'],
+        checksum: json['checksum'],
+        mimeType: json['mimeType'],
+        name: json['name'],
+        size: json['size'],
+      );
 }

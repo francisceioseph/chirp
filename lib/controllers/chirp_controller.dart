@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:chirp/models/chirp_file_metadata.dart';
 import 'package:chirp/models/chirp_packet.dart';
 import 'package:chirp/models/identity.dart';
 import 'package:chirp/models/message.dart';
@@ -14,6 +16,7 @@ import 'package:chirp/services/secure_chirp.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:crypto/crypto.dart';
 
 class ChirpController extends ChangeNotifier {
   final uuid = Uuid();
@@ -201,12 +204,48 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
-  Future<void> showFilePicker() async {
+  Future<void> pickAndOfferFile(String targetId) async {
+    final tiel = _tiels[targetId];
+
+    if (tiel == null || tiel.publicKey == null || tiel.status != .connected) {
+      log.w("⚠️ Tentativa de envio para $targetId sem handshake completo.");
+      return;
+    }
+
     final file = await _filePicker.pickFile();
 
     if (file != null) {
       log.d("File selected ${file.name}");
     }
+
+    final checksum = await _calculateChecksum(file!.path);
+
+    final metadata = ChirpFileMetadata(
+      id: Uuid().v4(),
+      name: file.name,
+      size: file.size,
+      checksum: checksum,
+      mimeType: file.extension,
+    );
+
+    final jsonData = jsonEncode(metadata.toJson());
+    final envelope = SecureChirp.encrypt(tiel.publicKey!, jsonData);
+
+    final packet = ChirpFileOfferPacket(
+      fromId: _me.id,
+      fromName: _me.name,
+      envelope: envelope,
+    );
+
+    _flockManager.sendPacket(targetId, packet);
+  }
+
+  Future<String> _calculateChecksum(String path) async {
+    final file = File(path);
+    final stream = file.openRead();
+    final hash = await sha256.bind(stream).first;
+
+    return hash.toString();
   }
 
   Future<void> _hydrateMessages() async {
