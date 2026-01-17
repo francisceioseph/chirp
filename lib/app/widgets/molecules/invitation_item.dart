@@ -1,5 +1,5 @@
 import 'package:chirp/app/controllers/chirp_controller.dart';
-import 'package:chirp/models/chirp_packet.dart';
+import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

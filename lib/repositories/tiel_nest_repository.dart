@@ -1,4 +1,4 @@
-import 'package:chirp/models/tiel.dart';
+import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/services/secure_nest.dart';
 
 class TielNestRepository {

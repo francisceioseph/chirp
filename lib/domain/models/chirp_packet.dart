@@ -1,4 +1,4 @@
-import 'package:chirp/models/chirp_envelope.dart';
+import 'package:chirp/domain/models/chirp_envelope.dart';
 
 enum ChirpPacketAction {
   identity,

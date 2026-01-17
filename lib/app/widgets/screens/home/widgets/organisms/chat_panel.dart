@@ -1,5 +1,5 @@
 import 'package:chirp/app/controllers/chirp_controller.dart';
-import 'package:chirp/models/tiel.dart';
+import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/app/widgets/atoms/glass_panel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/atoms/column_label.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_input.dart';

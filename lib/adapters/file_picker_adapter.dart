@@ -1,4 +1,4 @@
-import 'package:chirp/models/chirp_selected_file.dart';
+import 'package:chirp/domain/models/chirp_selected_file.dart';
 import 'package:chirp/ports/file_picker_port.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:file_picker/file_picker.dart';

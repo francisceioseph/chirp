@@ -1,5 +1,5 @@
-import 'package:chirp/models/chirp_envelope.dart';
-import 'package:chirp/models/secure_keys.dart';
+import 'package:chirp/domain/models/chirp_envelope.dart';
+import 'package:chirp/domain/models/secure_keys.dart';
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:crypton/crypton.dart';
 

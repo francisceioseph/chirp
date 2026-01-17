@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:chirp/models/message.dart';
+import 'package:chirp/domain/entities/message.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/molecules/message_bubble.dart';
 
 class MessageList extends StatefulWidget {

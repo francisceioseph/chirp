@@ -1,4 +1,4 @@
-import 'package:chirp/models/message.dart';
+import 'package:chirp/domain/entities/message.dart';
 import 'package:flutter/material.dart';
 
 class MessageBubble extends StatelessWidget {

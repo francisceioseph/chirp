@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:chirp/models/chirp_packet.dart';
+import 'package:chirp/domain/models/chirp_packet.dart';
 
-import 'package:chirp/models/identity.dart';
+import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:peerdart/peerdart.dart';
 

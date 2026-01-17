@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:chirp/models/chirp_packet.dart';
+import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/utils/app_logger.dart';
 
 abstract class FlockDiscovery {

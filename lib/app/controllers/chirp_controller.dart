@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:chirp/models/chirp_file_metadata.dart';
-import 'package:chirp/models/chirp_packet.dart';
-import 'package:chirp/models/identity.dart';
-import 'package:chirp/models/message.dart';
-import 'package:chirp/models/tiel.dart';
+import 'package:chirp/domain/models/chirp_file_metadata.dart';
+import 'package:chirp/domain/models/chirp_packet.dart';
+import 'package:chirp/domain/entities/identity.dart';
+import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/ports/file_picker_port.dart';
 import 'package:chirp/repositories/message_nest_repository.dart';
 import 'package:chirp/repositories/tiel_nest_repository.dart';

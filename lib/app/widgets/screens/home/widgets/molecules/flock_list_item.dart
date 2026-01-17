@@ -1,4 +1,4 @@
-import 'package:chirp/models/tiel.dart';
+import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/atoms/tiel_status_badge.dart';
 import 'package:flutter/material.dart';
 
