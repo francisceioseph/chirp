@@ -8,6 +8,8 @@ import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/entities/message.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/ports/file_picker_port.dart';
+import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
+import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
 import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
 import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
 import 'package:chirp/infrastructure/services/flock_discovery.dart';
@@ -28,6 +30,9 @@ class ChirpController extends ChangeNotifier {
   final MessageNestRepository _messagesRepo;
   final TielNestRepository _tielsRepo;
   final FilePickerPort _filePicker;
+
+  final RequestFriendshipUseCase _requestFriendshipUseCase;
+  final AcceptFriendshipUseCase _acceptFriendshipUseCase;
 
   Timer? _cleanupTimer;
   String? _activeChatId;
@@ -56,14 +61,25 @@ class ChirpController extends ChangeNotifier {
     ..._flocks.values,
   ];
 
-  ChirpController(
-    this._flockDiscovery,
-    this._flockManager,
-    this._messagesRepo,
-    this._tielsRepo,
-    this._filePicker,
-    this._me,
-  ) {
+  ChirpController({
+    required FlockDiscovery flockDiscovery,
+    required FlockManager flockManager,
+    required Identity me,
+
+    required TielNestRepository tielsRepository,
+    required MessageNestRepository messagesRepository,
+    required FilePickerPort filePicker,
+
+    required RequestFriendshipUseCase requestFriendshipUseCase,
+    required AcceptFriendshipUseCase acceptFriendshipUseCase,
+  }) : _flockDiscovery = flockDiscovery,
+       _flockManager = flockManager,
+       _me = me,
+       _tielsRepo = tielsRepository,
+       _messagesRepo = messagesRepository,
+       _filePicker = filePicker,
+       _requestFriendshipUseCase = requestFriendshipUseCase,
+       _acceptFriendshipUseCase = acceptFriendshipUseCase {
     _setupListeners();
   }
 
@@ -105,46 +121,36 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
-  void requestFriendship(Tiel target) {
-    final packet = ChirpRequestPacket(
-      fromId: _me.id,
-      fromName: _me.name,
-      publicKey: _me.publicKey,
-    );
+  Future<void> requestFriendship(Tiel target) async {
+    try {
+      final tiel = await _requestFriendshipUseCase.execute(target);
 
-    _flockManager.sendPacket(target.id, packet);
+      if (_tiels.containsKey(tiel.id)) {
+        _tiels[tiel.id] = tiel;
+        notifyListeners();
 
-    if (_tiels.containsKey(target.id)) {
-      _tiels[target.id] = _tiels[target.id]!.copyWith(
-        status: TielStatus.pending,
-      );
-
-      notifyListeners();
+        log.i("🐦 Solicitação de amizade enviada para ${target.name}");
+      }
+    } catch (e) {
+      log.e("❌ Falha ao solicitar amizade: $e");
     }
   }
 
-  void acceptFriendship(ChirpRequestPacket request) async {
-    final packet = ChirpAcceptPacket(
-      fromId: _me.id,
-      fromName: _me.name,
-      publicKey: _me.publicKey,
-    );
+  Future<void> acceptFriendship(ChirpRequestPacket request) async {
+    try {
+      final tiel = _tiels[request.fromId];
 
-    _flockManager.sendPacket(request.fromId, packet);
+      if (tiel != null) {
+        final newTiel = await _acceptFriendshipUseCase.execute(tiel, request);
 
-    final tiel = _tiels[request.fromId];
+        _tiels[request.fromId] = newTiel;
+        _pendingRequests.removeWhere((req) => req.fromId == request.fromId);
 
-    final newTiel = tiel!.copyWith(
-      publicKey: request.publicKey,
-      status: .connected,
-    );
-
-    _tiels[request.fromId] = newTiel;
-    _pendingRequests.removeWhere((req) => req.fromId == request.fromId);
-
-    await _tielsRepo.save(newTiel);
-
-    notifyListeners();
+        notifyListeners();
+      }
+    } catch (e) {
+      log.e("Falha ao aceitar amizade");
+    }
   }
 
   Future<void> sendChirp(String targetId, String text) async {
