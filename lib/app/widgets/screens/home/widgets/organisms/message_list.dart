@@ -1,3 +1,4 @@
+import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:chirp/domain/entities/message.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/molecules/message_bubble.dart';
@@ -17,21 +18,21 @@ class _MessageListState extends State<MessageList> {
   @override
   void didUpdateWidget(MessageList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Se chegou mensagem nova, rola para o fim
+
     if (widget.messages.length > oldWidget.messages.length) {
       _scrollToBottom();
     }
   }
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
+    if (!_scrollController.hasClients) return;
+
+    Future.microtask(() {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutBack,
+      );
     });
   }
 
@@ -41,14 +42,67 @@ class _MessageListState extends State<MessageList> {
       return const Center(child: Text("Silêncio no bando... envie um chirp!"));
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      itemCount: widget.messages.length,
-      itemBuilder: (context, index) {
-        final message = widget.messages[index];
-        return MessageBubble(message: message);
-      },
+    final theme = Theme.of(context);
+    final isFlat = theme.extension<ChirpPanelTheme>()?.blurSigma == 0;
+
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: true),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: EdgeInsets.symmetric(
+          horizontal: isFlat ? 12 : 20,
+          vertical: 20,
+        ),
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        itemCount: widget.messages.length,
+        itemBuilder: (context, index) {
+          final message = widget.messages[index];
+
+          final prevMessage = index > 0 ? widget.messages[index - 1] : null;
+          final nextMessage = index < widget.messages.length - 1
+              ? widget.messages[index + 1]
+              : null;
+
+          final bool isSameAuthorAsPrev = prevMessage?.author == message.author;
+
+          final bool isSameAuthorAsNext = nextMessage?.author == message.author;
+
+          final bool isRecent =
+              isSameAuthorAsPrev &&
+              message.dateCreated
+                      .difference(prevMessage!.dateCreated)
+                      .inMinutes <
+                  5;
+
+          final bool shouldShowAuthor = !isSameAuthorAsPrev || !isRecent;
+
+          final bool isFirstInGroup = !isSameAuthorAsPrev || !isRecent;
+
+          final bool isLastInGroup =
+              !isSameAuthorAsNext ||
+              (nextMessage != null &&
+                  nextMessage.dateCreated
+                          .difference(message.dateCreated)
+                          .inMinutes >=
+                      5);
+
+          return MessageBubble(
+            key: ValueKey(message.id),
+            message: message,
+            showAuthor: !message.isFromMe && shouldShowAuthor,
+            isFirstInGroup: isFirstInGroup,
+            isLastInGroup: isLastInGroup,
+          );
+        },
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 }

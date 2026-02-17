@@ -1,10 +1,20 @@
-import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:chirp/domain/entities/message.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChirpMessage message;
+  final bool showAuthor;
+  final bool isFirstInGroup;
+  final bool isLastInGroup;
 
-  const MessageBubble({super.key, required this.message});
+  const MessageBubble({
+    super.key,
+    required this.message,
+    this.showAuthor = true,
+    this.isFirstInGroup = true,
+    this.isLastInGroup = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,16 +22,29 @@ class MessageBubble extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final isMe = message.isFromMe;
 
+    final panelTheme = theme.extension<ChirpPanelTheme>();
+    final baseRadius =
+        panelTheme?.decoration?.borderRadius
+            ?.resolve(Directionality.of(context))
+            .topLeft
+            .x ??
+        18.0;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: EdgeInsets.only(
+        bottom: isLastInGroup ? 12.0 : 2.5,
+        top: isFirstInGroup ? 4.0 : 0,
+      ),
       child: Column(
         crossAxisAlignment: isMe
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
-          if (!isMe) _buildAuthorName(theme),
-          _buildBubbleContainer(context, theme, colorScheme, isMe),
-          _buildFooter(theme, colorScheme, isMe),
+          if (!isMe && showAuthor) _buildAuthorName(theme),
+
+          _buildBubbleContainer(context, theme, colorScheme, isMe, baseRadius),
+
+          if (isLastInGroup) _buildFooter(theme, colorScheme, isMe),
         ],
       ),
     );
@@ -29,12 +52,13 @@ class MessageBubble extends StatelessWidget {
 
   Widget _buildAuthorName(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 4),
+      padding: const EdgeInsets.only(left: 12, bottom: 4),
       child: Text(
         message.author,
         style: theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.bold,
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -45,73 +69,96 @@ class MessageBubble extends StatelessWidget {
     ThemeData theme,
     ColorScheme colorScheme,
     bool isMe,
+    double baseRadius,
   ) {
+    final isFlat = theme.extension<ChirpPanelTheme>()?.blurSigma == 0;
+
     return Container(
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.7,
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: isMe
-            ? colorScheme.primary.withValues(alpha: 0.15)
-            : colorScheme.onSurface.withValues(alpha: 0.08),
-        borderRadius: _getBorderRadius(isMe),
-        border: Border.all(
-          color: isMe
-              ? colorScheme.primary.withValues(alpha: 0.15)
-              : colorScheme.onSurface.withValues(alpha: 0.15),
+            ? colorScheme.primary
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: _getInstagramStyleRadius(
+          isMe,
+          isFirstInGroup,
+          isLastInGroup,
+          baseRadius,
         ),
+        border: (isFlat && !isMe)
+            ? null
+            : Border.all(color: colorScheme.onSurface.withValues(alpha: 0.05)),
       ),
-      child: Text(
+      child: SelectableText(
         message.body,
-        style: theme.textTheme.bodyMedium?.copyWith(height: 1.3),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          height: 1.4,
+          color: isMe ? colorScheme.onPrimary : colorScheme.onSurface,
+        ),
       ),
     );
   }
 
   Widget _buildFooter(ThemeData theme, ColorScheme colorScheme, bool isMe) {
-    final securityColor = isMe ? colorScheme.primary : colorScheme.secondary;
     final timeStr =
         "${message.dateCreated.hour}:${message.dateCreated.minute.toString().padLeft(2, '0')}";
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4, left: 6, right: 6),
+      padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isMe) ...[
-            Icon(
-              Icons.lock,
-              size: 10,
-              color: securityColor.withValues(alpha: 0.5),
-            ),
-            const SizedBox(width: 4),
-          ],
+          if (isMe) _buildSecurityIcon(colorScheme.primary),
           Text(
             timeStr,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
+              fontSize: 10,
             ),
           ),
-          if (!isMe) ...[
-            const SizedBox(width: 4),
-            Icon(
-              Icons.lock,
-              size: 10,
-              color: securityColor.withValues(alpha: 0.5),
-            ),
-          ],
+          if (!isMe) _buildSecurityIcon(colorScheme.secondary),
         ],
       ),
     );
   }
 
-  BorderRadius _getBorderRadius(bool isMe) {
-    return BorderRadius.only(
-      topLeft: const Radius.circular(16),
-      topRight: const Radius.circular(16),
-      bottomLeft: Radius.circular(isMe ? 16 : 4),
-      bottomRight: Radius.circular(isMe ? 4 : 16),
+  Widget _buildSecurityIcon(Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Icon(
+        Icons.lock_outline_rounded,
+        size: 10,
+        color: color.withValues(alpha: 0.5),
+      ),
     );
+  }
+
+  BorderRadius _getInstagramStyleRadius(
+    bool isMe,
+    bool isFirst,
+    bool isLast,
+    double base,
+  ) {
+    final r = Radius.circular(base);
+    final s = Radius.circular(base > 4 ? 4 : 0);
+
+    if (isMe) {
+      return BorderRadius.only(
+        topLeft: r,
+        bottomLeft: r,
+        topRight: isFirst ? r : s,
+        bottomRight: isLast ? r : s,
+      );
+    } else {
+      return BorderRadius.only(
+        topRight: r,
+        bottomRight: r,
+        topLeft: isFirst ? r : s,
+        bottomLeft: isLast ? r : s,
+      );
+    }
   }
 }
