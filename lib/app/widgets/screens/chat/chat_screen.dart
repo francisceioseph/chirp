@@ -1,6 +1,5 @@
 import 'package:chirp/app/controllers/chirp_controller.dart';
-import 'package:chirp/app/widgets/atoms/glass_panel.dart';
-import 'package:chirp/app/widgets/molecules/stacked_orbs.dart';
+import 'package:chirp/app/widgets/atoms/chirp_panel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_input.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_list.dart';
 import 'package:flutter/material.dart';
@@ -60,11 +59,9 @@ class ChatScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          const StackedOrbs(),
-
           SafeArea(
             bottom: false,
-            child: GlassPanel(
+            child: ChirpPanel(
               child: Column(
                 children: [
                   Expanded(

@@ -1,3 +1,4 @@
+import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/molecules/flock_list_item.dart';
 import 'package:flutter/material.dart';
@@ -18,35 +19,49 @@ class FlockList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: conversations.length,
-      itemBuilder: (context, index) {
-        final conversation = conversations[index];
+    final theme = Theme.of(context);
+    final panelTheme = theme.extension<ChirpPanelTheme>();
 
-        return FlockListItem(
-          conversation: conversation,
-          activeChatId: activeChatId,
-          onTap: () {
-            onItemTap(conversation);
-          },
-          onAddFriendshipTap: () {
-            if (conversation is Tiel && conversation.status == .discovered) {
-              onRequestFriendship(conversation);
-            }
-          },
-        );
-      },
-      separatorBuilder: (BuildContext context, int index) {
-        final theme = Theme.of(context);
-        final colorScheme = theme.colorScheme;
+    final bool showDivider =
+        panelTheme?.blurSigma != null && panelTheme!.blurSigma! > 0;
 
-        return Divider(
-          height: 1,
-          thickness: 0.5,
-          color: colorScheme.onSurface.withValues(alpha: 0.1),
-        );
-      },
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: true),
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(
+          vertical: panelTheme?.margin == EdgeInsets.zero ? 0 : 8,
+        ),
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        itemCount: conversations.length,
+        itemBuilder: (context, index) {
+          final conversation = conversations[index];
+
+          return FlockListItem(
+            key: ValueKey(conversation.id),
+            conversation: conversation,
+            activeChatId: activeChatId,
+            onTap: () => onItemTap(conversation),
+            onAddFriendshipTap: () {
+              if (conversation is Tiel) {
+                onRequestFriendship(conversation);
+              }
+            },
+          );
+        },
+        separatorBuilder: (context, index) {
+          if (!showDivider) return const SizedBox(height: 4);
+
+          return Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            thickness: 0.5,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+          );
+        },
+      ),
     );
   }
 }

@@ -32,8 +32,8 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Chirp Talk",
-      theme: ChirpThemes.sunnyLutino,
-      darkTheme: ChirpThemes.greyWild,
+      theme: ChirpThemes.slateFlat,
+      darkTheme: ChirpThemes.slateFlat,
       themeMode: ThemeMode.system,
       initialRoute: ChirpRoutes.home,
       onGenerateRoute: ChirpRoutes.generateRoute,

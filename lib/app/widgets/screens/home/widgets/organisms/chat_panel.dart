@@ -1,6 +1,6 @@
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/domain/entities/tiel.dart';
-import 'package:chirp/app/widgets/atoms/glass_panel.dart';
+import 'package:chirp/app/widgets/atoms/chirp_panel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/atoms/column_label.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_input.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_list.dart';
@@ -16,7 +16,7 @@ class ChatPanel extends StatelessWidget {
     final activeChatId = chirpCtrl.activeChatId;
 
     if (activeChatId == null) {
-      return const GlassPanel(
+      return const ChirpPanel(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -35,7 +35,7 @@ class ChatPanel extends StatelessWidget {
       (c) => c.id == activeChatId,
     );
 
-    return GlassPanel(
+    return ChirpPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

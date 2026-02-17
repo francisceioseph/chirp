@@ -20,7 +20,7 @@ class MessageBubble extends StatelessWidget {
             : CrossAxisAlignment.start,
         children: [
           if (!isMe) _buildAuthorName(theme),
-          _buildGlassBubble(context, theme, colorScheme, isMe),
+          _buildBubbleContainer(context, theme, colorScheme, isMe),
           _buildFooter(theme, colorScheme, isMe),
         ],
       ),
@@ -40,7 +40,7 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildGlassBubble(
+  Widget _buildBubbleContainer(
     BuildContext context,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -61,16 +61,6 @@ class MessageBubble extends StatelessWidget {
               ? colorScheme.primary.withValues(alpha: 0.15)
               : colorScheme.onSurface.withValues(alpha: 0.15),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isMe
-                ? colorScheme.primary.withValues(alpha: 0.2)
-                : colorScheme.onSurface.withValues(alpha: 0.05),
-            blurRadius: 8,
-            spreadRadius: 1,
-            offset: Offset.zero,
-          ),
-        ],
       ),
       child: Text(
         message.body,
@@ -91,7 +81,7 @@ class MessageBubble extends StatelessWidget {
         children: [
           if (isMe) ...[
             Icon(
-              Icons.security_rounded,
+              Icons.lock,
               size: 10,
               color: securityColor.withValues(alpha: 0.5),
             ),
@@ -106,7 +96,7 @@ class MessageBubble extends StatelessWidget {
           if (!isMe) ...[
             const SizedBox(width: 4),
             Icon(
-              Icons.security_rounded,
+              Icons.lock,
               size: 10,
               color: securityColor.withValues(alpha: 0.5),
             ),

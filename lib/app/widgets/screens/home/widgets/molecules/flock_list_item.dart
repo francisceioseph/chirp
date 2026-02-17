@@ -1,3 +1,4 @@
+import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/atoms/tiel_status_badge.dart';
 import 'package:flutter/material.dart';
@@ -24,66 +25,87 @@ class FlockListItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final isSelected = activeChatId == conversation.id;
 
-    final statusText = conversation.statusText;
-    final badgeColor = conversation.getStatusColor(theme.colorScheme);
+    final panelTheme = theme.extension<ChirpPanelTheme>();
+    final radius =
+        panelTheme?.decoration?.borderRadius
+            ?.resolve(Directionality.of(context))
+            .topLeft
+            .x ??
+        12.0;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? colorScheme.primary.withValues(alpha: 0.8)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected
-              ? colorScheme.primary.withValues(alpha: 0.3)
-              : Colors.transparent,
-        ),
+    final badgeColor = conversation.getStatusColor(colorScheme);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: panelTheme?.margin == EdgeInsets.zero ? 4 : 8,
       ),
-      child: ListTile(
+      child: InkWell(
         onTap: onTap,
-        leading: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: badgeColor.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: NetworkImage(conversation.avatar),
-              ),
+        mouseCursor: SystemMouseCursors.click,
+        borderRadius: BorderRadius.circular(radius / 2),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected
+                ? colorScheme.primaryContainer.withValues(alpha: 0.5)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(radius / 2),
+            border: Border.all(
+              color: isSelected
+                  ? colorScheme.primary.withValues(alpha: 0.2)
+                  : Colors.transparent,
             ),
-            if (conversation is Tiel)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: TielStatusBadge(
-                  badgeColor: badgeColor,
-                  status: (conversation as Tiel).status,
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            leading: _buildAvatar(badgeColor),
+            title: Tooltip(
+              message: conversation.name,
+              child: Text(
+                conversation.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurface,
                 ),
               ),
-          ],
-        ),
-        title: Text(
-          conversation.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          statusText,
-          style: TextStyle(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+            subtitle: Text(
+              conversation.statusText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            trailing: _buildTrailingAction(context, theme),
           ),
         ),
-        trailing: _buildTrailingAction(context, theme),
       ),
+    );
+  }
+
+  Widget _buildAvatar(Color badgeColor) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CircleAvatar(
+          radius: 16,
+          backgroundColor: Colors.grey.shade800,
+          backgroundImage: NetworkImage(conversation.avatar),
+        ),
+        if (conversation is Tiel)
+          Positioned(
+            bottom: -2,
+            right: -2,
+            child: TielStatusBadge(
+              badgeColor: badgeColor,
+              status: (conversation as Tiel).status,
+            ),
+          ),
+      ],
     );
   }
 

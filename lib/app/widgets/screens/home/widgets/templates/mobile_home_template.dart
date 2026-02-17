@@ -1,5 +1,4 @@
-import 'package:chirp/app/widgets/atoms/glass_panel.dart';
-import 'package:chirp/app/widgets/molecules/stacked_orbs.dart';
+import 'package:chirp/app/widgets/atoms/chirp_panel.dart';
 import 'package:chirp/app/widgets/organisms/chirp_app_bar.dart';
 import 'package:chirp/app/widgets/organisms/notification_drawer.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/flock_tab.dart';
@@ -23,12 +22,7 @@ class _MobileHomeTemplateState extends State<MobileHomeTemplate> {
     return Scaffold(
       appBar: const ChirpAppBar(),
       endDrawer: const NotificationsDrawer(),
-      body: Stack(
-        children: [
-          const StackedOrbs(),
-          GlassPanel(child: _tabs[_currentIndex]),
-        ],
-      ),
+      body: Stack(children: [ChirpPanel(child: _tabs[_currentIndex])]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
