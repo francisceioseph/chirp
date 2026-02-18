@@ -1,12 +1,15 @@
 import 'dart:io';
-import 'package:chirp/domain/entities/identity.dart';
-import 'package:chirp/infrastructure/repositories/identity_prefs_repository.dart';
-import 'package:chirp/infrastructure/services/secure_chirp.dart';
+import 'dart:math';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:chirp/domain/entities/identity.dart';
+import 'package:chirp/infrastructure/repositories/identity_prefs_repository.dart';
+import 'package:chirp/infrastructure/services/secure_chirp.dart';
+
 class IdentityService {
   final IdentityPrefsRepository _repository;
+
   static const _suffix = String.fromEnvironment("TIEL_ID", defaultValue: "");
 
   IdentityService(this._repository);
@@ -19,13 +22,13 @@ class IdentityService {
     }
 
     final id = const Uuid().v4();
-    final name = await _buildDefaultName();
-
+    final name = await _buildHardwareName();
     final keyPair = SecureChirp.makeKeys();
 
     final newIdentity = Identity(
       id: id,
       name: name,
+      nickname: name,
       publicKey: keyPair.pubKey,
       privateKey: keyPair.privKey,
     );
@@ -41,9 +44,12 @@ class IdentityService {
     final keyPair = SecureChirp.makeKeys();
     final id = const Uuid().v4();
 
+    final hardwareName = await _buildHardwareName();
+
     final identity = Identity(
       id: id,
-      name: _sanitize(nickname),
+      name: hardwareName,
+      nickname: _sanitize(nickname),
       email: email,
       publicKey: keyPair.pubKey,
       privateKey: keyPair.privKey,
@@ -57,33 +63,59 @@ class IdentityService {
     await _repository.clear();
   }
 
-  Future<String> _buildDefaultName() async {
-    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+  Future<Identity> updateNickname(String newNickname) async {
+    final current = await _repository.get();
+    if (current == null) throw Exception("Identidade não encontrada");
 
-    String rawName = "Tiel";
+    final updated = current.copyWith(nickname: _sanitize(newNickname));
+    await _repository.save(updated);
+
+    return updated;
+  }
+
+  Future<String> _buildHardwareName() async {
+    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    String hardwareName = "Chirper";
+
     try {
-      rawName = switch (Platform.operatingSystem) {
-        'linux' => (await deviceInfo.linuxInfo).name,
-        'windows' => (await deviceInfo.windowsInfo).computerName,
-        'macos' => (await deviceInfo.macOsInfo).computerName,
-        'android' => (await deviceInfo.androidInfo).model,
-        'ios' => (await deviceInfo.iosInfo).name,
-        _ => "Tiel",
-      };
+      if (Platform.isAndroid) {
+        final info = await deviceInfo.androidInfo;
+        hardwareName = "${info.manufacturer} ${info.model}";
+      } else if (Platform.isIOS) {
+        final info = await deviceInfo.iosInfo;
+        hardwareName = info.name;
+      } else if (Platform.isMacOS) {
+        hardwareName = (await deviceInfo.macOsInfo).computerName;
+      } else if (Platform.isWindows) {
+        hardwareName = (await deviceInfo.windowsInfo).computerName;
+      } else if (Platform.isLinux) {
+        hardwareName = (await deviceInfo.linuxInfo).name;
+      }
     } catch (_) {
-      rawName = "Tiel_Guest";
+      hardwareName = "Guest";
     }
 
-    return _sanitize(rawName);
+    return _generateUniqueName(hardwareName);
+  }
+
+  String _generateUniqueName(String base) {
+    final randomSuffix = Random()
+        .nextInt(0xFFFF)
+        .toRadixString(16)
+        .toUpperCase()
+        .padLeft(4, '0');
+
+    final sanitizedBase = _sanitize(base);
+    final envLabel = _suffix.isNotEmpty ? "_#$_suffix" : "";
+
+    return "${sanitizedBase}_$randomSuffix$envLabel";
   }
 
   String _sanitize(String name) {
-    final clean = name
+    return name
         .trim()
         .replaceAll(RegExp(r'[^\w\s]+'), '')
-        .replaceAll(' ', '_');
-
-    final label = _suffix.isNotEmpty ? "_#$_suffix" : "";
-    return "$clean$label";
+        .replaceAll(RegExp(r'\s+'), '_')
+        .toLowerCase();
   }
 }

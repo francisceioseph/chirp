@@ -32,23 +32,22 @@ Future<void> setupGlobalLocator() async {
 }
 
 Future<void> configureSession(Identity myIdentity) async {
-  if (getIt.isRegistered<Identity>()) {
-    await _resetSession();
+  if (getIt.currentScopeName == 'session') {
+    await getIt.popScope();
   }
 
-  getIt.registerSingleton<Identity>(myIdentity);
+  getIt.pushNewScope(scopeName: 'session');
 
   final nestAdapter = SecureNestHiveAdapter(myIdentity.id);
   final secureNest = SecureNestService(nestAdapter);
   await secureNest.setup();
+
+  getIt.registerSingleton(myIdentity);
   getIt.registerSingleton<ISecureNest>(secureNest);
+  getIt.registerLazySingleton(() => TielNestRepository(getIt()));
+  getIt.registerLazySingleton(() => MessageNestRepository(getIt()));
 
-  getIt.registerLazySingleton(() => TielNestRepository(getIt<ISecureNest>()));
-  getIt.registerLazySingleton(
-    () => MessageNestRepository(getIt<ISecureNest>()),
-  );
-
-  getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(myIdentity));
+  getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(getIt()));
 
   _registerSessionUseCases();
 
@@ -56,7 +55,7 @@ Future<void> configureSession(Identity myIdentity) async {
     () => ChirpController(
       flockDiscovery: getIt<FlockDiscovery>(),
       flockManager: getIt<FlockManager>(),
-      me: myIdentity,
+      me: getIt(),
       messagesRepository: getIt<MessageNestRepository>(),
       tielsRepository: getIt<TielNestRepository>(),
       requestFriendshipUseCase: getIt<RequestFriendshipUseCase>(),
@@ -70,56 +69,36 @@ Future<void> configureSession(Identity myIdentity) async {
   );
 }
 
-Future<void> _resetSession() async {
-  getIt.unregister<Identity>();
-  getIt.unregister<ISecureNest>();
-  getIt.unregister<TielNestRepository>();
-  getIt.unregister<MessageNestRepository>();
-  getIt.unregister<FlockManager>();
-  getIt.unregister<RequestFriendshipUseCase>();
-  getIt.unregister<AcceptFriendshipUseCase>();
-  getIt.unregister<SendChirpUseCase>();
-  getIt.unregister<ReceiveChirpUseCase>();
-  getIt.unregister<OfferFileUseCase>();
-  getIt.unregister<ChirpController>();
-}
-
 void _registerSessionUseCases() {
   getIt.registerLazySingleton(
     () => RequestFriendshipUseCase(
-      flockManager: getIt<FlockManager>(),
-      tielsRepo: getIt<TielNestRepository>(),
-      identityService: getIt<IdentityService>(),
+      flockManager: getIt(),
+      tielsRepo: getIt(),
+      identityService: getIt(),
     ),
   );
 
   getIt.registerLazySingleton(
     () => AcceptFriendshipUseCase(
-      flockManager: getIt<FlockManager>(),
-      tielsRepo: getIt<TielNestRepository>(),
-      identityService: getIt<IdentityService>(),
+      flockManager: getIt(),
+      tielsRepo: getIt(),
+      identityService: getIt(),
     ),
   );
 
   getIt.registerLazySingleton(
     () => SendChirpUseCase(
-      flockManager: getIt<FlockManager>(),
-      messagesRepo: getIt<MessageNestRepository>(),
-      identityService: getIt<IdentityService>(),
+      flockManager: getIt(),
+      messagesRepo: getIt(),
+      identityService: getIt(),
     ),
   );
 
   getIt.registerLazySingleton(
-    () => ReceiveChirpUseCase(
-      messageRepo: getIt<MessageNestRepository>(),
-      identityService: getIt<IdentityService>(),
-    ),
+    () => ReceiveChirpUseCase(messageRepo: getIt(), identityService: getIt()),
   );
 
   getIt.registerLazySingleton(
-    () => OfferFileUseCase(
-      flockManager: getIt<FlockManager>(),
-      identityService: getIt<IdentityService>(),
-    ),
+    () => OfferFileUseCase(flockManager: getIt(), identityService: getIt()),
   );
 }
