@@ -8,27 +8,57 @@ import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  await Hive.initFlutter();
-  await setupGlobalLocator();
+    await Hive.initFlutter();
+    await setupGlobalLocator();
 
-  final identityService = getIt<IdentityService>();
-  final currentIdentity = await identityService.loadOrCreateIdentity();
+    final identityService = getIt<IdentityService>();
+    final currentIdentity = await identityService.loadOrCreateIdentity();
+    await configureSession(currentIdentity);
 
-  await configureSession(currentIdentity);
+    runApp(const ChirpBootstrapper());
+  } catch (e) {
+    runApp(
+      MaterialApp(
+        home: Scaffold(body: Center(child: Text("Erro ao iniciar bando: $e"))),
+      ),
+    );
+  }
+}
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          lazy: false,
-          create: (_) => getIt<ChirpController>()..startServices(),
-        ),
-      ],
-      child: const MainApp(),
-    ),
-  );
+class ChirpBootstrapper extends StatefulWidget {
+  const ChirpBootstrapper({super.key});
+
+  @override
+  State<ChirpBootstrapper> createState() => _ChirpBootstrapperState();
+}
+
+class _ChirpBootstrapperState extends State<ChirpBootstrapper> {
+  Key _appKey = UniqueKey();
+
+  void rebuildSession() {
+    setState(() {
+      _appKey = UniqueKey();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: _appKey,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            lazy: false,
+            create: (_) => getIt<ChirpController>()..startServices(),
+          ),
+        ],
+        child: const MainApp(),
+      ),
+    );
+  }
 }
 
 class MainApp extends StatelessWidget {
