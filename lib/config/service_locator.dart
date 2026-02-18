@@ -24,17 +24,11 @@ final getIt = GetIt.instance;
 Future<void> setupGlobalLocator() async {
   getIt.registerLazySingleton<FilePickerPort>(() => FilePickerAdapter());
   getIt.registerLazySingleton<FlockDiscovery>(() => FlockDiscoveryService());
-  getIt.registerLazySingleton<ParseIncomingPacketUseCase>(
-    () => ParseIncomingPacketUseCase(),
-  );
-  getIt.registerLazySingleton<OpenFilePickerUseCase>(
-    () => OpenFilePickerUseCase(filePicker: getIt<FilePickerPort>()),
-  );
+  getIt.registerLazySingleton(() => ParseIncomingPacketUseCase());
+  getIt.registerLazySingleton(() => OpenFilePickerUseCase(filePicker: getIt()));
 
   getIt.registerLazySingleton(() => IdentityPrefsRepository());
-  getIt.registerLazySingleton(
-    () => IdentityService(getIt<IdentityPrefsRepository>()),
-  );
+  getIt.registerLazySingleton(() => IdentityService(getIt()));
 }
 
 Future<void> configureSession(Identity myIdentity) async {
@@ -56,7 +50,7 @@ Future<void> configureSession(Identity myIdentity) async {
 
   getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(myIdentity));
 
-  _registerSessionUseCases(myIdentity);
+  _registerSessionUseCases();
 
   getIt.registerFactory(
     () => ChirpController(
@@ -90,12 +84,12 @@ Future<void> _resetSession() async {
   getIt.unregister<ChirpController>();
 }
 
-void _registerSessionUseCases(Identity me) {
+void _registerSessionUseCases() {
   getIt.registerLazySingleton(
     () => RequestFriendshipUseCase(
       flockManager: getIt<FlockManager>(),
       tielsRepo: getIt<TielNestRepository>(),
-      me: me,
+      identityService: getIt<IdentityService>(),
     ),
   );
 
@@ -103,7 +97,7 @@ void _registerSessionUseCases(Identity me) {
     () => AcceptFriendshipUseCase(
       flockManager: getIt<FlockManager>(),
       tielsRepo: getIt<TielNestRepository>(),
-      me: me,
+      identityService: getIt<IdentityService>(),
     ),
   );
 
@@ -111,18 +105,21 @@ void _registerSessionUseCases(Identity me) {
     () => SendChirpUseCase(
       flockManager: getIt<FlockManager>(),
       messagesRepo: getIt<MessageNestRepository>(),
-      me: me,
+      identityService: getIt<IdentityService>(),
     ),
   );
 
   getIt.registerLazySingleton(
     () => ReceiveChirpUseCase(
       messageRepo: getIt<MessageNestRepository>(),
-      me: me,
+      identityService: getIt<IdentityService>(),
     ),
   );
 
   getIt.registerLazySingleton(
-    () => OfferFileUseCase(flockManager: getIt<FlockManager>(), me: me),
+    () => OfferFileUseCase(
+      flockManager: getIt<FlockManager>(),
+      identityService: getIt<IdentityService>(),
+    ),
   );
 }
