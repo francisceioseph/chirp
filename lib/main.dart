@@ -1,3 +1,6 @@
+import 'package:chirp/app/controllers/chat_controller.dart';
+import 'package:chirp/app/controllers/friendship_controller.dart';
+import 'package:chirp/app/controllers/presence_controller.dart';
 import 'package:chirp/config/service_locator.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/routes.dart';
@@ -54,6 +57,9 @@ class _ChirpBootstrapperState extends State<ChirpBootstrapper> {
             lazy: false,
             create: (_) => getIt<ChirpController>()..startServices(),
           ),
+          ChangeNotifierProvider.value(value: getIt<PresenceController>()),
+          ChangeNotifierProvider.value(value: getIt<ChatController>()),
+          ChangeNotifierProvider.value(value: getIt<FriendshipController>()),
         ],
         child: const MainApp(),
       ),

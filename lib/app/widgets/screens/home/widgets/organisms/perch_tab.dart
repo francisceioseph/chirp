@@ -1,4 +1,4 @@
-import 'package:chirp/app/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/presence_controller.dart';
 import 'package:chirp/app/widgets/atoms/chirp_brand_identity.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +8,7 @@ class PerchTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ChirpController>();
+    final presenceCtrl = context.watch<PresenceController>();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -60,7 +60,7 @@ class PerchTab extends StatelessWidget {
                   radius: 65,
                   backgroundColor: colorScheme.surface,
                   backgroundImage: NetworkImage(
-                    "https://api.dicebear.com/7.x/adventurer/png?seed=${controller.myName}",
+                    "https://api.dicebear.com/7.x/adventurer/png?seed=${presenceCtrl.me.nickname}",
                   ),
                 ),
               ),
@@ -70,7 +70,7 @@ class PerchTab extends StatelessWidget {
           const SizedBox(height: 32),
 
           Text(
-            controller.myName,
+            presenceCtrl.me.nickname,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               letterSpacing: 1.1,
@@ -89,7 +89,7 @@ class PerchTab extends StatelessWidget {
               ),
             ),
             child: Text(
-              controller.myId,
+              presenceCtrl.me.nickname,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontFamily: 'monospace',
                 color: colorScheme.primary.withValues(alpha: 0.8),

@@ -1,3 +1,6 @@
+import 'package:chirp/app/controllers/chat_controller.dart';
+import 'package:chirp/app/controllers/friendship_controller.dart';
+import 'package:chirp/app/controllers/presence_controller.dart';
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/usecases/chat/offer_file_use_case.dart';
 import 'package:chirp/domain/usecases/chat/open_file_picker_use_case.dart';
@@ -50,23 +53,7 @@ Future<void> configureSession(Identity myIdentity) async {
   getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(getIt()));
 
   _registerSessionUseCases();
-
-  getIt.registerFactory(
-    () => ChirpController(
-      flockDiscovery: getIt<FlockDiscovery>(),
-      flockManager: getIt<FlockManager>(),
-      me: getIt(),
-      messagesRepository: getIt<MessageNestRepository>(),
-      tielsRepository: getIt<TielNestRepository>(),
-      requestFriendshipUseCase: getIt<RequestFriendshipUseCase>(),
-      acceptFriendshipUseCase: getIt<AcceptFriendshipUseCase>(),
-      sendChirpUseCase: getIt<SendChirpUseCase>(),
-      offerFileUseCase: getIt<OfferFileUseCase>(),
-      openFilePickerUseCase: getIt<OpenFilePickerUseCase>(),
-      parseIncomingPacketUseCase: getIt<ParseIncomingPacketUseCase>(),
-      receiveChirpUseCase: getIt<ReceiveChirpUseCase>(),
-    ),
-  );
+  _registerControllers();
 }
 
 void _registerSessionUseCases() {
@@ -100,5 +87,44 @@ void _registerSessionUseCases() {
 
   getIt.registerLazySingleton(
     () => OfferFileUseCase(flockManager: getIt(), identityService: getIt()),
+  );
+}
+
+void _registerControllers() {
+  getIt.registerLazySingleton(
+    () => PresenceController(
+      discovery: getIt<FlockDiscovery>(),
+      repo: getIt<TielNestRepository>(),
+      me: getIt<Identity>(),
+    ),
+  );
+
+  getIt.registerLazySingleton(
+    () => ChatController(
+      sendChirpUseCase: getIt<SendChirpUseCase>(),
+      receiveChirpUseCase: getIt<ReceiveChirpUseCase>(),
+      messagesRepository: getIt<MessageNestRepository>(),
+    ),
+  );
+
+  getIt.registerLazySingleton(
+    () => FriendshipController(
+      requestUseCase: getIt<RequestFriendshipUseCase>(),
+      acceptUseCase: getIt<AcceptFriendshipUseCase>(),
+      tielRepo: getIt<TielNestRepository>(),
+    ),
+  );
+
+  // --- Orquestrador Principal ---
+  getIt.registerFactory(
+    () => ChirpController(
+      presence: getIt<PresenceController>(),
+      chat: getIt<ChatController>(),
+      friendship: getIt<FriendshipController>(),
+      flockManager: getIt<FlockManager>(),
+      parsePacketUseCase: getIt<ParseIncomingPacketUseCase>(),
+      offerFileUseCase: getIt<OfferFileUseCase>(),
+      openFilePickerUseCase: getIt<OpenFilePickerUseCase>(),
+    ),
   );
 }

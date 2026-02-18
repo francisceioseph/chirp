@@ -1,3 +1,4 @@
+import 'package:chirp/app/controllers/chat_controller.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/app/widgets/atoms/chirp_panel.dart';
@@ -13,6 +14,8 @@ class ChatPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chirpCtrl = context.watch<ChirpController>();
+    final chatCtrl = context.watch<ChatController>();
+
     final activeChatId = chirpCtrl.activeChatId;
 
     if (activeChatId == null) {
@@ -30,7 +33,7 @@ class ChatPanel extends StatelessWidget {
       );
     }
 
-    final messages = chirpCtrl.getMessagesFor(activeChatId);
+    final messages = chatCtrl.getMessagesFor(activeChatId);
     final activeChat = chirpCtrl.allConversations.firstWhere(
       (c) => c.id == activeChatId,
     );

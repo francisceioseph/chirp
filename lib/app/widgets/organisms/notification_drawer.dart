@@ -1,7 +1,7 @@
 import 'dart:ui';
+import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:chirp/app/widgets/molecules/invitation_item.dart';
 
@@ -12,8 +12,8 @@ class NotificationsDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final panelTheme = theme.extension<ChirpPanelTheme>();
-    final controller = context.watch<ChirpController>();
-    final requests = controller.pendingRequests;
+    final friendshipCtrl = context.watch<FriendshipController>();
+    final requests = friendshipCtrl.pendingRequests;
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;

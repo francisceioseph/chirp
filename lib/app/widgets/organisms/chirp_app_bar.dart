@@ -1,4 +1,4 @@
-import 'package:chirp/app/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/widgets/atoms/chirp_brand_identity.dart';
 import 'package:chirp/app/widgets/atoms/notification_bell.dart';
 import 'package:chirp/app/widgets/molecules/chirp_easter_egg.dart';
@@ -14,7 +14,7 @@ class ChirpAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ChirpController>(
+    return Consumer<FriendshipController>(
       builder: (context, controller, _) {
         return Container(
           padding: EdgeInsets.symmetric(

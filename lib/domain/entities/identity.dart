@@ -1,7 +1,7 @@
 class Identity {
   final String id;
   final String name;
-  final String? nickname;
+  final String nickname;
   final String? email;
   final String publicKey;
   final String? privateKey;
@@ -10,7 +10,7 @@ class Identity {
     required this.id,
     required this.name,
     required this.publicKey,
-    this.nickname,
+    required this.nickname,
     this.email,
     this.privateKey,
   });
