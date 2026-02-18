@@ -17,7 +17,7 @@ class OfferFileUseCase {
   }) : _flockManager = flockManager,
        _identityService = identityService;
 
-  void execute(Tiel target, ChirpFileMetadata metadata) async {
+  Future<void> execute(Tiel target, ChirpFileMetadata metadata) async {
     final jsonData = jsonEncode(metadata.toJson());
     final envelope = SecureChirp.encrypt(target.publicKey!, jsonData);
 
