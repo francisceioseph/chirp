@@ -1,6 +1,7 @@
 import 'package:chirp/config/service_locator.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/routes.dart';
+import 'package:chirp/infrastructure/services/identity_service.dart';
 import 'package:flutter/material.dart';
 import 'package:chirp/app/themes/theme.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +11,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
-  await setupLocator();
+  await setupGlobalLocator();
+
+  final identityService = getIt<IdentityService>();
+  final currentIdentity = await identityService.loadOrCreateIdentity();
+
+  await configureSession(currentIdentity);
 
   runApp(
     MultiProvider(
@@ -35,7 +41,7 @@ class MainApp extends StatelessWidget {
       theme: ChirpThemes.slateFlat,
       darkTheme: ChirpThemes.slateFlat,
       themeMode: ThemeMode.system,
-      initialRoute: ChirpRoutes.home,
+      initialRoute: ChirpRoutes.login,
       onGenerateRoute: ChirpRoutes.generateRoute,
     );
   }

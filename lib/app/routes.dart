@@ -1,10 +1,12 @@
 import 'package:chirp/app/widgets/screens/chat/chat_screen.dart';
 import 'package:chirp/app/widgets/screens/home/home_screen.dart';
+import 'package:chirp/app/widgets/screens/login/login_screen.dart';
 import 'package:flutter/material.dart';
 
 class ChirpRoutes {
-  static const String home = '/';
+  static const String home = '/home';
   static const String chat = '/chat';
+  static const String login = '/login';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -20,6 +22,9 @@ class ChirpRoutes {
           );
         }
         return _errorRoute();
+
+      case login:
+        return MaterialPageRoute(builder: (_) => LoginScreen());
 
       default:
         return _errorRoute();

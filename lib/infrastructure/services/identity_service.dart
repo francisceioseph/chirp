@@ -1,58 +1,83 @@
 import 'dart:io';
 import 'package:chirp/domain/entities/identity.dart';
+import 'package:chirp/infrastructure/repositories/identity_prefs_repository.dart';
 import 'package:chirp/infrastructure/services/secure_chirp.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 class IdentityService {
+  final IdentityPrefsRepository _repository;
   static const _suffix = String.fromEnvironment("TIEL_ID", defaultValue: "");
 
-  static String get _keyId => 'tiel_id$_suffix';
-  static String get _keyName => 'tiel_name$_suffix';
-  static String get _keyPublic => 'tiel_pub_key$_suffix';
-  static String get _keyPrivate => 'tiel_priv_key$_suffix';
+  IdentityService(this._repository);
 
-  static Future<Identity> getIdentity() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<Identity> loadOrCreateIdentity() async {
+    final savedIdentity = await _repository.get();
 
-    final id = prefs.getString(_keyId) ?? Uuid().v4();
-    if (!prefs.containsKey(_keyId)) await prefs.setString(_keyId, id);
-
-    final name = prefs.getString(_keyName) ?? await _buildTielName();
-    if (!prefs.containsKey(_keyName)) await prefs.setString(_keyName, id);
-
-    String? pubKey = prefs.getString(_keyPublic);
-    String? privKey = prefs.getString(_keyPrivate);
-
-    if (pubKey == null || privKey == null) {
-      final keyPair = SecureChirp.makeKeys();
-      pubKey = keyPair.pubKey;
-      privKey = keyPair.privKey;
-
-      await prefs.setString(_keyPublic, pubKey);
-      await prefs.setString(_keyPrivate, privKey);
+    if (savedIdentity != null) {
+      return savedIdentity;
     }
 
-    return Identity(id: id, name: name, publicKey: pubKey, privateKey: privKey);
+    final id = const Uuid().v4();
+    final name = await _buildDefaultName();
+
+    final keyPair = SecureChirp.makeKeys();
+
+    final newIdentity = Identity(
+      id: id,
+      name: name,
+      publicKey: keyPair.pubKey,
+      privateKey: keyPair.privKey,
+    );
+
+    await _repository.save(newIdentity);
+    return newIdentity;
   }
 
-  static Future<String> _buildTielName() async {
+  Future<Identity> signIn({
+    required String nickname,
+    required String email,
+  }) async {
+    final keyPair = SecureChirp.makeKeys();
+    final id = const Uuid().v4();
+
+    final identity = Identity(
+      id: id,
+      name: _sanitize(nickname),
+      email: email,
+      publicKey: keyPair.pubKey,
+      privateKey: keyPair.privKey,
+    );
+
+    await _repository.save(identity);
+    return identity;
+  }
+
+  Future<void> signOut() async {
+    await _repository.clear();
+  }
+
+  Future<String> _buildDefaultName() async {
     final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
-    String rawName = switch (Platform.operatingSystem) {
-      'linux' => (await deviceInfo.linuxInfo).name,
-      'windows' => (await deviceInfo.windowsInfo).computerName,
-      'macos' => (await deviceInfo.macOsInfo).computerName,
-      'android' => (await deviceInfo.androidInfo).model,
-      'ios' => (await deviceInfo.iosInfo).name,
-      _ => "Tiel",
-    };
+    String rawName = "Tiel";
+    try {
+      rawName = switch (Platform.operatingSystem) {
+        'linux' => (await deviceInfo.linuxInfo).name,
+        'windows' => (await deviceInfo.windowsInfo).computerName,
+        'macos' => (await deviceInfo.macOsInfo).computerName,
+        'android' => (await deviceInfo.androidInfo).model,
+        'ios' => (await deviceInfo.iosInfo).name,
+        _ => "Tiel",
+      };
+    } catch (_) {
+      rawName = "Tiel_Guest";
+    }
 
     return _sanitize(rawName);
   }
 
-  static String _sanitize(String name) {
+  String _sanitize(String name) {
     final clean = name
         .trim()
         .replaceAll(RegExp(r'[^\w\s]+'), '')
