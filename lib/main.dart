@@ -1,3 +1,4 @@
+import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/config/service_locator.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/routes.dart';
@@ -18,6 +19,10 @@ void main() async {
         ChangeNotifierProvider(
           lazy: false,
           create: (_) => getIt<ChirpController>()..startServices(),
+        ),
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (_) => getIt<FriendshipController>(),
         ),
       ],
       child: const MainApp(),

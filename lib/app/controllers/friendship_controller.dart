@@ -27,6 +27,8 @@ class FriendshipController extends ChangeNotifier {
         .toList();
   }
 
+  int get notificationCount => pendingRequests.length;
+
   Future<void> requestFriendship(Tiel target) async {
     log.d("🤝 [Amizade] Solicitando conexão com ${target.name}...");
 

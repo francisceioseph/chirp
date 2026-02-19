@@ -1,4 +1,4 @@
-import 'package:chirp/app/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +74,7 @@ class InvitationItem extends StatelessWidget {
   }
 
   Widget _buildActions(BuildContext context) {
-    final controller = context.read<ChirpController>();
+    final friendshipCtrl = context.read<FriendshipController>();
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
@@ -83,7 +83,7 @@ class InvitationItem extends StatelessWidget {
         _ActionButton(
           icon: Icons.check_rounded,
           color: Colors.green,
-          onPressed: () => controller.acceptFriendship(req),
+          onPressed: () => friendshipCtrl.handleAcceptRequest(req),
           tooltip: "Aceitar",
         ),
         const SizedBox(width: 8),

@@ -1,3 +1,4 @@
+import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
@@ -11,6 +12,7 @@ class FlockPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chirpCtrl = context.watch<ChirpController>();
+    final friendshipCtrl = context.watch<FriendshipController>();
 
     return ChirpPanel(
       child: Column(
@@ -27,7 +29,7 @@ class FlockPanel extends StatelessWidget {
                   onItemTap: (conversation) =>
                       chirpCtrl.selectChat(conversation.id),
                   onRequestFriendship: (tiel) =>
-                      chirpCtrl.requestFriendship(tiel),
+                      friendshipCtrl.requestFriendship(tiel),
                 );
               },
             ),
