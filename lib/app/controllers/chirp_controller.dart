@@ -1,83 +1,96 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:chirp/domain/entities/tiel.dart';
+
+import 'package:chirp/domain/models/conversation_nest.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
+import 'package:chirp/domain/entities/identity.dart';
+import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/tiel.dart';
+import 'package:chirp/domain/models/messages_nest.dart';
 import 'package:chirp/domain/usecases/chat/parse_incoming_packet_use_case.dart';
 import 'package:chirp/domain/usecases/chat/offer_file_use_case.dart';
 import 'package:chirp/domain/usecases/chat/open_file_picker_use_case.dart';
+import 'package:chirp/domain/usecases/chat/receive_chirp_use_case.dart';
+import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
+import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
+import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
+import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
+import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
+import 'package:chirp/infrastructure/services/flock_discovery.dart';
 import 'package:chirp/infrastructure/services/flock_manager.dart';
 import 'package:chirp/utils/app_logger.dart';
-
-// Especialistas
-import 'presence_controller.dart';
-import 'chat_controller.dart';
-import 'friendship_controller.dart';
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 class ChirpController extends ChangeNotifier {
-  // --- Sub-Controllers ---
-  final PresenceController presence;
-  final ChatController chat;
-  final FriendshipController friendship;
+  final uuid = Uuid();
 
-  // --- Infra & UseCases ---
+  final FlockDiscovery _flockDiscovery;
   final FlockManager _flockManager;
-  final ParseIncomingPacketUseCase _parsePacketUseCase;
-  final OpenFilePickerUseCase _openFilePickerUseCase;
-  final OfferFileUseCase _offerFileUseCase;
+  final Identity _me;
 
-  // --- Estado de UI ---
+  final MessageNestRepository _messagesRepo;
+  final TielNestRepository _tielsRepo;
+
+  final RequestFriendshipUseCase _requestFriendshipUseCase;
+  final AcceptFriendshipUseCase _acceptFriendshipUseCase;
+  final SendChirpUseCase _sendChirpUseCase;
+  final OfferFileUseCase _offerFileUseCase;
+  final OpenFilePickerUseCase _openFilePickerUseCase;
+  final ParseIncomingPacketUseCase _parseIncomingPacketUseCase;
+  final ReceiveChirpUseCase _receiveChirpUseCase;
+
+  Timer? _cleanupTimer;
   String? _activeChatId;
 
-  ChirpController({
-    required this.presence,
-    required this.chat,
-    required this.friendship,
-    required FlockManager flockManager,
-    required ParseIncomingPacketUseCase parsePacketUseCase,
-    required OpenFilePickerUseCase openFilePickerUseCase,
-    required OfferFileUseCase offerFileUseCase,
-  }) : _flockManager = flockManager,
-       _parsePacketUseCase = parsePacketUseCase,
-       _openFilePickerUseCase = openFilePickerUseCase,
-       _offerFileUseCase = offerFileUseCase {
-    _setupCentralListener();
-  }
+  final _tiels = ConversationNest<Tiel>();
+  final _flocks = ConversationNest<Flock>();
+  final _messages = MessagesNest();
 
-  // --- Getters Restaurados ---
+  final List<ChirpRequestPacket> _pendingRequests = [];
+
+  String get myId => _me.id;
+  String get myName => _me.name;
 
   String? get activeChatId => _activeChatId;
 
-  bool get hasNotifications => friendship.notificationCount > 0;
-
-  /// Recupera todas as conversas unificando as fontes (Tiels, Flocks, etc.)
-  List<Conversation> get allConversations => [
-    ...presence.allTiels,
-    // ...futuros Flocks aqui
-  ];
-
-  // --- Ciclo de Vida ---
-
-  Future<void> startServices() async {
-    _log("🚀 [Maestro] Iniciando motores do bando...");
-    try {
-      _flockManager.init();
-      await presence.init(); // Presence cuida da própria hidratação e radar
-      _log("✅ [Maestro] Bando pronto para voar.");
-    } catch (e) {
-      _log(
-        "❌ [Maestro] Falha crítica na inicialização",
-        isError: true,
-        error: e,
-      );
-    }
+  List<ChirpRequestPacket> get pendingRequests {
+    return _pendingRequests
+        .where((packet) => _tiels.contains(packet.fromId))
+        .toList();
   }
 
-  // --- Coordenação de Conversas ---
+  int get notificationCount => pendingRequests.length;
 
-  void selectChat(String? chatId) {
-    _activeChatId = chatId;
-    _log("📍 Chat ativo alterado para: $chatId");
-    notifyListeners();
+  List<Conversation> get allConversations => [..._tiels.all, ..._flocks.all];
+
+  ChirpController({
+    required FlockDiscovery flockDiscovery,
+    required FlockManager flockManager,
+    required Identity me,
+
+    required TielNestRepository tielsRepository,
+    required MessageNestRepository messagesRepository,
+
+    required RequestFriendshipUseCase requestFriendshipUseCase,
+    required AcceptFriendshipUseCase acceptFriendshipUseCase,
+    required SendChirpUseCase sendChirpUseCase,
+    required OfferFileUseCase offerFileUseCase,
+    required OpenFilePickerUseCase openFilePickerUseCase,
+    required ParseIncomingPacketUseCase parseIncomingPacketUseCase,
+    required ReceiveChirpUseCase receiveChirpUseCase,
+  }) : _flockDiscovery = flockDiscovery,
+       _flockManager = flockManager,
+       _me = me,
+       _tielsRepo = tielsRepository,
+       _messagesRepo = messagesRepository,
+       _requestFriendshipUseCase = requestFriendshipUseCase,
+       _acceptFriendshipUseCase = acceptFriendshipUseCase,
+       _sendChirpUseCase = sendChirpUseCase,
+       _offerFileUseCase = offerFileUseCase,
+       _openFilePickerUseCase = openFilePickerUseCase,
+       _parseIncomingPacketUseCase = parseIncomingPacketUseCase,
+       _receiveChirpUseCase = receiveChirpUseCase {
+    _setupListeners();
   }
 
   Conversation? getConversationFor(String conversationId) {
@@ -86,130 +99,303 @@ class ChirpController extends ChangeNotifier {
         .firstOrNull;
   }
 
-  // --- Coordenação de Amizade (Ponte entre Presence e Friendship) ---
+  List<ChirpMessage> getMessagesFor(String chatId) => _messages.forChat(chatId);
 
-  Future<void> acceptFriendship(ChirpRequestPacket request) async {
+  void selectChat(String? chatId) {
+    _activeChatId = chatId;
+    notifyListeners();
+  }
+
+  Future<void> startServices() async {
+    log.i("🚀 [Serviços] Iniciando motores do bando...");
+
     try {
-      final tiel = presence.getTiel(request.fromId);
-      if (tiel != null) {
-        // O Friendship cuida da lógica da UseCase
-        final authorizedTiel = await friendship.acceptFriendship(tiel, request);
-        // O Presence atualiza o radar com o novo Tiel (agora com chave pública)
-        presence.updateTiel(authorizedTiel);
-        notifyListeners();
-      }
+      _flockManager.init();
+
+      await _hydrateTiels();
+      await _hydrateMessages();
+
+      notifyListeners();
+
+      await _flockDiscovery.advertise(_me.id, _me.name);
+      await _flockDiscovery.discover((String id, String name, String address) {
+        _onTielFound(id, name, address);
+      });
+
+      _cleanupTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+        updateTielsStatus();
+      });
+
+      log.i("✅ [Serviços] Bando pronto para voar.");
     } catch (e) {
-      _log("💥 Falha ao coordenar aceite de amizade", isError: true, error: e);
+      log.e("❌ [Serviços] Falha crítica na inicialização", error: e);
     }
   }
 
-  // --- Coordenação de Mensagens ---
+  Future<void> requestFriendship(Tiel target) async {
+    log.d("🤝 [Amizade] Solicitando conexão com ${target.name}...");
+
+    try {
+      final tiel = await _requestFriendshipUseCase.execute(target);
+
+      _tiels.put(tiel);
+      notifyListeners();
+
+      log.i("📩 [Amizade] Convite enviado com sucesso para ${target.name}");
+    } catch (e) {
+      log.e(
+        "⚠️ [Amizade] Erro ao solicitar amizade com ${target.name}",
+        error: e,
+      );
+    }
+  }
+
+  Future<void> acceptFriendship(ChirpRequestPacket request) async {
+    try {
+      final tiel = _tiels[request.fromId];
+
+      if (tiel != null) {
+        final newTiel = await _acceptFriendshipUseCase.execute(tiel, request);
+
+        _tiels.put(newTiel);
+        _pendingRequests.removeWhere((req) => req.fromId == request.fromId);
+
+        notifyListeners();
+      }
+    } catch (e) {
+      log.e("Falha ao aceitar amizade: $e");
+    }
+  }
 
   Future<void> sendChirp(String targetId, String text) async {
-    final tiel = presence.getTiel(targetId);
+    final tiel = _tiels[targetId];
 
-    if (tiel == null ||
-        tiel.publicKey == null ||
-        tiel.status != TielStatus.connected) {
-      _log(
-        "🚫 [Chat] Envio negado: ${tiel?.name ?? targetId} não está conectado.",
+    if (tiel == null || tiel.publicKey == null || tiel.status != .connected) {
+      log.w(
+        "🚫 [Chat] Tentativa de envio negada: ${tiel?.name ?? targetId} não está conectado.",
       );
       return;
     }
 
-    await chat.sendChirp(tiel, text);
+    try {
+      log.d(
+        "📤 [Chat] Criptografando e enviando mensagem para ${tiel.name}...",
+      );
+
+      final message = await _sendChirpUseCase.execute(tiel, text);
+
+      _messages.add(targetId, message);
+      notifyListeners();
+
+      log.i("✨ [Chat] Mensagem entregue ao bando para ${tiel.name}");
+    } catch (e) {
+      log.e("💥 [Chat] Erro no envio seguro para ${tiel.name}", error: e);
+    }
   }
 
-  // --- Coordenação de Arquivos (Restaurado!) ---
+  void updateTielsStatus() {
+    final now = DateTime.now();
+    final birdsGoneAway = <String>[];
+
+    _tiels.updateAll((id, tiel) {
+      if (tiel.status == TielStatus.away) return tiel;
+
+      if (now.difference(tiel.lastSeen).inSeconds > 120) {
+        birdsGoneAway.add(tiel.name);
+        return tiel.copyWith(status: TielStatus.away);
+      }
+
+      return tiel;
+    });
+
+    if (birdsGoneAway.isNotEmpty) {
+      log.d(
+        "💤 [Status] ${birdsGoneAway.length} Tiels ficaram inativos: ${birdsGoneAway.join(', ')}",
+      );
+      notifyListeners();
+    }
+  }
 
   Future<void> pickAndOfferFile(String targetId) async {
-    final tiel = presence.getTiel(targetId);
+    final tiel = _tiels[targetId];
 
     if (tiel == null ||
         tiel.publicKey == null ||
         tiel.status != TielStatus.connected) {
-      _log("🚫 [Arquivos] Oferta negada: Tiel não autorizado ou offline.");
+      log.w(
+        "🚫 [Arquivos] Oferta negada: ${tiel?.name ?? targetId} não possui handshake completo.",
+      );
       return;
     }
 
     try {
-      _log("📂 [Arquivos] Abrindo seletor para ${tiel.name}...");
+      log.d("📂 [Arquivos] Abrindo seletor para enviar para ${tiel.name}...");
       final output = await _openFilePickerUseCase.execute();
 
       if (output.metadata != null) {
-        _log("📦 [Arquivos] Enviando '${output.metadata!.name}'...");
+        final fileName = output.metadata!.name;
+        final fileSize = output.metadata!.size;
+
+        log.d(
+          "📦 [Arquivos] Arquivo selecionado: $fileName ($fileSize bytes). Enviando oferta...",
+        );
+
         _offerFileUseCase.execute(tiel, output.metadata!);
-        _log("✨ [Arquivos] Oferta enviada com sucesso.");
+
+        log.d(
+          "✨ [Arquivos] Oferta de '$fileName' enviada com sucesso para ${tiel.name}.",
+        );
+      } else {
+        log.d("📝 [Arquivos] Seleção de arquivo cancelada pelo usuário.");
       }
     } catch (e) {
-      _log("💥 [Arquivos] Erro no fluxo de arquivos", isError: true, error: e);
+      log.e(
+        "💥 [Arquivos] Falha no fluxo de oferta de arquivo para ${tiel.name}",
+        error: e,
+      );
     }
   }
 
-  // --- Roteamento Central de Pacotes ---
+  Future<void> _hydrateMessages() async {
+    try {
+      log.d("📦 [Hidratação] Iniciando leitura do histórico de mensagens...");
 
-  void _setupCentralListener() {
-    _flockManager.packets.listen((rawData) {
+      for (var chat in allConversations) {
+        final history = await _messagesRepo.list(chat.id);
+
+        if (history.isNotEmpty) {
+          _messages.addAll(chat.id, history);
+        }
+      }
+
+      log.i("✅ [Hidratação] Concluída com sucesso");
+    } catch (e) {
+      log.e("💥 [Hidratação] Falha ao restaurar mensagens do banco local $e");
+    }
+  }
+
+  Future<void> _hydrateTiels() async {
+    try {
+      log.d("[Hidratação] Hidratando lista de tiels");
+
+      final tiels = await _tielsRepo.list();
+
+      for (var tiel in tiels) {
+        _tiels.update(tiel.id, (t) => t.copyWith(status: .away));
+      }
+
+      log.d("[Hidratação] Lista de tiels hidratadas.");
+    } catch (e) {
+      log.e("[Hidratação] Erro ao hidratar lista de tiels: $e");
+    }
+  }
+
+  void _setupListeners() {
+    _flockManager.packets.listen((dynamic rawData) {
       try {
-        final packet = _parsePacketUseCase.execute(rawData);
-        _routePacket(packet);
+        final packet = _parseIncomingPacketUseCase.execute(rawData);
+        _processIncomingPacket(packet);
       } catch (e) {
-        _log("⚠️ Erro ao processar pacote recebido", isError: true, error: e);
+        log.e("[Serviços] Erro ao processar pacote recebido $e");
       }
     });
   }
 
-  void _routePacket(ChirpPacket packet) {
+  void _processIncomingPacket(ChirpPacket packet) {
     switch (packet) {
       case ChirpRequestPacket():
-        // Validação: Só aceitamos pedidos de quem está no radar
-        if (presence.getTiel(packet.fromId) != null) {
-          friendship.addIncomingRequest(packet);
-        }
+        _pendingRequests.add(packet);
+        notifyListeners();
         break;
 
       case ChirpAcceptPacket():
-        _handleAcceptPacket(packet);
+        _tiels.update(
+          packet.fromId,
+          (t) => t.copyWith(
+            publicKey: packet.publicKey,
+            status: TielStatus.connected,
+          ),
+        );
+        notifyListeners();
         break;
 
       case ChirpMessagePacket():
-        chat.handleIncomingPacket(packet);
+        _handleIncomingMessage(packet);
         break;
 
-      default:
-        _log(
-          "ℹ️ Pacote ${packet.runtimeType} recebido mas não tratado pelo Maestro.",
-        );
+      case ChirpFileOfferPacket():
+        log.w("File offer not implemented");
+        break;
+
+      case ChirpFileAcceptPacket():
+        log.w("File accpet not implemented yet");
+        break;
+
+      case ChirpIdentityPacket():
+        break;
     }
   }
 
-  void _handleAcceptPacket(ChirpAcceptPacket packet) {
-    final tiel = presence.getTiel(packet.fromId);
-    if (tiel != null) {
-      final authorizedTiel = tiel.copyWith(
-        publicKey: packet.publicKey,
-        status: TielStatus.connected,
+  void _handleIncomingMessage(ChirpMessagePacket packet) async {
+    final sender = packet.fromId;
+
+    try {
+      log.d("📥 [Chat] Novo pacote recebido de $sender. Descriptografando...");
+
+      final message = await _receiveChirpUseCase.execute(packet);
+
+      _messages.add(packet.fromId, message);
+      notifyListeners();
+
+      log.i("📩 [Chat] Mensagem de $sender processada e guardada no ninho.");
+    } catch (e) {
+      log.e(
+        "🔐 [Chat] Erro de segurança: Não foi possível ler mensagem de $sender",
+        error: e,
       );
-      presence.updateTiel(authorizedTiel);
-      _log("🤝 Handshake completo com ${tiel.name}");
     }
   }
 
-  // --- Logs & Limpeza ---
+  void _onTielFound(String id, String name, String address) {
+    if (id == _me.id) return;
 
-  void _log(String message, {bool isError = false, dynamic error}) {
-    if (isError) {
-      log.e("[Maestro] $message", error: error);
-    } else {
-      log.d("[Maestro] $message");
-    }
+    _tiels.upsert(
+      id,
+      create: () {
+        log.d("🐣 [Radar] Novo Tiel descoberto: $name ($id) em $address");
+        return Tiel(
+          id: id,
+          name: name,
+          address: address,
+          lastSeen: DateTime.now(),
+          status: TielStatus.discovered,
+        );
+      },
+      update: (existing) {
+        log.d("📡 [Radar] Ping de presença: $name ($id)");
+
+        final newStatus = existing.publicKey != null
+            ? TielStatus.connected
+            : TielStatus.discovered;
+
+        return existing.copyWith(
+          name: name,
+          address: address,
+          lastSeen: DateTime.now(),
+          status: newStatus,
+        );
+      },
+    );
+
+    notifyListeners();
   }
 
   @override
   void dispose() {
-    presence.dispose();
-    chat.clear();
-    friendship.clear();
+    _flockDiscovery.stop();
+    _flockManager.dispose();
+    _cleanupTimer?.cancel();
+
     super.dispose();
   }
 }

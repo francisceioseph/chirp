@@ -1,5 +1,4 @@
 import 'package:chirp/app/controllers/chirp_controller.dart';
-import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/flock_list.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,9 +8,7 @@ class FlockTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chirpCtrl = context.watch<ChirpController>();
-    final friendshipCtrl = context.watch<FriendshipController>();
-
+    final controller = context.watch<ChirpController>();
     final theme = Theme.of(context);
 
     return Column(
@@ -34,7 +31,7 @@ class FlockTab extends StatelessWidget {
                   alpha: 0.2,
                 ),
                 child: Text(
-                  "${chirpCtrl.allConversations.length}",
+                  "${controller.allConversations.length}",
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.primary,
@@ -47,14 +44,14 @@ class FlockTab extends StatelessWidget {
 
         Expanded(
           child: FlockList(
-            conversations: chirpCtrl.allConversations,
+            conversations: controller.allConversations,
             activeChatId: null,
             onItemTap: (conversation) {
-              chirpCtrl.selectChat(conversation.id);
+              controller.selectChat(conversation.id);
               Navigator.pushNamed(context, '/chat', arguments: conversation.id);
             },
             onRequestFriendship: (tiel) {
-              friendshipCtrl.requestFriendship(tiel);
+              controller.requestFriendship(tiel);
             },
           ),
         ),

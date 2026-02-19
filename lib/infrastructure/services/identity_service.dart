@@ -1,121 +1,64 @@
 import 'dart:io';
-import 'dart:math';
+import 'package:chirp/domain/entities/identity.dart';
+import 'package:chirp/infrastructure/services/secure_chirp.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:chirp/domain/entities/identity.dart';
-import 'package:chirp/infrastructure/repositories/identity_prefs_repository.dart';
-import 'package:chirp/infrastructure/services/secure_chirp.dart';
-
 class IdentityService {
-  final IdentityPrefsRepository _repository;
-
   static const _suffix = String.fromEnvironment("TIEL_ID", defaultValue: "");
 
-  IdentityService(this._repository);
+  static String get _keyId => 'tiel_id$_suffix';
+  static String get _keyName => 'tiel_name$_suffix';
+  static String get _keyPublic => 'tiel_pub_key$_suffix';
+  static String get _keyPrivate => 'tiel_priv_key$_suffix';
 
-  Future<Identity> loadOrCreateIdentity() async {
-    final savedIdentity = await _repository.get();
+  static Future<Identity> getIdentity() async {
+    final prefs = await SharedPreferences.getInstance();
 
-    if (savedIdentity != null) {
-      return savedIdentity;
+    final id = prefs.getString(_keyId) ?? Uuid().v4();
+    if (!prefs.containsKey(_keyId)) await prefs.setString(_keyId, id);
+
+    final name = prefs.getString(_keyName) ?? await _buildTielName();
+    if (!prefs.containsKey(_keyName)) await prefs.setString(_keyName, id);
+
+    String? pubKey = prefs.getString(_keyPublic);
+    String? privKey = prefs.getString(_keyPrivate);
+
+    if (pubKey == null || privKey == null) {
+      final keyPair = SecureChirp.makeKeys();
+      pubKey = keyPair.pubKey;
+      privKey = keyPair.privKey;
+
+      await prefs.setString(_keyPublic, pubKey);
+      await prefs.setString(_keyPrivate, privKey);
     }
 
-    final id = const Uuid().v4();
-    final name = await _buildHardwareName();
-    final keyPair = SecureChirp.makeKeys();
-
-    final newIdentity = Identity(
-      id: id,
-      name: name,
-      nickname: name,
-      publicKey: keyPair.pubKey,
-      privateKey: keyPair.privKey,
-    );
-
-    await _repository.save(newIdentity);
-    return newIdentity;
+    return Identity(id: id, name: name, publicKey: pubKey, privateKey: privKey);
   }
 
-  Future<Identity> signIn({
-    required String nickname,
-    required String email,
-  }) async {
-    final keyPair = SecureChirp.makeKeys();
-    final id = const Uuid().v4();
-
-    final hardwareName = await _buildHardwareName();
-
-    final identity = Identity(
-      id: id,
-      name: hardwareName,
-      nickname: _sanitize(nickname),
-      email: email,
-      publicKey: keyPair.pubKey,
-      privateKey: keyPair.privKey,
-    );
-
-    await _repository.save(identity);
-    return identity;
-  }
-
-  Future<void> signOut() async {
-    await _repository.clear();
-  }
-
-  Future<Identity> updateNickname(String newNickname) async {
-    final current = await _repository.get();
-    if (current == null) throw Exception("Identidade não encontrada");
-
-    final updated = current.copyWith(nickname: _sanitize(newNickname));
-    await _repository.save(updated);
-
-    return updated;
-  }
-
-  Future<String> _buildHardwareName() async {
+  static Future<String> _buildTielName() async {
     final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-    String hardwareName = "Chirper";
 
-    try {
-      if (Platform.isAndroid) {
-        final info = await deviceInfo.androidInfo;
-        hardwareName = "${info.manufacturer} ${info.model}";
-      } else if (Platform.isIOS) {
-        final info = await deviceInfo.iosInfo;
-        hardwareName = info.name;
-      } else if (Platform.isMacOS) {
-        hardwareName = (await deviceInfo.macOsInfo).computerName;
-      } else if (Platform.isWindows) {
-        hardwareName = (await deviceInfo.windowsInfo).computerName;
-      } else if (Platform.isLinux) {
-        hardwareName = (await deviceInfo.linuxInfo).name;
-      }
-    } catch (_) {
-      hardwareName = "Guest";
-    }
+    String rawName = switch (Platform.operatingSystem) {
+      'linux' => (await deviceInfo.linuxInfo).name,
+      'windows' => (await deviceInfo.windowsInfo).computerName,
+      'macos' => (await deviceInfo.macOsInfo).computerName,
+      'android' => (await deviceInfo.androidInfo).model,
+      'ios' => (await deviceInfo.iosInfo).name,
+      _ => "Tiel",
+    };
 
-    return _generateUniqueName(hardwareName);
+    return _sanitize(rawName);
   }
 
-  String _generateUniqueName(String base) {
-    final randomSuffix = Random()
-        .nextInt(0xFFFF)
-        .toRadixString(16)
-        .toUpperCase()
-        .padLeft(4, '0');
-
-    final sanitizedBase = _sanitize(base);
-    final envLabel = _suffix.isNotEmpty ? "_#$_suffix" : "";
-
-    return "${sanitizedBase}_$randomSuffix$envLabel";
-  }
-
-  String _sanitize(String name) {
-    return name
+  static String _sanitize(String name) {
+    final clean = name
         .trim()
         .replaceAll(RegExp(r'[^\w\s]+'), '')
-        .replaceAll(RegExp(r'\s+'), '_')
-        .toLowerCase();
+        .replaceAll(' ', '_');
+
+    final label = _suffix.isNotEmpty ? "_#$_suffix" : "";
+    return "$clean$label";
   }
 }

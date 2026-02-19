@@ -1,4 +1,3 @@
-import 'package:chirp/app/controllers/chat_controller.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/widgets/atoms/chirp_panel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_input.dart';
@@ -13,12 +12,10 @@ class ChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chirpCtrl = context.watch<ChirpController>();
-    final chatCtrl = context.watch<ChatController>();
-
+    final controller = context.watch<ChirpController>();
     final theme = Theme.of(context);
 
-    final conversation = chirpCtrl.getConversationFor(conversationId);
+    final conversation = controller.getConversationFor(conversationId);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -69,12 +66,13 @@ class ChatScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: MessageList(
-                      messages: chatCtrl.getMessagesFor(conversationId),
+                      messages: controller.getMessagesFor(conversationId),
                     ),
                   ),
 
                   MessageInput(
-                    onSend: (text) => chirpCtrl.sendChirp(conversationId, text),
+                    onSend: (text) =>
+                        controller.sendChirp(conversationId, text),
                   ),
                 ],
               ),

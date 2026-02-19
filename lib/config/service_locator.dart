@@ -1,7 +1,3 @@
-import 'package:chirp/app/controllers/chat_controller.dart';
-import 'package:chirp/app/controllers/friendship_controller.dart';
-import 'package:chirp/app/controllers/presence_controller.dart';
-import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/usecases/chat/offer_file_use_case.dart';
 import 'package:chirp/domain/usecases/chat/open_file_picker_use_case.dart';
 import 'package:chirp/domain/usecases/chat/parse_incoming_packet_use_case.dart';
@@ -11,10 +7,11 @@ import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
 import 'package:chirp/infrastructure/adapters/file_picker_adapter.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
+import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/ports/file_picker_port.dart';
-import 'package:chirp/infrastructure/repositories/identity_prefs_repository.dart';
 import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
 import 'package:chirp/infrastructure/adapters/secure_nest_hive_adapter.dart';
+import 'package:chirp/domain/ports/secure_nest_port.dart';
 import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
 import 'package:chirp/infrastructure/services/flock_discovery.dart';
 import 'package:chirp/infrastructure/services/identity_service.dart';
@@ -24,107 +21,89 @@ import 'package:get_it/get_it.dart';
 
 final getIt = GetIt.instance;
 
-Future<void> setupGlobalLocator() async {
-  getIt.registerLazySingleton<FilePickerPort>(() => FilePickerAdapter());
+Future<void> setupLocator() async {
+  final Identity myIdentity = await IdentityService.getIdentity();
+
   getIt.registerLazySingleton<FlockDiscovery>(() => FlockDiscoveryService());
-  getIt.registerLazySingleton(() => ParseIncomingPacketUseCase());
-  getIt.registerLazySingleton(() => OpenFilePickerUseCase(filePicker: getIt()));
 
-  getIt.registerLazySingleton(() => IdentityPrefsRepository());
-  getIt.registerLazySingleton(() => IdentityService(getIt()));
-}
+  getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(myIdentity));
 
-Future<void> configureSession(Identity myIdentity) async {
-  if (getIt.currentScopeName == 'session') {
-    await getIt.popScope();
-  }
+  getIt.registerLazySingleton<SecureNestPort>(
+    () => SecureNestHiveAdapter(myIdentity.id),
+  );
 
-  getIt.pushNewScope(scopeName: 'session');
-
-  final nestAdapter = SecureNestHiveAdapter(myIdentity.id);
-  final secureNest = SecureNestService(nestAdapter);
+  final secureNest = SecureNestService(getIt<SecureNestPort>());
   await secureNest.setup();
 
-  getIt.registerSingleton(myIdentity);
-  getIt.registerSingleton<ISecureNest>(secureNest);
-  getIt.registerLazySingleton(() => TielNestRepository(getIt()));
-  getIt.registerLazySingleton(() => MessageNestRepository(getIt()));
+  getIt.registerLazySingleton<ISecureNest>(() => secureNest);
 
-  getIt.registerLazySingleton<FlockManager>(() => P2PFlockManager(getIt()));
+  getIt.registerLazySingleton(() => TielNestRepository(getIt<ISecureNest>()));
 
-  _registerSessionUseCases();
-  _registerControllers();
-}
-
-void _registerSessionUseCases() {
   getIt.registerLazySingleton(
+    () => MessageNestRepository(getIt<ISecureNest>()),
+  );
+
+  getIt.registerLazySingleton<FilePickerPort>(() => FilePickerAdapter());
+
+  getIt.registerLazySingleton<RequestFriendshipUseCase>(
     () => RequestFriendshipUseCase(
-      flockManager: getIt(),
-      tielsRepo: getIt(),
-      identityService: getIt(),
+      flockManager: getIt<FlockManager>(),
+      tielsRepo: getIt<TielNestRepository>(),
+      me: myIdentity,
     ),
   );
 
-  getIt.registerLazySingleton(
+  getIt.registerLazySingleton<AcceptFriendshipUseCase>(
     () => AcceptFriendshipUseCase(
-      flockManager: getIt(),
-      tielsRepo: getIt(),
-      identityService: getIt(),
+      flockManager: getIt<FlockManager>(),
+      tielsRepo: getIt<TielNestRepository>(),
+      me: myIdentity,
     ),
   );
 
-  getIt.registerLazySingleton(
+  getIt.registerLazySingleton<SendChirpUseCase>(
     () => SendChirpUseCase(
-      flockManager: getIt(),
-      messagesRepo: getIt(),
-      identityService: getIt(),
+      flockManager: getIt<FlockManager>(),
+      messagesRepo: getIt<MessageNestRepository>(),
+      me: myIdentity,
     ),
   );
 
-  getIt.registerLazySingleton(
-    () => ReceiveChirpUseCase(messageRepo: getIt(), identityService: getIt()),
-  );
-
-  getIt.registerLazySingleton(
-    () => OfferFileUseCase(flockManager: getIt(), identityService: getIt()),
-  );
-}
-
-void _registerControllers() {
-  getIt.registerLazySingleton(
-    () => PresenceController(
-      discovery: getIt<FlockDiscovery>(),
-      repo: getIt<TielNestRepository>(),
-      me: getIt<Identity>(),
+  getIt.registerLazySingleton<ReceiveChirpUseCase>(
+    () => ReceiveChirpUseCase(
+      messageRepo: getIt<MessageNestRepository>(),
+      me: myIdentity,
     ),
   );
 
-  getIt.registerLazySingleton(
-    () => ChatController(
-      sendChirpUseCase: getIt<SendChirpUseCase>(),
-      receiveChirpUseCase: getIt<ReceiveChirpUseCase>(),
-      messagesRepository: getIt<MessageNestRepository>(),
-    ),
+  getIt.registerLazySingleton<OpenFilePickerUseCase>(
+    () => OpenFilePickerUseCase(filePicker: getIt<FilePickerPort>()),
   );
 
-  getIt.registerLazySingleton(
-    () => FriendshipController(
-      requestUseCase: getIt<RequestFriendshipUseCase>(),
-      acceptUseCase: getIt<AcceptFriendshipUseCase>(),
-      tielRepo: getIt<TielNestRepository>(),
-    ),
+  getIt.registerLazySingleton<OfferFileUseCase>(
+    () => OfferFileUseCase(flockManager: getIt<FlockManager>(), me: myIdentity),
   );
 
-  // --- Orquestrador Principal ---
+  getIt.registerLazySingleton<ParseIncomingPacketUseCase>(
+    () => ParseIncomingPacketUseCase(),
+  );
+
   getIt.registerFactory(
     () => ChirpController(
-      presence: getIt<PresenceController>(),
-      chat: getIt<ChatController>(),
-      friendship: getIt<FriendshipController>(),
+      flockDiscovery: getIt<FlockDiscovery>(),
       flockManager: getIt<FlockManager>(),
-      parsePacketUseCase: getIt<ParseIncomingPacketUseCase>(),
+      me: myIdentity,
+
+      messagesRepository: getIt<MessageNestRepository>(),
+      tielsRepository: getIt<TielNestRepository>(),
+
+      requestFriendshipUseCase: getIt<RequestFriendshipUseCase>(),
+      acceptFriendshipUseCase: getIt<AcceptFriendshipUseCase>(),
+      sendChirpUseCase: getIt<SendChirpUseCase>(),
       offerFileUseCase: getIt<OfferFileUseCase>(),
       openFilePickerUseCase: getIt<OpenFilePickerUseCase>(),
+      parseIncomingPacketUseCase: getIt<ParseIncomingPacketUseCase>(),
+      receiveChirpUseCase: getIt<ReceiveChirpUseCase>(),
     ),
   );
 }
