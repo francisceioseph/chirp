@@ -1,20 +1,21 @@
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
-import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
+
 import 'package:chirp/infrastructure/services/flock_manager.dart';
+import 'package:chirp/infrastructure/store/tiels_store.dart';
 
 class AcceptFriendshipUseCase {
   final FlockManager _flockManager;
-  final TielNestRepository _tielsRepo;
+  final TielsStore _store;
   final Identity _me;
 
   AcceptFriendshipUseCase({
     required FlockManager flockManager,
-    required TielNestRepository tielsRepo,
+    required TielsStore store,
     required Identity me,
   }) : _flockManager = flockManager,
-       _tielsRepo = tielsRepo,
+       _store = store,
        _me = me;
 
   Future<Tiel> execute(Tiel target, ChirpRequestPacket request) async {
@@ -31,7 +32,7 @@ class AcceptFriendshipUseCase {
       status: .connected,
     );
 
-    await _tielsRepo.save(tiel);
+    await _store.save(tiel);
 
     return tiel;
   }

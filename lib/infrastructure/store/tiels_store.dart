@@ -10,6 +10,8 @@ class TielsStore {
 
   List<Tiel> get tiels => _cache.all;
 
+  Tiel? getById(String id) => _cache[id];
+
   Future<void> save(Tiel tiel) async {
     await _repository.save(tiel);
     _cache.add(tiel.id, tiel);
@@ -24,4 +26,6 @@ class TielsStore {
       _cache.add(tiel.id, tiel);
     }
   }
+
+  bool contains(String id) => _cache.contains(id);
 }
