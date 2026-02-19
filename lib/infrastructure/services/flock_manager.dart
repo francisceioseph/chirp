@@ -16,7 +16,6 @@ abstract class FlockManager {
 
 class P2PFlockManager implements FlockManager {
   final Peer _peer;
-  final Identity _me;
 
   final _packetCtrl = StreamController<dynamic>.broadcast();
   final Map<String, DataConnection> _activeConnections = {};
@@ -24,7 +23,7 @@ class P2PFlockManager implements FlockManager {
   @override
   Stream<dynamic> get packets => _packetCtrl.stream;
 
-  P2PFlockManager(this._me) : _peer = Peer(id: _me.id);
+  P2PFlockManager(Identity identity) : _peer = Peer(id: identity.id);
 
   @override
   void init() {

@@ -1,4 +1,4 @@
-import 'package:chirp/app/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/widgets/atoms/chirp_brand_identity.dart';
 import 'package:chirp/app/widgets/atoms/notification_bell.dart';
 import 'package:chirp/app/widgets/molecules/chirp_easter_egg.dart';
@@ -14,8 +14,8 @@ class ChirpAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ChirpController>(
-      builder: (context, controller, _) {
+    return Consumer<FriendshipController>(
+      builder: (context, friendshipCtrl, _) {
         return Container(
           padding: EdgeInsets.symmetric(
             vertical: MediaQuery.of(context).padding.top + 8,
@@ -31,7 +31,9 @@ class ChirpAppBar extends StatelessWidget implements PreferredSizeWidget {
                   alignment: CrossAxisAlignment.start,
                 ),
               ),
-              NotificationBell(notificationCount: controller.notificationCount),
+              NotificationBell(
+                notificationCount: friendshipCtrl.notificationCount,
+              ),
             ],
           ),
         );
