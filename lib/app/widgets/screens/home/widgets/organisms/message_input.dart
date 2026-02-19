@@ -49,13 +49,14 @@ class _MessageInputState extends State<MessageInput> {
     final panelTheme = theme.extension<ChirpPanelTheme>();
     final isFlat = panelTheme?.blurSigma == 0;
 
-    return WillPopScope(
-      onWillPop: () {
+    return PopScope(
+      canPop: !_showEmojiPicker,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+
         if (_showEmojiPicker) {
           setState(() => _showEmojiPicker = false);
-          return Future.value(false);
         }
-        return Future.value(true);
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
