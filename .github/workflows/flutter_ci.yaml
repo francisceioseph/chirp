@@ -1,0 +1,46 @@
+name: Flutter Clean Arch CI
+
+# O workflow roda em pushes na main e em qualquer PR
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest # Runner Linux (Custo 1x)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Configura o ambiente Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x' # Ou a versão específica que você usa
+          channel: 'stable'
+          cache: true # Ativa o cache automático do SDK para economizar tempo
+
+      # Instala as dependências (Pub get)
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Verifica se o código segue o padrão de formatação (Importante em times)
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      # Analisa o código em busca de erros estáticos e warnings de lint
+      - name: Analyze project
+        run: flutter analyze
+
+      # Executa os testes de unidade e widget
+      # Como você separou os Controllers, aqui eles serão validados isoladamente
+      - name: Run tests
+        run: flutter test --coverage
+
+      # (Opcional) Se você quiser subir o relatório de cobertura de testes
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
