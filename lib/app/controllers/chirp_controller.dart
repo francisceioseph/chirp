@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:chirp/domain/models/conversation_nest.dart';
+import 'package:chirp/domain/models/chirp_cache.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/entities/message.dart';
@@ -42,8 +42,8 @@ class ChirpController extends ChangeNotifier {
   Timer? _cleanupTimer;
   String? _activeChatId;
 
-  final _tiels = ConversationNest<Tiel>();
-  final _flocks = ConversationNest<Flock>();
+  final _tiels = ChirpCache<Tiel>();
+  final _flocks = ChirpCache<Flock>();
   final _messages = MessagesNest();
 
   final List<ChirpRequestPacket> _pendingRequests = [];
@@ -138,7 +138,7 @@ class ChirpController extends ChangeNotifier {
     try {
       final tiel = await _requestFriendshipUseCase.execute(target);
 
-      _tiels.put(tiel);
+      _tiels.add(tiel.id, tiel);
       notifyListeners();
 
       log.i("📩 [Amizade] Convite enviado com sucesso para ${target.name}");
@@ -157,7 +157,7 @@ class ChirpController extends ChangeNotifier {
       if (tiel != null) {
         final newTiel = await _acceptFriendshipUseCase.execute(tiel, request);
 
-        _tiels.put(newTiel);
+        _tiels.add(newTiel.id, newTiel);
         _pendingRequests.removeWhere((req) => req.fromId == request.fromId);
 
         notifyListeners();
