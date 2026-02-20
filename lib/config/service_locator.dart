@@ -18,7 +18,6 @@ import 'package:chirp/infrastructure/services/flock_discovery.dart';
 import 'package:chirp/infrastructure/services/identity_service.dart';
 import 'package:chirp/infrastructure/services/flock_manager.dart';
 import 'package:chirp/infrastructure/services/secure_nest.dart';
-import 'package:chirp/infrastructure/data/tiels_store.dart';
 import 'package:get_it/get_it.dart';
 
 final getIt = GetIt.instance;
@@ -39,19 +38,18 @@ Future<void> setupLocator() async {
 
   getIt.registerLazySingleton<ISecureNest>(() => secureNest);
 
-  getIt.registerLazySingleton(() => TielNestRepository(getIt<ISecureNest>()));
+  getIt.registerLazySingleton(() => TielNestRepository(nest: getIt()));
 
   getIt.registerLazySingleton(
     () => MessageNestRepository(getIt<ISecureNest>()),
   );
 
-  getIt.registerLazySingleton<TielsStore>(() => TielsStore(getIt()));
   getIt.registerLazySingleton<FilePickerPort>(() => FilePickerAdapter());
 
   getIt.registerLazySingleton<RequestFriendshipUseCase>(
     () => RequestFriendshipUseCase(
       flockManager: getIt<FlockManager>(),
-      store: getIt<TielsStore>(),
+      tielsRepo: getIt(),
       me: myIdentity,
     ),
   );
@@ -59,7 +57,7 @@ Future<void> setupLocator() async {
   getIt.registerLazySingleton<AcceptFriendshipUseCase>(
     () => AcceptFriendshipUseCase(
       flockManager: getIt<FlockManager>(),
-      store: getIt<TielsStore>(),
+      tielsRepo: getIt(),
       me: myIdentity,
     ),
   );
@@ -95,7 +93,7 @@ Future<void> setupLocator() async {
     () => FriendshipController(
       acceptFriendshipUseCase: getIt(),
       requestFriendshipUseCase: getIt(),
-      store: getIt(),
+      tielsRepo: getIt(),
     ),
   );
 

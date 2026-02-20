@@ -41,6 +41,7 @@ class ChirpController extends ChangeNotifier {
   Timer? _cleanupTimer;
   String? _activeChatId;
 
+  // o problema acontece porque tiels não usa o tiels repository, mas o chirp cache
   final _tiels = ChirpCache<Tiel>();
   final _flocks = ChirpCache<Flock>();
   final _messages = MessagesNest();
@@ -80,6 +81,8 @@ class ChirpController extends ChangeNotifier {
 
        _friendshipCtrl = friendshipCtrl {
     _setupListeners();
+
+    _tielsRepo.addListener(notifyListeners);
   }
 
   Conversation? getConversationFor(String conversationId) {

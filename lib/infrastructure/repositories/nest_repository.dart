@@ -11,6 +11,8 @@ abstract class NestRepository<T> {
   @protected
   final Map<String, T> cache = {};
 
+  Map<String, T> get cached => cache;
+
   NestRepository({required this.nest, required this.boxName});
 
   Future<void> save(String key, T data);

@@ -1,7 +1,8 @@
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/infrastructure/repositories/nest_repository.dart';
+import 'package:flutter/foundation.dart';
 
-class TielNestRepository extends NestRepository<Tiel> {
+class TielNestRepository extends NestRepository<Tiel> with ChangeNotifier {
   TielNestRepository({required super.nest}) : super(boxName: 'tiels_vault');
 
   @override
@@ -40,5 +41,7 @@ class TielNestRepository extends NestRepository<Tiel> {
   Future<void> save(String key, Tiel data) async {
     cache[key] = data;
     await nest.save(boxName, key, data.toJson());
+
+    notifyListeners();
   }
 }

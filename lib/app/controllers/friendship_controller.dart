@@ -2,28 +2,28 @@ import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
-import 'package:chirp/infrastructure/data/tiels_store.dart';
+import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 
 class FriendshipController extends ChangeNotifier {
   final RequestFriendshipUseCase _requestFriendshipUseCase;
   final AcceptFriendshipUseCase _acceptFriendshipUseCase;
-  final TielsStore _store;
+  final TielNestRepository _tielsRepo;
 
   final List<ChirpRequestPacket> _pendingRequests = [];
 
   FriendshipController({
     required RequestFriendshipUseCase requestFriendshipUseCase,
     required AcceptFriendshipUseCase acceptFriendshipUseCase,
-    required TielsStore store,
+    required TielNestRepository tielsRepo,
   }) : _requestFriendshipUseCase = requestFriendshipUseCase,
        _acceptFriendshipUseCase = acceptFriendshipUseCase,
-       _store = store;
+       _tielsRepo = tielsRepo;
 
   List<ChirpRequestPacket> get pendingRequests {
     return _pendingRequests
-        .where((packet) => _store.contains(packet.fromId))
+        .where((packet) => _tielsRepo.cached.containsKey(packet.fromId))
         .toList();
   }
 
@@ -51,13 +51,13 @@ class FriendshipController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> handleAcceptRequest(ChirpRequestPacket request) async {
+  Future<void> acceptFriendshipRequest(ChirpRequestPacket request) async {
     log.d(
       "🤝 [Amizade] Aceitando solicitação de amizade de ${request.fromName}...",
     );
 
     try {
-      final tiel = _store.getById(request.fromId);
+      final tiel = await _tielsRepo.get(request.fromId);
 
       if (tiel != null) {
         await _acceptFriendshipUseCase.execute(tiel, request);
