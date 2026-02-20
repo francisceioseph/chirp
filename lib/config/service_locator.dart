@@ -18,7 +18,7 @@ import 'package:chirp/infrastructure/services/flock_discovery.dart';
 import 'package:chirp/infrastructure/services/identity_service.dart';
 import 'package:chirp/infrastructure/services/flock_manager.dart';
 import 'package:chirp/infrastructure/services/secure_nest.dart';
-import 'package:chirp/infrastructure/store/tiels_store.dart';
+import 'package:chirp/infrastructure/data/tiels_store.dart';
 import 'package:get_it/get_it.dart';
 
 final getIt = GetIt.instance;

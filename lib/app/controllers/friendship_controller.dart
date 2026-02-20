@@ -2,7 +2,7 @@ import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
-import 'package:chirp/infrastructure/store/tiels_store.dart';
+import 'package:chirp/infrastructure/data/tiels_store.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 

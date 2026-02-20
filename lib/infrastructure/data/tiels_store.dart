@@ -1,5 +1,5 @@
 import 'package:chirp/domain/entities/tiel.dart';
-import 'package:chirp/domain/models/chirp_cache.dart';
+import 'package:chirp/infrastructure/data/chirp_cache.dart';
 import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
 
 class TielsStore {

@@ -3,7 +3,7 @@ import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 
 import 'package:chirp/infrastructure/services/flock_manager.dart';
-import 'package:chirp/infrastructure/store/tiels_store.dart';
+import 'package:chirp/infrastructure/data/tiels_store.dart';
 
 class AcceptFriendshipUseCase {
   final FlockManager _flockManager;

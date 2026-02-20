@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:chirp/app/controllers/friendship_controller.dart';
-import 'package:chirp/domain/models/chirp_cache.dart';
+import 'package:chirp/infrastructure/data/chirp_cache.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/entities/message.dart';
