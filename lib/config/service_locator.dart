@@ -1,11 +1,15 @@
 import 'package:chirp/app/controllers/friendship_controller.dart';
+import 'package:chirp/app/controllers/presence_controller.dart';
 import 'package:chirp/domain/usecases/chat/offer_file_use_case.dart';
 import 'package:chirp/domain/usecases/chat/open_file_picker_use_case.dart';
 import 'package:chirp/domain/usecases/chat/parse_incoming_packet_use_case.dart';
 import 'package:chirp/domain/usecases/chat/receive_chirp_use_case.dart';
 import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
-import 'package:chirp/domain/usecases/friendship/accept_friendship_use_case.dart';
+import 'package:chirp/domain/usecases/friendship/complete_handshake_use_case.dart';
+import 'package:chirp/domain/usecases/friendship/confirm_friendship_use_case.dart';
 import 'package:chirp/domain/usecases/friendship/request_friendship_use_case.dart';
+import 'package:chirp/domain/usecases/presence/tiel_found_use_case.dart';
+import 'package:chirp/domain/usecases/presence/update_tiels_status_use_case.dart';
 import 'package:chirp/infrastructure/adapters/file_picker_adapter.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/domain/entities/identity.dart';
@@ -54,8 +58,8 @@ Future<void> setupLocator() async {
     ),
   );
 
-  getIt.registerLazySingleton<AcceptFriendshipUseCase>(
-    () => AcceptFriendshipUseCase(
+  getIt.registerLazySingleton<ConfirmFriendshipUseCase>(
+    () => ConfirmFriendshipUseCase(
       flockManager: getIt<FlockManager>(),
       tielsRepo: getIt(),
       me: myIdentity,
@@ -90,16 +94,37 @@ Future<void> setupLocator() async {
   );
 
   getIt.registerLazySingleton(
+    () => TielFoundUseCase(identity: myIdentity, tielsRepository: getIt()),
+  );
+
+  getIt.registerLazySingleton(
+    () => UpdateTielsStatusUseCase(tielsRepository: getIt()),
+  );
+
+  getIt.registerLazySingleton(
+    () => CompleteHandshakeUseCase(tielsRepo: getIt()),
+  );
+
+  getIt.registerLazySingleton(
     () => FriendshipController(
-      acceptFriendshipUseCase: getIt(),
+      confirmFriendshipUseCase: getIt(),
       requestFriendshipUseCase: getIt(),
+      completeHandshakeUseCase: getIt(),
       tielsRepo: getIt(),
+    ),
+  );
+
+  getIt.registerLazySingleton(
+    () => PresenceController(
+      identity: myIdentity,
+      flockDiscovery: getIt(),
+      tielFoundUseCase: getIt(),
+      updateTielsStatusUseCase: getIt(),
     ),
   );
 
   getIt.registerFactory(
     () => ChirpController(
-      flockDiscovery: getIt<FlockDiscovery>(),
       flockManager: getIt<FlockManager>(),
       me: myIdentity,
 

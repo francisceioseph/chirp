@@ -5,12 +5,12 @@ import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
 
 import 'package:chirp/infrastructure/services/flock_manager.dart';
 
-class AcceptFriendshipUseCase {
+class ConfirmFriendshipUseCase {
   final FlockManager _flockManager;
   final TielNestRepository _tielsRepo;
   final Identity _me;
 
-  AcceptFriendshipUseCase({
+  ConfirmFriendshipUseCase({
     required FlockManager flockManager,
     required TielNestRepository tielsRepo,
     required Identity me,

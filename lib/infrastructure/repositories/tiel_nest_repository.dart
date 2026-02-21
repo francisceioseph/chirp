@@ -44,4 +44,16 @@ class TielNestRepository extends NestRepository<Tiel> with ChangeNotifier {
 
     notifyListeners();
   }
+
+  @override
+  Future<void> updateAll(Tiel Function(String key, Tiel data) onUpdate) async {
+    cache.updateAll(onUpdate);
+
+    final operations = cache.entries.map((entry) {
+      return nest.save(boxName, entry.key, entry.value.toJson());
+    });
+
+    await Future.wait(operations);
+    notifyListeners();
+  }
 }

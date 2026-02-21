@@ -18,4 +18,5 @@ abstract class NestRepository<T> {
   Future<void> save(String key, T data);
   Future<T?> get(String key);
   Future<List<T>> list();
+  Future<void> updateAll(T Function(String key, T data) onUpdate);
 }
