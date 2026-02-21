@@ -3,7 +3,6 @@ import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/molecules/nearby_tiel_list_tile.dart';
 import 'package:chirp/config/dependency_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class NearbyTielsList extends StatelessWidget {
   const NearbyTielsList({super.key});
