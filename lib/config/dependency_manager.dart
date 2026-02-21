@@ -92,7 +92,7 @@ class DependencyManager {
     getIt.registerLazySingleton(
       () => SendChirpUseCase(
         flockManager: getIt(),
-        messagesRepo: getIt<MessageNestRepository>(),
+        msgRepo: getIt<MessageNestRepository>(),
         me: getIt(),
       ),
     );

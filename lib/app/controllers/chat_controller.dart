@@ -1,70 +1,70 @@
+import 'package:chirp/domain/entities/conversation.dart';
+import 'package:chirp/domain/entities/tiel.dart';
+import 'package:chirp/domain/usecases/chat/open_or_create_conversation_use_case.dart';
+import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
+import 'package:chirp/infrastructure/repositories/conversation_nest_repository.dart';
+import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 
 class ChatController extends ChangeNotifier {
-  // final SendChirpUseCase _sendChirpUseCase;
+  final ConversationNestRepository _conversationRepo;
 
-  // final TielNestRepository _tielRepo;
-  // final MessageNestRepository _messageRepo;
+  final SendChirpUseCase _sendChirpUseCase;
+  final OpenOrCreateConversationUseCase _openOrCreateConversationUseCase;
 
-  // String? _activeConvesationId;
+  String? _activeConvesationId;
 
-  // ChatController({
-  //   required SendChirpUseCase sendChirpUseCase,
-  //   required TielNestRepository tielRepo,
-  //   required MessageNestRepository messageRepo,
-  // }) : _sendChirpUseCase = sendChirpUseCase,
-  //      _tielRepo = tielRepo,
-  //      _messageRepo = messageRepo;
+  ChatController({
+    required ConversationNestRepository conversationRepo,
+    required OpenOrCreateConversationUseCase openOrCreateConversationUseCase,
+    required SendChirpUseCase sendChirpUseCase,
+  }) : _conversationRepo = conversationRepo,
+       _sendChirpUseCase = sendChirpUseCase,
+       _openOrCreateConversationUseCase = openOrCreateConversationUseCase;
 
-  // List<Conversation> get conversations => [..._tielRepo.cached.values];
+  List<Conversation> get conversations => [..._conversationRepo.cached.values];
 
-  // String? get activeConversationId => _activeConvesationId;
+  String? get activeConversationId => _activeConvesationId;
 
-  // set activeConversationId(String? value) {
-  //   _activeConvesationId = value;
-  //   notifyListeners();
-  // }
+  set activeConversationId(String? value) {
+    _activeConvesationId = value;
+    notifyListeners();
+  }
 
-  // Future<void> start() async {
-  //   await _messageRepo.list();
-  // }
+  Future<void> openOrCreateConversation(Tiel tiel) async {
+    try {
+      log.d("[Chat] Creating conversation with ${tiel.name}");
 
-  // Conversation? getConversationById(String conversationId) => conversations
-  //     .where((conversation) => conversation.id == conversationId)
-  //     .firstOrNull;
+      final conversation = await _openOrCreateConversationUseCase.execute(tiel);
+      activeConversationId = conversation.id;
 
-  // Future<List<ChirpMessage>> listMessagesFor(String conversationId) {
-  //   return _messageRepo.list(
-  //     where: (msg) => msg.conversationId == conversationId,
-  //   );
-  // }
+      notifyListeners();
 
-  // Future<void> sendChirpMessage(String targetId, String text) async {
-  //   final tiel = _tielRepo.cached[targetId];
+      log.i("✨ [Chat] Conversation created with ${tiel.name}");
+    } catch (e) {
+      log.e("💥 [Chat] Erro ao criar conversa com ${tiel.name}", error: e);
+    }
+  }
 
-  //   if (tiel == null ||
-  //       tiel.publicKey == null ||
-  //       tiel.status != TielStatus.connected) {
-  //     log.w(
-  //       "🚫 [Chat] Tentativa de envio negada: ${tiel?.name ?? targetId} não está conectado.",
-  //     );
+  Future<void> sendChirp({
+    required String conversationId,
+    required String text,
+    required String targetId,
+  }) async {
+    try {
+      log.d("📤 [Chat] Criptografando e enviando mensagem para $targetId...");
 
-  //     return;
-  //   }
+      await _sendChirpUseCase.execute(
+        conversationId: conversationId,
+        targetId: targetId,
+        text: text,
+      );
 
-  //   try {
-  //     log.d(
-  //       "📤 [Chat] Criptografando e enviando mensagem para ${tiel.name}...",
-  //     );
+      notifyListeners();
 
-  //     final message = await _sendChirpUseCase.execute(tiel, text);
-
-  //     await _messageRepo.save(targetId, message);
-  //     notifyListeners();
-
-  //     log.i("✨ [Chat] Mensagem entregue ao bando para ${tiel.name}");
-  //   } catch (e) {
-  //     log.e("💥 [Chat] Erro no envio seguro para ${tiel.name}", error: e);
-  //   }
-  // }
+      log.i("✨ [Chat] Mensagem entregue ao bando para $targetId");
+    } catch (e) {
+      log.e("💥 [Chat] Erro no envio seguro para $targetId", error: e);
+    }
+  }
 }

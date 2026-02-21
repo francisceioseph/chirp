@@ -5,29 +5,52 @@ import 'package:chirp/domain/entities/chirp_message.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
+import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
 import 'package:chirp/infrastructure/services/flock_manager.dart';
 import 'package:chirp/infrastructure/services/secure_chirp.dart';
+import 'package:chirp/utils/app_logger.dart';
 import 'package:uuid/uuid.dart';
 
 class SendChirpUseCase {
-  final FlockManager _flockManager;
-  final MessageNestRepository _messagesRepo;
   final Identity _me;
+
+  final FlockManager _flockManager;
+
+  final TielNestRepository _tielRepo;
+  final MessageNestRepository _msgRepo;
 
   final _uuid = Uuid();
 
   SendChirpUseCase({
     required FlockManager flockManager,
-    required MessageNestRepository messagesRepo,
+    required TielNestRepository tielRepo,
+    required MessageNestRepository msgRepo,
     required Identity me,
   }) : _flockManager = flockManager,
-       _messagesRepo = messagesRepo,
+       _tielRepo = tielRepo,
+       _msgRepo = msgRepo,
        _me = me;
 
-  Future<ChirpMessage> execute(Tiel target, String text) async {
+  Future<void> execute({
+    required String conversationId,
+    required String text,
+    required String targetId,
+  }) async {
+    final target = await _tielRepo.get(targetId);
+
+    if (target == null ||
+        target.publicKey == null ||
+        target.status != TielStatus.connected) {
+      log.w(
+        "🚫 [Chat] Tentativa de envio negada: ${target?.name ?? targetId} não está conectado.",
+      );
+
+      return;
+    }
+
     final message = ChirpMessage(
       id: _uuid.v4(),
-      conversationId: target.id,
+      conversationId: conversationId,
       senderId: _me.id,
       author: _me.name,
       body: text,
@@ -46,8 +69,6 @@ class SendChirpUseCase {
 
     _flockManager.sendPacket(target.id, packet);
 
-    await _messagesRepo.save(message.id, message);
-
-    return message;
+    await _msgRepo.save(message.id, message);
   }
 }
