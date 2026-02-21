@@ -1,6 +1,6 @@
 import 'package:chirp/app/themes/chirp_panel_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/chirp_message.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChirpMessage message;

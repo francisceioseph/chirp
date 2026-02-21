@@ -67,18 +67,4 @@ void main() {
       },
     );
   });
-
-  group('Flock - Entity Test', () {
-    test('Deve retornar metadados de grupo corretamente', () {
-      final flock = Flock(
-        id: 'bando_01',
-        name: 'Os Canários',
-        tielIds: ['1', '2', '3'],
-      );
-
-      expect(flock.type, ConversationType.group);
-      expect(flock.statusText, "3 tiels no bando");
-      expect(flock.getStatusColor(colorScheme), colorScheme.secondary);
-    });
-  });
 }

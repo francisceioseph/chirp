@@ -1,6 +1,5 @@
-import 'package:chirp/app/themes/chirp_panel_theme.dart';
+import 'package:chirp/domain/entities/conversation.dart';
 import 'package:chirp/domain/entities/tiel.dart';
-import 'package:chirp/app/widgets/screens/home/widgets/molecules/flock_list_item.dart';
 import 'package:flutter/material.dart';
 
 class FlockList extends StatelessWidget {
@@ -19,49 +18,52 @@ class FlockList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final panelTheme = theme.extension<ChirpPanelTheme>();
+    return Placeholder();
 
-    final bool showDivider =
-        panelTheme?.blurSigma != null && panelTheme!.blurSigma! > 0;
+    // TODO: RESTORE THIS LIST LATER
+    // final theme = Theme.of(context);
+    // final panelTheme = theme.extension<ChirpPanelTheme>();
 
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: true),
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(
-          vertical: panelTheme?.margin == EdgeInsets.zero ? 0 : 8,
-        ),
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        itemCount: conversations.length,
-        itemBuilder: (context, index) {
-          final conversation = conversations[index];
+    // final bool showDivider =
+    //     panelTheme?.blurSigma != null && panelTheme!.blurSigma! > 0;
 
-          return FlockListItem(
-            key: ValueKey(conversation.id),
-            conversation: conversation,
-            activeChatId: activeChatId,
-            onTap: () => onItemTap(conversation),
-            onAddFriendshipTap: () {
-              if (conversation is Tiel) {
-                onRequestFriendship(conversation);
-              }
-            },
-          );
-        },
-        separatorBuilder: (context, index) {
-          if (!showDivider) return const SizedBox(height: 4);
+    // return ScrollConfiguration(
+    //   behavior: ScrollConfiguration.of(context).copyWith(scrollbars: true),
+    //   child: ListView.separated(
+    //     padding: EdgeInsets.symmetric(
+    //       vertical: panelTheme?.margin == EdgeInsets.zero ? 0 : 8,
+    //     ),
+    //     physics: const BouncingScrollPhysics(
+    //       parent: AlwaysScrollableScrollPhysics(),
+    //     ),
+    //     itemCount: conversations.length,
+    //     itemBuilder: (context, index) {
+    //       final conversation = conversations[index];
 
-          return Divider(
-            height: 1,
-            indent: 16,
-            endIndent: 16,
-            thickness: 0.5,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-          );
-        },
-      ),
-    );
+    //       return FlockListItem(
+    //         key: ValueKey(conversation.id),
+    //         conversation: conversation,
+    //         activeChatId: activeChatId,
+    //         onTap: () => onItemTap(conversation),
+    //         onAddFriendshipTap: () {
+    //           if (conversation is Tiel) {
+    //             onRequestFriendship(conversation);
+    //           }
+    //         },
+    //       );
+    //     },
+    //     separatorBuilder: (context, index) {
+    //       if (!showDivider) return const SizedBox(height: 4);
+
+    //       return Divider(
+    //         height: 1,
+    //         indent: 16,
+    //         endIndent: 16,
+    //         thickness: 0.5,
+    //         color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+    //       );
+    //     },
+    //   ),
+    // );
   }
 }

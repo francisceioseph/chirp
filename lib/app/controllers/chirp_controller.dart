@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:chirp/app/controllers/friendship_controller.dart';
-import 'package:chirp/infrastructure/data/chirp_cache.dart';
+import 'package:chirp/domain/entities/conversation.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/domain/entities/identity.dart';
-import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/chirp_message.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/models/messages_nest.dart';
 import 'package:chirp/domain/usecases/chat/parse_incoming_packet_use_case.dart';
@@ -38,7 +38,6 @@ class ChirpController extends ChangeNotifier {
 
   String? _activeChatId;
 
-  final _flocks = ChirpCache<Flock>();
   final _messages = MessagesNest();
 
   String get myId => _me.id;
@@ -47,7 +46,7 @@ class ChirpController extends ChangeNotifier {
   String? get activeChatId => _activeChatId;
   Map<String, Tiel> get _tiels => _tielsRepo.cached;
 
-  List<Conversation> get allConversations => [..._tiels.values, ..._flocks.all];
+  List<Tiel> get allConversations => [..._tiels.values];
 
   ChirpController({
     required FlockManager flockManager,
@@ -80,9 +79,12 @@ class ChirpController extends ChangeNotifier {
   }
 
   Conversation? getConversationFor(String conversationId) {
-    return allConversations
-        .where((conv) => conv.id == conversationId)
-        .firstOrNull;
+    return null;
+
+    // TODO: REVIEW THIS LATER. REMOVAL DUE TO NEW CTRL.
+    // return allConversations
+    //     .where((conv) => conv.id == conversationId)
+    //     .firstOrNull;
   }
 
   List<ChirpMessage> getMessagesFor(String chatId) => _messages.forChat(chatId);
@@ -97,7 +99,9 @@ class ChirpController extends ChangeNotifier {
 
     try {
       await _tielsRepo.list();
-      _tielsRepo.cached.updateAll((_, tiel) => tiel.copyWith(status: .away));
+      _tielsRepo.cached.updateAll(
+        (_, tiel) => tiel.copyWith(status: TielStatus.away),
+      );
 
       await _hydrateMessages();
 
@@ -112,7 +116,9 @@ class ChirpController extends ChangeNotifier {
   Future<void> sendChirp(String targetId, String text) async {
     final tiel = _tiels[targetId];
 
-    if (tiel == null || tiel.publicKey == null || tiel.status != .connected) {
+    if (tiel == null ||
+        tiel.publicKey == null ||
+        tiel.status != TielStatus.connected) {
       log.w(
         "🚫 [Chat] Tentativa de envio negada: ${tiel?.name ?? targetId} não está conectado.",
       );
@@ -179,13 +185,13 @@ class ChirpController extends ChangeNotifier {
     try {
       log.d("📦 [Hidratação] Iniciando leitura do histórico de mensagens...");
 
-      for (var chat in allConversations) {
-        final history = await _messagesRepo.list(chat.id);
+      // for (var chat in allConversations) {
+      //   final history = await _messagesRepo.list(chat.id);
 
-        if (history.isNotEmpty) {
-          _messages.addAll(chat.id, history);
-        }
-      }
+      //   if (history.isNotEmpty) {
+      //     _messages.addAll(chat.id, history);
+      //   }
+      // }
 
       log.i("✅ [Hidratação] Concluída com sucesso");
     } catch (e) {

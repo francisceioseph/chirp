@@ -1,4 +1,4 @@
-import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/chirp_message.dart';
 
 class MessagesNest {
   final Map<String, List<ChirpMessage>> _nest = {};

@@ -38,7 +38,7 @@ sealed class ChirpPacket {
 
 class ChirpIdentityPacket extends ChirpPacket {
   ChirpIdentityPacket({required super.fromId, required super.fromName})
-    : super(action: .identity);
+    : super(action: ChirpPacketAction.identity);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -58,7 +58,7 @@ class ChirpRequestPacket extends ChirpPacket {
     required super.fromId,
     required super.fromName,
     required this.publicKey,
-  }) : super(action: .request);
+  }) : super(action: ChirpPacketAction.request);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -83,7 +83,7 @@ class ChirpAcceptPacket extends ChirpPacket {
     required super.fromId,
     required super.fromName,
     required this.publicKey,
-  }) : super(action: .accept);
+  }) : super(action: ChirpPacketAction.accept);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -108,7 +108,7 @@ class ChirpMessagePacket extends ChirpPacket {
     required super.fromId,
     required super.fromName,
     required this.envelope,
-  }) : super(action: .message);
+  }) : super(action: ChirpPacketAction.message);
 
   @override
   Map<String, dynamic> toJson() => {
