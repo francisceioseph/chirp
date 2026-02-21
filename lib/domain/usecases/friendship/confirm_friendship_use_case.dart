@@ -29,7 +29,7 @@ class ConfirmFriendshipUseCase {
 
     final tiel = target.copyWith(
       publicKey: request.publicKey,
-      status: .connected,
+      status: TielStatus.connected,
     );
 
     await _tielsRepo.save(tiel.id, tiel);

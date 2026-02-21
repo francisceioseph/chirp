@@ -1,6 +1,6 @@
 import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/controllers/presence_controller.dart';
-import 'package:chirp/config/service_locator.dart';
+import 'package:chirp/config/dependency_manager.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/routes.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
-  await setupLocator();
+  await DependencyManager().setup();
 
   runApp(
     MultiProvider(

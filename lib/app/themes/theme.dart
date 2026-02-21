@@ -38,6 +38,12 @@ abstract class ChirpThemes {
         Colors.white,
         radius: 16,
       ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: _lutinoCheek,
+        unselectedLabelColor: _lutinoText.withValues(alpha: 0.6),
+        indicatorColor: _lutinoCheek,
+        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+      ),
       extensions: [
         ChirpPanelTheme(
           blurSigma: 10,
@@ -73,6 +79,13 @@ abstract class ChirpThemes {
         radius: 24,
       ),
       elevatedButtonTheme: _baseButtonTheme(_wildYellow, _wildGrey, radius: 16),
+      tabBarTheme: TabBarThemeData(
+        labelColor: _wildYellow,
+        unselectedLabelColor: _wildText.withValues(alpha: 0.5),
+        indicatorColor: _wildYellow,
+        indicatorSize:
+            TabBarIndicatorSize.label, // Fica mais elegante no Desktop
+      ),
       extensions: [
         ChirpPanelTheme(
           blurSigma: 35,
@@ -110,6 +123,11 @@ abstract class ChirpThemes {
       appBarTheme: _baseAppBar(_slateBg, Colors.white),
       cardTheme: _baseCardTheme(_slateSidebar, radius: 4),
       elevatedButtonTheme: _baseButtonTheme(_wildYellow, _wildGrey, radius: 4),
+      tabBarTheme: TabBarThemeData(
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white.withValues(alpha: 0.3),
+        indicatorColor: _wildYellow, // O detalhe de cor que quebra a sobriedade
+      ),
       extensions: [
         ChirpPanelTheme(
           blurSigma: 0, // Sem blur para performance e foco

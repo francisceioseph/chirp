@@ -23,13 +23,23 @@ class FriendshipController extends ChangeNotifier {
   }) : _requestFriendshipUseCase = requestFriendshipUseCase,
        _confirmFriendshipUseCase = confirmFriendshipUseCase,
        _completeHandshakeUseCase = completeHandshakeUseCase,
-       _tielsRepo = tielsRepo;
+       _tielsRepo = tielsRepo {
+    _tielsRepo.addListener(notifyListeners);
+  }
 
   List<ChirpRequestPacket> get pendingRequests {
     return _pendingRequests
         .where((packet) => _tielsRepo.cached.containsKey(packet.fromId))
         .toList();
   }
+
+  List<Tiel> get nearbyTiels => _tielsRepo.cached.values
+      .where(
+        (tiel) =>
+            tiel.status == TielStatus.discovered ||
+            tiel.status == TielStatus.pending,
+      )
+      .toList();
 
   int get notificationCount => pendingRequests.length;
 

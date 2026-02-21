@@ -1,4 +1,5 @@
 import 'package:chirp/app/themes/chirp_panel_theme.dart';
+import 'package:chirp/domain/entities/conversation.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/atoms/tiel_status_badge.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,8 @@ class FlockListItem extends StatelessWidget {
             .x ??
         12.0;
 
-    final badgeColor = conversation.getStatusColor(colorScheme);
+    // TODO: ADD REAL BADGECOLOR LATER
+    final badgeColor = Colors.grey; //conversation.getStatusColor(colorScheme);
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -59,9 +61,9 @@ class FlockListItem extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
             leading: _buildAvatar(badgeColor),
             title: Tooltip(
-              message: conversation.name,
+              message: conversation.title,
               child: Text(
-                conversation.name,
+                conversation.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyLarge?.copyWith(
@@ -72,14 +74,15 @@ class FlockListItem extends StatelessWidget {
                 ),
               ),
             ),
-            subtitle: Text(
-              conversation.statusText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
+            // TODO: ADD TIEL STATUS TEXT LATER
+            // subtitle: Text(
+            //   conversation.statusText,
+            //   maxLines: 1,
+            //   overflow: TextOverflow.ellipsis,
+            //   style: theme.textTheme.bodySmall?.copyWith(
+            //     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            //   ),
+            // ),
             trailing: _buildTrailingAction(context, theme),
           ),
         ),
@@ -117,13 +120,13 @@ class FlockListItem extends StatelessWidget {
     final tiel = conversation as Tiel;
 
     return switch (tiel.status) {
-      .discovered => IconButton(
+      TielStatus.discovered => IconButton(
         onPressed: onAddFriendshipTap,
         icon: Icon(Icons.person_add_alt_1_rounded),
         tooltip: "Solicitar Amizade",
       ),
 
-      .pending => const SizedBox(
+      TielStatus.pending => const SizedBox(
         width: 24,
         height: 24,
         child: CircularProgressIndicator(
@@ -132,7 +135,7 @@ class FlockListItem extends StatelessWidget {
         ),
       ),
 
-      .connected => Icon(
+      TielStatus.connected => Icon(
         Icons.chat_bubble_outline_rounded,
         color: theme.colorScheme.primary.withValues(alpha: 0.5),
         size: 20,

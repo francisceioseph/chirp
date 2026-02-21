@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/chirp_message.dart';
 
 void main() {
   group('ChirpMessage - Entity Test', () {
@@ -12,6 +12,7 @@ void main() {
         body: 'Olá, bando!',
         dateCreated: date,
         isFromMe: true,
+        conversationId: "conv123",
       );
 
       expect(message.id, 'msg_001');
@@ -26,6 +27,7 @@ void main() {
         author: 'Tester',
         body: 'Teste de rede',
         dateCreated: DateTime.parse("2026-02-18T11:00:00.000Z"),
+        conversationId: "conv123",
       );
 
       final json = original.toJson();
@@ -54,6 +56,7 @@ void main() {
       () {
         final original = ChirpMessage(
           id: '1',
+          conversationId: "123",
           senderId: 'A',
           author: 'Antigo',
           body: 'Texto',

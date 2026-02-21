@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:chirp/domain/entities/identity.dart';
-import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/chirp_message.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
@@ -27,6 +27,7 @@ class SendChirpUseCase {
   Future<ChirpMessage> execute(Tiel target, String text) async {
     final message = ChirpMessage(
       id: _uuid.v4(),
+      conversationId: target.id,
       senderId: _me.id,
       author: _me.name,
       body: text,
@@ -45,7 +46,7 @@ class SendChirpUseCase {
 
     _flockManager.sendPacket(target.id, packet);
 
-    await _messagesRepo.save(message);
+    await _messagesRepo.save(message.id, message);
 
     return message;
   }

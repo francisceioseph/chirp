@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chirp/domain/models/messages_nest.dart';
-import 'package:chirp/domain/entities/message.dart';
+import 'package:chirp/domain/entities/chirp_message.dart';
 
 void main() {
   group('MessagesNest - Gestão de Histórico', () {
@@ -11,6 +11,7 @@ void main() {
     test('Deve adicionar e ordenar mensagens por data', () {
       final m1 = ChirpMessage(
         id: '1',
+        conversationId: "conv123",
         senderId: 'a',
         author: 'Tiel A',
         body: 'Tarde',
@@ -19,6 +20,7 @@ void main() {
 
       final m2 = ChirpMessage(
         id: '2',
+        conversationId: "conv123",
         senderId: 'a',
         author: 'Tiel A',
         body: 'Cedo',
@@ -36,6 +38,7 @@ void main() {
     test('Não deve permitir mensagens com ID duplicado no mesmo chat', () {
       final m1 = ChirpMessage(
         id: 'rep_1',
+        conversationId: "conv123",
         senderId: 'b',
         author: "tiel b",
         body: 'Oi',
@@ -44,6 +47,7 @@ void main() {
 
       final m2 = ChirpMessage(
         id: 'rep_1',
+        conversationId: "conv123",
         senderId: 'b',
         author: "tiel b",
         body: 'Oi de novo',

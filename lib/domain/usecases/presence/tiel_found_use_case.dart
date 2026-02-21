@@ -20,30 +20,42 @@ class TielFoundUseCase {
 
     log.d("📡 [Radar] Ping de presença: $name ($id)");
 
-    Tiel tiel;
+    final existing = _tielsRepository.cached[id];
+    final status = _resolveTielStatus(existing);
 
-    if (_tielsRepository.cached.containsKey(id)) {
-      final existing = _tielsRepository.cached[id]!;
-      final newStatus = existing.publicKey != null
-          ? TielStatus.connected
-          : TielStatus.discovered;
-
-      tiel = existing.copyWith(
-        name: name,
-        address: address,
-        lastSeen: DateTime.now(),
-        status: newStatus,
-      );
-    } else {
-      tiel = Tiel(
-        id: id,
-        name: name,
-        address: address,
-        lastSeen: DateTime.now(),
-        status: TielStatus.discovered,
-      );
-    }
+    final tiel = existing == null
+        ? Tiel(
+            id: id,
+            name: name,
+            address: address,
+            lastSeen: DateTime.now(),
+            status: status,
+          )
+        : existing.copyWith(
+            name: name,
+            address: address,
+            lastSeen: DateTime.now(),
+            status: status,
+          );
 
     await _tielsRepository.save(id, tiel);
+  }
+
+  TielStatus _resolveTielStatus(Tiel? existing) {
+    if (existing == null) {
+      return TielStatus.discovered;
+    }
+
+    if (existing.status == TielStatus.pending) {
+      return TielStatus.pending;
+    }
+
+    if (existing.status == TielStatus.connected) {
+      return TielStatus.connected;
+    }
+
+    return (existing.publicKey != null)
+        ? TielStatus.connected
+        : TielStatus.discovered;
   }
 }

@@ -41,7 +41,7 @@ class ChatScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  conversation?.name ?? "Tiel Desconhecida",
+                  conversation?.title ?? "Tiel Desconhecida",
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

@@ -1,69 +1,65 @@
-import 'package:chirp/app/controllers/chirp_controller.dart';
-import 'package:chirp/domain/entities/tiel.dart';
-import 'package:chirp/app/widgets/atoms/chirp_panel.dart';
-import 'package:chirp/app/widgets/screens/home/widgets/atoms/column_label.dart';
-import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_input.dart';
-import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_list.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class ChatPanel extends StatelessWidget {
   const ChatPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final chirpCtrl = context.watch<ChirpController>();
-    final activeChatId = chirpCtrl.activeChatId;
+    return Placeholder();
 
-    if (activeChatId == null) {
-      return const ChirpPanel(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.question_answer_outlined, size: 48),
-              SizedBox(height: 16),
-              Text("Selecione uma Tiel para chirpar"),
-            ],
-          ),
-        ),
-      );
-    }
+    // TODO: RESTORE THIS PANEL LATER
+    // final chirpCtrl = context.watch<ChirpController>();
+    // final activeChatId = chirpCtrl.activeChatId;
 
-    final messages = chirpCtrl.getMessagesFor(activeChatId);
-    final activeChat = chirpCtrl.allConversations.firstWhere(
-      (c) => c.id == activeChatId,
-    );
+    // if (activeChatId == null) {
+    //   return const ChirpPanel(
+    //     child: Center(
+    //       child: Column(
+    //         mainAxisSize: MainAxisSize.min,
+    //         children: [
+    //           Icon(Icons.question_answer_outlined, size: 48),
+    //           SizedBox(height: 16),
+    //           Text("Selecione uma Tiel para chirpar"),
+    //         ],
+    //       ),
+    //     ),
+    //   );
+    // }
 
-    return ChirpPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const ColumnLabel(label: "Mensagens"),
-          Expanded(child: MessageList(messages: messages)),
-          MessageInput(
-            isEnabled: _canSendChat(activeChat),
-            onSend: (text) {
-              chirpCtrl.sendChirp(activeChatId, text);
-            },
-            onAttachFile: () {
-              chirpCtrl.pickAndOfferFile(activeChatId);
-            },
-          ),
-        ],
-      ),
-    );
+    // final messages = chirpCtrl.getMessagesFor(activeChatId);
+    // final activeChat = chirpCtrl.allConversations.firstWhere(
+    //   (c) => c.id == activeChatId,
+    // );
+
+    // return ChirpPanel(
+    //   child: Column(
+    //     crossAxisAlignment: CrossAxisAlignment.start,
+    //     children: [
+    //       const ColumnLabel(label: "Mensagens"),
+    //       Expanded(child: MessageList(messages: messages)),
+    //       MessageInput(
+    //         isEnabled: _canSendChat(activeChat),
+    //         onSend: (text) {
+    //           chirpCtrl.sendChirp(activeChatId, text);
+    //         },
+    //         onAttachFile: () {
+    //           chirpCtrl.pickAndOfferFile(activeChatId);
+    //         },
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 
-  bool _canSendChat(Conversation conversation) {
-    if (conversation is Tiel) {
-      return conversation.status == .connected;
-    }
+  // bool _canSendChat(Conversation conversation) {
+  //   if (conversation is Tiel) {
+  //     return conversation.status == TielStatus.connected;
+  //   }
 
-    if (conversation is Flock) {
-      return true;
-    }
+  //   if (conversation is Flock) {
+  //     return true;
+  //   }
 
-    return false;
-  }
+  //   return false;
+  // }
 }
