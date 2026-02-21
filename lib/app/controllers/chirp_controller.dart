@@ -97,6 +97,8 @@ class ChirpController extends ChangeNotifier {
 
     try {
       await _tielsRepo.list();
+      _tielsRepo.cached.updateAll((_, tiel) => tiel.copyWith(status: .away));
+
       await _hydrateMessages();
 
       notifyListeners();
