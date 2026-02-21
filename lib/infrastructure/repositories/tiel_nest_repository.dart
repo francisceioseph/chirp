@@ -1,24 +1,59 @@
 import 'package:chirp/domain/entities/tiel.dart';
-import 'package:chirp/infrastructure/services/secure_nest.dart';
+import 'package:chirp/infrastructure/repositories/nest_repository.dart';
+import 'package:flutter/foundation.dart';
 
-class TielNestRepository {
-  final ISecureNest _nest;
-  final String _boxName = "tiels_vault";
+class TielNestRepository extends NestRepository<Tiel> with ChangeNotifier {
+  TielNestRepository({required super.nest}) : super(boxName: 'tiels_vault');
 
-  TielNestRepository(this._nest);
+  @override
+  Future<Tiel?> get(String key) async {
+    if (cache.containsKey(key)) {
+      return cache[key]!;
+    }
 
-  Future<void> save(Tiel tiel) async {
-    await _nest.save(_boxName, tiel.id, tiel.toJson());
+    final json = await nest.get(boxName, key);
+
+    if (json != null) {
+      final tiel = Tiel.fromJson(json);
+      cache[key] = tiel;
+
+      return tiel;
+    }
+
+    return null;
   }
 
+  @override
   Future<List<Tiel>> list() async {
-    final tiels = await _nest.getAll(_boxName);
+    final allJson = await nest.getAll(boxName);
+    final tiels = allJson.map((json) => Tiel.fromJson(json)).toList();
 
-    return tiels.map((json) => Tiel.fromJson(json)).toList()
-      ..sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+    tiels.sort((a, b) => b.lastSeen.compareTo(a.lastSeen));
+
+    cache.clear();
+    for (var tiel in tiels) {
+      cache[tiel.id] = tiel;
+    }
+    return tiels;
   }
 
-  Future<void> deleteAll() async {
-    await _nest.deleteAll(_boxName);
+  @override
+  Future<void> save(String key, Tiel data) async {
+    cache[key] = data;
+    await nest.save(boxName, key, data.toJson());
+
+    notifyListeners();
+  }
+
+  @override
+  Future<void> updateAll(Tiel Function(String key, Tiel data) onUpdate) async {
+    cache.updateAll(onUpdate);
+
+    final operations = cache.entries.map((entry) {
+      return nest.save(boxName, entry.key, entry.value.toJson());
+    });
+
+    await Future.wait(operations);
+    notifyListeners();
   }
 }

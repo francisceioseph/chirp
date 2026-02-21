@@ -90,4 +90,16 @@ class SecureNestHiveAdapter implements SecureNestPort {
 
     return box;
   }
+
+  @override
+  Future<void> close(String boxName) async {
+    final scopedBoxName = "${boxName}_$_storageSuffix";
+
+    if (_vault.containsKey(scopedBoxName)) {
+      final box = _vault[scopedBoxName]!;
+      await box.close();
+
+      _vault.remove(scopedBoxName);
+    }
+  }
 }

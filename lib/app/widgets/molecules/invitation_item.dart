@@ -83,7 +83,7 @@ class InvitationItem extends StatelessWidget {
         _ActionButton(
           icon: Icons.check_rounded,
           color: Colors.green,
-          onPressed: () => friendshipCtrl.handleAcceptRequest(req),
+          onPressed: () => friendshipCtrl.acceptFriendshipRequest(req),
           tooltip: "Aceitar",
         ),
         const SizedBox(width: 8),

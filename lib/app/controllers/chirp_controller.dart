@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:chirp/app/controllers/friendship_controller.dart';
-import 'package:chirp/domain/models/chirp_cache.dart';
+import 'package:chirp/infrastructure/data/chirp_cache.dart';
 import 'package:chirp/domain/models/chirp_packet.dart';
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/entities/message.dart';
@@ -14,7 +14,6 @@ import 'package:chirp/domain/usecases/chat/receive_chirp_use_case.dart';
 import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
 import 'package:chirp/infrastructure/repositories/message_nest_repository.dart';
 import 'package:chirp/infrastructure/repositories/tiel_nest_repository.dart';
-import 'package:chirp/infrastructure/services/flock_discovery.dart';
 import 'package:chirp/infrastructure/services/flock_manager.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +22,6 @@ import 'package:uuid/uuid.dart';
 class ChirpController extends ChangeNotifier {
   final uuid = Uuid();
 
-  final FlockDiscovery _flockDiscovery;
   final FlockManager _flockManager;
   final Identity _me;
 
@@ -38,10 +36,8 @@ class ChirpController extends ChangeNotifier {
 
   final FriendshipController _friendshipCtrl;
 
-  Timer? _cleanupTimer;
   String? _activeChatId;
 
-  final _tiels = ChirpCache<Tiel>();
   final _flocks = ChirpCache<Flock>();
   final _messages = MessagesNest();
 
@@ -49,11 +45,11 @@ class ChirpController extends ChangeNotifier {
   String get myName => _me.name;
 
   String? get activeChatId => _activeChatId;
+  Map<String, Tiel> get _tiels => _tielsRepo.cached;
 
-  List<Conversation> get allConversations => [..._tiels.all, ..._flocks.all];
+  List<Conversation> get allConversations => [..._tiels.values, ..._flocks.all];
 
   ChirpController({
-    required FlockDiscovery flockDiscovery,
     required FlockManager flockManager,
     required Identity me,
 
@@ -67,8 +63,7 @@ class ChirpController extends ChangeNotifier {
     required ReceiveChirpUseCase receiveChirpUseCase,
 
     required FriendshipController friendshipCtrl,
-  }) : _flockDiscovery = flockDiscovery,
-       _flockManager = flockManager,
+  }) : _flockManager = flockManager,
        _me = me,
        _tielsRepo = tielsRepository,
        _messagesRepo = messagesRepository,
@@ -80,6 +75,8 @@ class ChirpController extends ChangeNotifier {
 
        _friendshipCtrl = friendshipCtrl {
     _setupListeners();
+
+    _tielsRepo.addListener(notifyListeners);
   }
 
   Conversation? getConversationFor(String conversationId) {
@@ -99,21 +96,12 @@ class ChirpController extends ChangeNotifier {
     log.i("🚀 [Serviços] Iniciando motores do bando...");
 
     try {
-      _flockManager.init();
+      await _tielsRepo.list();
+      _tielsRepo.cached.updateAll((_, tiel) => tiel.copyWith(status: .away));
 
-      await _hydrateTiels();
       await _hydrateMessages();
 
       notifyListeners();
-
-      await _flockDiscovery.advertise(_me.id, _me.name);
-      await _flockDiscovery.discover((String id, String name, String address) {
-        _onTielFound(id, name, address);
-      });
-
-      _cleanupTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-        updateTielsStatus();
-      });
 
       log.i("✅ [Serviços] Bando pronto para voar.");
     } catch (e) {
@@ -144,29 +132,6 @@ class ChirpController extends ChangeNotifier {
       log.i("✨ [Chat] Mensagem entregue ao bando para ${tiel.name}");
     } catch (e) {
       log.e("💥 [Chat] Erro no envio seguro para ${tiel.name}", error: e);
-    }
-  }
-
-  void updateTielsStatus() {
-    final now = DateTime.now();
-    final birdsGoneAway = <String>[];
-
-    _tiels.updateAll((id, tiel) {
-      if (tiel.status == TielStatus.away) return tiel;
-
-      if (now.difference(tiel.lastSeen).inSeconds > 120) {
-        birdsGoneAway.add(tiel.name);
-        return tiel.copyWith(status: TielStatus.away);
-      }
-
-      return tiel;
-    });
-
-    if (birdsGoneAway.isNotEmpty) {
-      log.d(
-        "💤 [Status] ${birdsGoneAway.length} Tiels ficaram inativos: ${birdsGoneAway.join(', ')}",
-      );
-      notifyListeners();
     }
   }
 
@@ -228,22 +193,6 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
-  Future<void> _hydrateTiels() async {
-    try {
-      log.d("[Hidratação] Hidratando lista de tiels");
-
-      final tiels = await _tielsRepo.list();
-
-      for (var tiel in tiels) {
-        _tiels.update(tiel.id, (t) => t.copyWith(status: .away));
-      }
-
-      log.d("[Hidratação] Lista de tiels hidratadas.");
-    } catch (e) {
-      log.e("[Hidratação] Erro ao hidratar lista de tiels: $e");
-    }
-  }
-
   void _setupListeners() {
     _flockManager.packets.listen((dynamic rawData) {
       try {
@@ -258,18 +207,11 @@ class ChirpController extends ChangeNotifier {
   void _processIncomingPacket(ChirpPacket packet) {
     switch (packet) {
       case ChirpRequestPacket():
-        _friendshipCtrl.handlePendingRequest(packet);
+        _friendshipCtrl.handlePendingFriendship(packet);
         break;
 
       case ChirpAcceptPacket():
-        _tiels.update(
-          packet.fromId,
-          (t) => t.copyWith(
-            publicKey: packet.publicKey,
-            status: TielStatus.connected,
-          ),
-        );
-        notifyListeners();
+        _friendshipCtrl.handleCompleteHandshake(packet);
         break;
 
       case ChirpMessagePacket():
@@ -309,45 +251,9 @@ class ChirpController extends ChangeNotifier {
     }
   }
 
-  void _onTielFound(String id, String name, String address) {
-    if (id == _me.id) return;
-
-    _tiels.upsert(
-      id,
-      create: () {
-        log.d("🐣 [Radar] Novo Tiel descoberto: $name ($id) em $address");
-        return Tiel(
-          id: id,
-          name: name,
-          address: address,
-          lastSeen: DateTime.now(),
-          status: TielStatus.discovered,
-        );
-      },
-      update: (existing) {
-        log.d("📡 [Radar] Ping de presença: $name ($id)");
-
-        final newStatus = existing.publicKey != null
-            ? TielStatus.connected
-            : TielStatus.discovered;
-
-        return existing.copyWith(
-          name: name,
-          address: address,
-          lastSeen: DateTime.now(),
-          status: newStatus,
-        );
-      },
-    );
-
-    notifyListeners();
-  }
-
   @override
   void dispose() {
-    _flockDiscovery.stop();
     _flockManager.dispose();
-    _cleanupTimer?.cancel();
 
     super.dispose();
   }

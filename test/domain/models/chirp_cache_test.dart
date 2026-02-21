@@ -1,4 +1,4 @@
-import 'package:chirp/domain/models/chirp_cache.dart';
+import 'package:chirp/infrastructure/data/chirp_cache.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 

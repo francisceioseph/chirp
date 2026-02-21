@@ -4,6 +4,7 @@ abstract class ISecureNest {
   Future<void> setup();
 
   Future<void> save(String boxName, String id, Map<String, dynamic> data);
+  Future<Map<String, dynamic>?> get(String boxName, String id);
   Future<List<Map<String, dynamic>>> getAll(String boxName);
   Future<void> delete(String boxName, String id);
   Future<void> deleteAll(String boxName);
@@ -41,5 +42,10 @@ class SecureNestService implements ISecureNest {
   @override
   Future<void> deleteAll(String boxName) async {
     await _port.deleteAll(boxName);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> get(String boxName, String id) {
+    return _port.get(boxName, id);
   }
 }

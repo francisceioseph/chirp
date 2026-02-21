@@ -6,4 +6,5 @@ abstract class SecureNestPort {
   Future<List<Map<String, dynamic>>> getAll(String boxName);
   Future<void> delete(String boxName, String id);
   Future<void> deleteAll(String boxName);
+  Future<void> close(String boxName);
 }
