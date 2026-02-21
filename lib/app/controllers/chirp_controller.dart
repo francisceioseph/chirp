@@ -98,10 +98,7 @@ class ChirpController extends ChangeNotifier {
     log.i("🚀 [Serviços] Iniciando motores do bando...");
 
     try {
-      _tielsRepo.cached.updateAll(
-        (_, tiel) => tiel.copyWith(status: TielStatus.away),
-      );
-
+      _flockManager.init();
       await _hydrateMessages();
 
       notifyListeners();
