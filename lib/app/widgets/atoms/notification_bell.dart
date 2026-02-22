@@ -7,6 +7,10 @@ class NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final icon = notificationCount > 0
+        ? Icons.notifications_active_outlined
+        : Icons.notifications_none_outlined;
+
     return Padding(
       padding: const EdgeInsets.only(right: 12.0),
       child: Badge(
@@ -14,7 +18,7 @@ class NotificationBell extends StatelessWidget {
         label: Text(notificationCount.toString()),
         backgroundColor: Colors.redAccent,
         child: IconButton(
-          icon: const Icon(Icons.notifications_none_rounded, size: 28),
+          icon: Icon(icon, size: 28),
           onPressed: () => Scaffold.of(context).openEndDrawer(),
         ),
       ),
