@@ -8,6 +8,7 @@ class ChirpAvatar extends StatelessWidget {
   final AvatarType type;
   final double radius;
   final Widget? badge;
+  final String? heroTag;
 
   const ChirpAvatar({
     super.key,
@@ -16,6 +17,7 @@ class ChirpAvatar extends StatelessWidget {
     this.type = AvatarType.tiel,
     this.radius = 16,
     this.badge,
+    this.heroTag,
   });
 
   @override
@@ -23,10 +25,26 @@ class ChirpAvatar extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    Widget avatarCore = _buildCircle(colorScheme, theme);
+
+    if (heroTag != null) {
+      avatarCore = Hero(
+        tag: heroTag!,
+        flightShuttleBuilder: (context, animation, direction, from, to) {
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (context, child) =>
+                Material(type: MaterialType.transparency, child: to.widget),
+          );
+        },
+        child: avatarCore,
+      );
+    }
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        _buildCircle(colorScheme, theme),
+        avatarCore,
         if (badge != null) Positioned(bottom: -2, right: -2, child: badge!),
       ],
     );

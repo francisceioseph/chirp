@@ -1,3 +1,4 @@
+import 'package:chirp/app/widgets/screens/home/widgets/organisms/chirp_user_control_tile.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/conversation_list.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/friend_list.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/nearby_tiels_list.dart';
@@ -8,6 +9,8 @@ class FlockPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return DefaultTabController(
       length: 3,
       child: Column(
@@ -41,6 +44,16 @@ class FlockPanel extends StatelessWidget {
               ],
             ),
           ),
+
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: 32,
+            endIndent: 32,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+          ),
+
+          ChirpUserControlTile(),
         ],
       ),
     );
