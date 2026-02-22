@@ -33,9 +33,9 @@ class SecureNestHiveAdapter implements SecureNestPort {
   @override
   Future<Map<String, dynamic>?> get(String boxName, String id) async {
     final box = await _getBox(boxName);
-    final map = box.get(id) ?? {};
+    final map = box.get(id);
 
-    return Map<String, dynamic>.from(map);
+    return map != null ? Map<String, dynamic>.from(map) : null;
   }
 
   @override

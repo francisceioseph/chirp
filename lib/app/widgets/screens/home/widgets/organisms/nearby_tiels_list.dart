@@ -1,5 +1,6 @@
 import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/themes/chirp_panel_theme.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/atoms/empty_state.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/molecules/nearby_tiel_list_tile.dart';
 import 'package:chirp/config/dependency_manager.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,10 @@ class NearbyTielsList extends StatelessWidget {
     return ListenableBuilder(
       listenable: getIt<FriendshipController>(),
       builder: (context, _) {
+        if (ctrl.nearbyTiels.isEmpty) {
+          return EmptyState(icon: Icons.radar, text: "Nenhum amigo próximo...");
+        }
+
         return ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: true),
           child: ListView.separated(

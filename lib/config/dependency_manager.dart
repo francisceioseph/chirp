@@ -1,3 +1,4 @@
+import 'package:chirp/app/controllers/chat_controller.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/controllers/presence_controller.dart';
@@ -6,6 +7,7 @@ import 'package:chirp/domain/ports/file_picker_port.dart';
 import 'package:chirp/domain/ports/secure_nest_port.dart';
 import 'package:chirp/domain/usecases/chat/offer_file_use_case.dart';
 import 'package:chirp/domain/usecases/chat/open_file_picker_use_case.dart';
+import 'package:chirp/domain/usecases/chat/open_or_create_conversation_use_case.dart';
 import 'package:chirp/domain/usecases/chat/parse_incoming_packet_use_case.dart';
 import 'package:chirp/domain/usecases/chat/receive_chirp_use_case.dart';
 import 'package:chirp/domain/usecases/chat/send_chirp_use_case.dart';
@@ -92,8 +94,17 @@ class DependencyManager {
     getIt.registerLazySingleton(
       () => SendChirpUseCase(
         flockManager: getIt(),
-        msgRepo: getIt<MessageNestRepository>(),
+        tielRepo: getIt(),
+        msgRepo: getIt(),
         me: getIt(),
+      ),
+    );
+
+    getIt.registerLazySingleton(
+      () => OpenOrCreateConversationUseCase(
+        me: getIt(),
+        conversationRepo: getIt(),
+        particpantRepo: getIt(),
       ),
     );
 
@@ -143,6 +154,14 @@ class DependencyManager {
         flockDiscovery: getIt(),
         tielFoundUseCase: getIt(),
         updateTielsStatusUseCase: getIt(),
+      ),
+    );
+
+    getIt.registerLazySingleton(
+      () => ChatController(
+        conversationRepo: getIt(),
+        openOrCreateConversationUseCase: getIt(),
+        sendChirpUseCase: getIt(),
       ),
     );
 

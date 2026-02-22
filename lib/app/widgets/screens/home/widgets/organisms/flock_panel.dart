@@ -1,3 +1,5 @@
+import 'package:chirp/app/widgets/screens/home/widgets/organisms/conversation_list.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/organisms/friend_list.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/nearby_tiels_list.dart';
 import 'package:flutter/material.dart';
 
@@ -7,41 +9,49 @@ class FlockPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Column(
         children: [
           TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: 16,
+            ),
+            dividerColor: Colors.transparent,
             tabs: [
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.chat_bubble_outline, size: 18),
-                    SizedBox(width: 8),
-                    Text('Conversas'),
-                  ],
-                ),
-              ),
-
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.radar, size: 18),
-                    SizedBox(width: 8),
-                    Text('No Radar'),
-                  ],
-                ),
-              ),
+              _buildTab(Icons.chat_bubble_outline, 'Conversas'),
+              _buildTab(Icons.people_outline, 'Amigos'),
+              _buildTab(Icons.radar, 'Radar'),
             ],
           ),
 
           Expanded(
             child: TabBarView(
-              children: [const Placeholder(), const NearbyTielsList()],
+              children: [
+                const ConversationList(),
+                const FriendList(),
+                const NearbyTielsList(),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTab(IconData icon, String label) {
+    return Tab(
+      child: Row(
+        mainAxisSize:
+            MainAxisSize.min, // Crucial: A Row só ocupa o espaço necessário
+        children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(label)],
       ),
     );
   }
