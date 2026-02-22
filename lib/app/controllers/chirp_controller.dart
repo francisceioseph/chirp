@@ -110,31 +110,31 @@ class ChirpController extends ChangeNotifier {
   }
 
   Future<void> sendChirp(String targetId, String text) async {
-    final tiel = _tiels[targetId];
+    // final tiel = _tiels[targetId];
 
-    if (tiel == null ||
-        tiel.publicKey == null ||
-        tiel.status != TielStatus.connected) {
-      log.w(
-        "🚫 [Chat] Tentativa de envio negada: ${tiel?.name ?? targetId} não está conectado.",
-      );
-      return;
-    }
+    // if (tiel == null ||
+    //     tiel.publicKey == null ||
+    //     tiel.status != TielStatus.connected) {
+    //   log.w(
+    //     "🚫 [Chat] Tentativa de envio negada: ${tiel?.name ?? targetId} não está conectado.",
+    //   );
+    //   return;
+    // }
 
-    try {
-      log.d(
-        "📤 [Chat] Criptografando e enviando mensagem para ${tiel.name}...",
-      );
+    // try {
+    //   log.d(
+    //     "📤 [Chat] Criptografando e enviando mensagem para ${tiel.name}...",
+    //   );
 
-      final message = await _sendChirpUseCase.execute(tiel, text);
+    //   final message = await _sendChirpUseCase.execute(tiel, text);
 
-      _messages.add(targetId, message);
-      notifyListeners();
+    //   _messages.add(targetId, message);
+    //   notifyListeners();
 
-      log.i("✨ [Chat] Mensagem entregue ao bando para ${tiel.name}");
-    } catch (e) {
-      log.e("💥 [Chat] Erro no envio seguro para ${tiel.name}", error: e);
-    }
+    //   log.i("✨ [Chat] Mensagem entregue ao bando para ${tiel.name}");
+    // } catch (e) {
+    //   log.e("💥 [Chat] Erro no envio seguro para ${tiel.name}", error: e);
+    // }
   }
 
   Future<void> pickAndOfferFile(String targetId) async {

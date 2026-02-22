@@ -33,13 +33,24 @@ class FriendshipController extends ChangeNotifier {
         .toList();
   }
 
-  List<Tiel> get nearbyTiels => _tielsRepo.cached.values
-      .where(
-        (tiel) =>
-            tiel.status == TielStatus.discovered ||
-            tiel.status == TielStatus.pending,
-      )
-      .toList();
+  List<Tiel> get nearbyTiels =>
+      _tielsRepo.cached.values.where((tiel) => tiel.publicKey == null).toList();
+
+  Map<String, List<Tiel>> get groupedFriends {
+    final allFriends =
+        _tielsRepo.cached.values.where((t) => t.publicKey != null).toList()
+          ..sort(
+            (a, b) => a.name.toUpperCase().compareTo(b.name.toUpperCase()),
+          );
+
+    return allFriends.fold<Map<String, List<Tiel>>>({}, (map, tiel) {
+      final char = tiel.name.isEmpty ? "?" : tiel.name[0].toUpperCase();
+
+      (map[char] ??= []).add(tiel);
+
+      return map;
+    });
+  }
 
   int get notificationCount => pendingRequests.length;
 

@@ -1,4 +1,5 @@
 import 'package:chirp/app/themes/chirp_panel_theme.dart';
+import 'package:chirp/app/widgets/atoms/chirp_avatar.dart';
 import 'package:chirp/domain/entities/tiel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/atoms/tiel_status_badge.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +39,14 @@ class NearbyTielListTile extends StatelessWidget {
         ),
         child: ListTile(
           contentPadding: const EdgeInsets.only(left: 12, right: 4),
-          leading: _buildAvatar(colorScheme),
+          leading: ChirpAvatar(
+            imageUrl: tiel.avatar,
+            name: tiel.name,
+            badge: TielStatusBadge(
+              badgeColor: tiel.getStatusColor(colorScheme),
+              status: tiel.status,
+            ),
+          ),
           title: Tooltip(
             message: tiel.name,
             child: Text(
@@ -59,27 +67,6 @@ class NearbyTielListTile extends StatelessWidget {
           trailing: _buildActionButton(theme),
         ),
       ),
-    );
-  }
-
-  Widget _buildAvatar(ColorScheme colorScheme) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: Colors.grey.shade800,
-          backgroundImage: NetworkImage(tiel.avatar),
-        ),
-        Positioned(
-          bottom: -2,
-          right: -2,
-          child: TielStatusBadge(
-            badgeColor: tiel.getStatusColor(colorScheme),
-            status: tiel.status,
-          ),
-        ),
-      ],
     );
   }
 
