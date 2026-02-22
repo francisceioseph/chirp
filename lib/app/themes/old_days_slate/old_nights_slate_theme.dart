@@ -20,7 +20,7 @@ class OldNightsSlateTheme extends ChirpThemeBase {
         primary: winGreen,
         surface: Color(0xFF121212),
       ),
-      textTheme: GoogleFonts.vt323TextTheme(
+      textTheme: GoogleFonts.notoSansTextTheme(
         base.textTheme,
       ), // Fonte pixelada para o look retrô total
       appBarTheme: ChirpThemeBase.baseAppBar(winBlack, winGreen),

@@ -2,6 +2,7 @@ import 'package:chirp/app/controllers/chat_controller.dart';
 import 'package:chirp/app/controllers/chirp_controller.dart';
 import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/controllers/presence_controller.dart';
+import 'package:chirp/app/controllers/theme_controller.dart';
 import 'package:chirp/domain/entities/identity.dart';
 import 'package:chirp/domain/ports/file_picker_port.dart';
 import 'package:chirp/domain/ports/secure_nest_port.dart';
@@ -27,6 +28,7 @@ import 'package:chirp/infrastructure/services/flock_manager.dart';
 import 'package:chirp/infrastructure/services/identity_service.dart';
 import 'package:chirp/infrastructure/services/secure_nest.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final getIt = GetIt.instance;
 
@@ -47,11 +49,13 @@ class DependencyManager {
     await secureNest.setup();
     getIt.registerLazySingleton<ISecureNest>(() => secureNest);
 
+    final prefs = await SharedPreferences.getInstance();
+
     _registerRepositories();
     _registerP2PServices();
     _registerFileServices();
     _registerUseCases();
-    _registerControllers();
+    _registerControllers(prefs);
 
     await _warmupCaches();
   }
@@ -138,7 +142,7 @@ class DependencyManager {
     );
   }
 
-  void _registerControllers() {
+  void _registerControllers(SharedPreferences prefs) {
     getIt.registerLazySingleton(
       () => FriendshipController(
         confirmFriendshipUseCase: getIt(),
@@ -164,6 +168,8 @@ class DependencyManager {
         sendChirpUseCase: getIt(),
       ),
     );
+
+    getIt.registerLazySingleton(() => ThemeController(prefs: prefs));
 
     getIt.registerFactory(
       () => ChirpController(

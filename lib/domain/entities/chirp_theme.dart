@@ -8,6 +8,7 @@ enum ChirpThemeFamily {
   human,
   symbian,
   foundation,
+  mightyCats,
 }
 
 class ChirpTheme {

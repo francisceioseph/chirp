@@ -4,6 +4,8 @@ import 'package:chirp/app/themes/foundation_slate/foundation_day_slate_themee.da
 import 'package:chirp/app/themes/foundation_slate/foundation_night_slate_theme.dart';
 import 'package:chirp/app/themes/human_slate/human_day_slate_theme.dart';
 import 'package:chirp/app/themes/human_slate/human_night_slate_theme.dart';
+import 'package:chirp/app/themes/mighty_cats/mighty_cats_day_slate_theme.dart';
+import 'package:chirp/app/themes/mighty_cats/mighty_cats_night_slate_theme.dart';
 import 'package:chirp/app/themes/old_days_slate/old_days_slate_theme.dart';
 import 'package:chirp/app/themes/old_days_slate/old_nights_slate_theme.dart';
 import 'package:chirp/app/themes/skylight_themes/skylight_slate_theme.dart';
@@ -62,7 +64,17 @@ class ChirpThemeCatalog {
       light: FoundationDaySlateTheme.theme,
       dark: FoundationNightSlateTheme.theme,
     ),
+    ChirpTheme(
+      id: "mighty_cats",
+      name: "Mighty Cats",
+      description: "O rugido do skeuomorfismo. Alumínio e vidro clássicos.",
+      family: ChirpThemeFamily.mightyCats,
+      light: MightyCatsDaySlateTheme.theme,
+      dark: MightyCatsNightSlateTheme.theme,
+    ),
   ];
+
+  static ChirpTheme get defaultTheme => all[0];
 
   static ChirpTheme findById(String id) =>
       all.firstWhere((t) => t.id == id, orElse: () => all.first);

@@ -85,7 +85,9 @@ class _SettingsMenu extends StatelessWidget {
       menuChildren: [
         MenuItemButton(
           leadingIcon: const Icon(Icons.palette_outlined),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, ChirpRoutes.themes);
+          },
           child: const Text("Temas"),
         ),
         MenuItemButton(
