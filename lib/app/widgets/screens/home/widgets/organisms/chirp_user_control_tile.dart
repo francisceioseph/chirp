@@ -14,35 +14,33 @@ class ChirpUserControlTile extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final identity = getIt<Identity>();
 
+    final bool isMobile = MediaQuery.sizeOf(context).width < 600;
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: _buildAvatar(context, identity),
       title: _buildTitle(theme, identity.name),
       subtitle: _buildSubtitle(theme, colorScheme),
-      trailing: _SettingsMenu(colorScheme: colorScheme),
+      trailing: isMobile ? null : _SettingsMenu(colorScheme: colorScheme),
+      onTap: isMobile ? () => _navigateToProfile(context, identity) : null,
+    );
+  }
+
+  void _navigateToProfile(BuildContext context, Identity me) {
+    Navigator.pushNamed(
+      context,
+      ChirpRoutes.profile,
+      arguments: ChirpMember.fromIdentity(me),
     );
   }
 
   Widget _buildAvatar(BuildContext context, Identity me) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          ChirpRoutes.profile,
-          arguments: ChirpMember.fromIdentity(me),
-        );
-      },
-      child: ChirpAvatar(
-        name: me.name,
-        imageUrl: "https://api.dicebear.com/7.x/adventurer/png?seed=${me.name}",
-        radius: 18,
-        heroTag: 'profile_avatar_${me.id}',
-        badge: const CircleAvatar(
-          radius: 5,
-          backgroundColor: Colors.greenAccent,
-        ),
-      ),
+    return ChirpAvatar(
+      name: me.name,
+      imageUrl: "https://api.dicebear.com/7.x/adventurer/png?seed=${me.name}",
+      radius: 18,
+      heroTag: 'profile_avatar_${me.id}',
+      badge: const CircleAvatar(radius: 5, backgroundColor: Colors.greenAccent),
     );
   }
 

@@ -27,7 +27,7 @@ class NotificationHeader extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            "Pios de Amizade",
+            "Notificações",
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),

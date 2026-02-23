@@ -1,5 +1,6 @@
 import 'package:chirp/app/controllers/friendship_controller.dart';
 import 'package:chirp/app/widgets/molecules/invitation_item.dart';
+import 'package:chirp/app/widgets/screens/home/widgets/atoms/empty_state.dart';
 import 'package:chirp/config/dependency_manager.dart';
 import 'package:chirp/utils/app_logger.dart';
 import 'package:flutter/material.dart';
@@ -14,14 +15,9 @@ class NotificationList extends StatelessWidget {
     final requests = friendshipCtrl.pendingRequests;
 
     if (requests.isEmpty) {
-      return const Center(
-        child: Opacity(
-          opacity: 0.5,
-          child: Text(
-            "Ninguém cantando por aqui...",
-            style: TextStyle(fontStyle: FontStyle.italic),
-          ),
-        ),
+      return EmptyState(
+        icon: Icons.notifications_off_outlined,
+        text: "Ninguém piando por aqui...",
       );
     }
 
