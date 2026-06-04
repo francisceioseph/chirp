@@ -1,4 +1,4 @@
-import 'package:chirp/app/controllers/chirp_controller.dart';
+import 'package:chirp/app/controllers/chat_controller.dart';
 import 'package:chirp/app/widgets/atoms/chirp_panel.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_input.dart';
 import 'package:chirp/app/widgets/screens/home/widgets/organisms/message_list.dart';
@@ -12,10 +12,10 @@ class ChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ChirpController>();
+    final chatCtrl = context.watch<ChatController>();
     final theme = Theme.of(context);
 
-    final conversation = controller.getConversationFor(conversationId);
+    final conversation = chatCtrl.conversation;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -25,7 +25,7 @@ class ChatScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () {
-            context.read<ChirpController>().selectChat(null);
+            context.read<ChatController>().selectedConversationId = null;
             Navigator.pop(context);
           },
         ),
@@ -64,15 +64,20 @@ class ChatScreen extends StatelessWidget {
             child: ChirpPanel(
               child: Column(
                 children: [
-                  Expanded(
-                    child: MessageList(
-                      messages: controller.getMessagesFor(conversationId),
-                    ),
-                  ),
+                  Expanded(child: MessageList(messages: chatCtrl.messages)),
 
                   MessageInput(
-                    onSend: (text) =>
-                        controller.sendChirp(conversationId, text),
+                    onSend: (text) {
+                      final conversation = chatCtrl.conversation;
+
+                      if (conversation != null) {
+                        chatCtrl.sendChirp(
+                          conversationId: conversation.id,
+                          text: text,
+                          targetId: conversation.targetId,
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
