@@ -46,6 +46,7 @@ class ConversationList extends StatelessWidget {
                 indent: 72, // Alinhado com o início do texto após o avatar
                 endIndent: 16,
                 thickness: 0.5,
+
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
               );
             },
