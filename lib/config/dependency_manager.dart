@@ -120,11 +120,15 @@ class DependencyManager {
     );
 
     getIt.registerLazySingleton(
-      () => OpenFilePickerUseCase(filePicker: getIt()),
+      () => OpenFilePickerUseCase(filePicker: getIt(), tielRepo: getIt()),
     );
 
     getIt.registerLazySingleton(
-      () => OfferFileUseCase(flockManager: getIt(), me: getIt()),
+      () => OfferFileUseCase(
+        flockManager: getIt(),
+        me: getIt(),
+        tielRepo: getIt(),
+      ),
     );
 
     getIt.registerLazySingleton(() => ParseIncomingPacketUseCase());
@@ -164,8 +168,12 @@ class DependencyManager {
     getIt.registerLazySingleton(
       () => ChatController(
         conversationRepo: getIt(),
-        openOrCreateConversationUseCase: getIt(),
+        msgRepo: getIt(),
         sendChirpUseCase: getIt(),
+        receiveChirpUseCase: getIt(),
+        openOrCreateConversationUseCase: getIt(),
+        offerFileUseCase: getIt(),
+        openFilePickerUseCase: getIt(),
       ),
     );
 
@@ -173,13 +181,9 @@ class DependencyManager {
 
     getIt.registerFactory(
       () => ChirpController(
-        flockManager: getIt(),
         me: getIt(),
-        messagesRepository: getIt<MessageNestRepository>(),
+        flockManager: getIt(),
         tielsRepository: getIt<TielNestRepository>(),
-        sendChirpUseCase: getIt(),
-        offerFileUseCase: getIt(),
-        openFilePickerUseCase: getIt(),
         parseIncomingPacketUseCase: getIt(),
         receiveChirpUseCase: getIt(),
         friendshipCtrl: getIt(),

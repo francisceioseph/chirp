@@ -12,15 +12,15 @@ class ConversationList extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final panelTheme = theme.extension<ChirpPanelTheme>();
-    final ctrl = getIt<ChatController>();
+    final chatCtrl = getIt<ChatController>();
 
     final bool showDivider =
         panelTheme?.blurSigma != null && panelTheme!.blurSigma! > 0;
 
     return ListenableBuilder(
-      listenable: ctrl,
+      listenable: chatCtrl,
       builder: (context, _) {
-        final conversations = ctrl.conversations;
+        final conversations = chatCtrl.conversations;
 
         if (conversations.isEmpty) {
           return EmptyState(
@@ -51,11 +51,14 @@ class ConversationList extends StatelessWidget {
             },
             itemBuilder: (context, index) {
               final conversation = conversations[index];
+              final selectedChatId = chatCtrl.conversation?.id;
+              final isSelected = selectedChatId == conversation.id;
 
               return ConversationListTile(
                 conversation: conversation,
+                isSelected: isSelected,
                 onTap: () {
-                  ctrl.activeConversationId = conversation.id;
+                  chatCtrl.selectedConversationId = conversation.id;
                 },
               );
             },
