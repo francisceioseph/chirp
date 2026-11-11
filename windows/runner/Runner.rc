@@ -89,7 +89,7 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Psito Chirp" "\0"
+            VALUE "CompanyName", "Psito" "\0"
             VALUE "FileDescription", "Psito Chirp" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "psito_chirp" "\0"
