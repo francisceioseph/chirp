@@ -14,7 +14,8 @@
 //!
 //! Para mandar, o nó esvazia a caixa de saída de cada contato numa conexão, na ordem,
 //! e só tira um envelope com o `Ack`. Tenta de novo a cada `RETRY_INTERVAL`, quando
-//! o contato fala com a gente e quando há algo novo na caixa.
+//! o contato fala com a gente, quando a descoberta (mDNS, `discovery`) o acha num
+//! endereço novo e quando há algo novo na caixa.
 
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
@@ -27,6 +28,7 @@ use iroh::{Endpoint, EndpointAddr, EndpointId, SecretKey};
 use tokio::sync::{broadcast, mpsc};
 
 use crate::contacts::{self, Contact, ContactState};
+use crate::discovery;
 use crate::error::{CoreError, CoreResult};
 use crate::invite::Invite;
 use crate::messages::{self, Effect};
@@ -49,6 +51,8 @@ const MAX_MESSAGES: usize = 1024;
 const RETRY_INTERVAL: Duration = Duration::from_secs(20);
 /// Um contato que falou com a gente (ou recebeu) há menos que isso está online.
 const ONLINE_FOR: Duration = Duration::from_secs(90);
+/// De quanto em quanto tempo o anúncio do mDNS é conferido (a época, os endereços).
+const ANNOUNCE_CHECK: Duration = Duration::from_secs(60);
 
 /// O que muda no núcleo sem a UI pedir.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,11 +78,15 @@ pub struct Node {
     flushing: Mutex<(HashSet<i64>, HashSet<i64>)>,
     /// Quando cada contato falou com a gente (ou recebeu) pela última vez.
     seen: Mutex<HashMap<i64, Instant>>,
+    /// O mDNS, quando o sistema deixa (no iOS, pede uma permissão da Apple).
+    mdns: Option<mdns_sd::ServiceDaemon>,
+    /// O anúncio de agora: o nome completo, o token e os endereços.
+    announced: Mutex<Option<(String, String, Vec<SocketAddr>)>>,
 }
 
 /// Um endereço da rede local: IPv4 privado (RFC 1918) ou IPv6 local único (fc00::/7).
 /// O link-local do IPv6 fica de fora, porque sem a interface não se usa.
-fn is_local(addr: &SocketAddr) -> bool {
+pub(crate) fn is_local(addr: &SocketAddr) -> bool {
     match addr.ip() {
         std::net::IpAddr::V4(ip) => ip.is_private(),
         std::net::IpAddr::V6(ip) => (ip.segments()[0] & 0xfe00) == 0xfc00,
@@ -164,11 +172,124 @@ impl Node {
             wake,
             flushing: Mutex::new((HashSet::new(), HashSet::new())),
             seen: Mutex::new(HashMap::new()),
+            mdns: mdns_sd::ServiceDaemon::new().ok(),
+            announced: Mutex::new(None),
         });
         tokio::spawn(node.clone().accept_loop());
         tokio::spawn(node.clone().delivery_loop(woken));
         tokio::spawn(node.clone().announce());
+        tokio::spawn(node.clone().discovery_loop());
         Ok(node)
+    }
+
+    fn now_secs() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
+    }
+
+    /// Anuncia pelo mDNS e procura os contatos, enquanto o nó estiver ligado.
+    async fn discovery_loop(self: Arc<Self>) {
+        let Some(daemon) = self.mdns.as_ref() else {
+            return;
+        };
+        let Ok(found) = daemon.browse(discovery::SERVICE) else {
+            return;
+        };
+        let mut tick = tokio::time::interval(ANNOUNCE_CHECK);
+        loop {
+            tokio::select! {
+                _ = tick.tick() => {
+                    if self.endpoint.is_closed() {
+                        return;
+                    }
+                    self.announce_mdns();
+                }
+                event = found.recv_async() => match event {
+                    Ok(mdns_sd::ServiceEvent::ServiceResolved(service)) => {
+                        let ips = service.addresses.iter().map(|ip| ip.to_ip_addr());
+                        let addrs = discovery::usable(ips, service.port);
+                        let _ = self.found(&service.fullname, addrs).await;
+                    }
+                    Ok(_) => {}
+                    Err(_) => return,
+                },
+            }
+        }
+    }
+
+    /// O anúncio desta época, com os endereços de agora. Só refaz quando muda.
+    fn announce_mdns(&self) {
+        let Some(daemon) = self.mdns.as_ref() else {
+            return;
+        };
+        let token = discovery::token(&self.discovery_key, discovery::epoch(Self::now_secs()));
+        let addrs = self.addrs();
+        let Ok(mut announced) = self.announced.lock() else {
+            return;
+        };
+        if let Some((_, old_token, old_addrs)) = announced.as_ref() {
+            if *old_token == token && *old_addrs == addrs {
+                return;
+            }
+        }
+        if let Some((fullname, _, _)) = announced.take() {
+            let _ = daemon.unregister(&fullname);
+        }
+        let Some(port) = addrs.first().map(|a| a.port()) else {
+            return;
+        };
+        let ips: Vec<std::net::IpAddr> = addrs.iter().map(|a| a.ip()).collect();
+        let Ok(service) = mdns_sd::ServiceInfo::new(
+            discovery::SERVICE,
+            &token,
+            &format!("{token}.local."),
+            ips.as_slice(),
+            port,
+            None::<HashMap<String, String>>,
+        ) else {
+            return;
+        };
+        let fullname = service.get_fullname().to_owned();
+        if daemon.register(service).is_ok() {
+            *announced = Some((fullname, token, addrs));
+        }
+    }
+
+    /// Um anúncio na rede: se o token é de um contato, os endereços dele vão para a
+    /// frente da lista, e o que esperava por ele sai.
+    async fn found(&self, fullname: &str, addrs: Vec<SocketAddr>) -> CoreResult<()> {
+        let Some(token) = discovery::instance(fullname).map(str::to_owned) else {
+            return Ok(());
+        };
+        if addrs.is_empty() {
+            return Ok(());
+        }
+        let now = Self::now_secs();
+        let contact = with_store(&self.store, move |s| {
+            let contacts = contacts::list(s.conn())?;
+            let Some(id) = discovery::owner(
+                contacts
+                    .iter()
+                    .filter(|c| c.state == ContactState::Established)
+                    .map(|c| (c.id, c.discovery_key.as_slice())),
+                &token,
+                now,
+            ) else {
+                return Ok(None);
+            };
+            // Na ordem inversa, para o primeiro anunciado ficar na frente.
+            for addr in addrs.iter().rev() {
+                contacts::learn_addr(s.conn(), id, &addr.to_string())?;
+            }
+            Ok(Some(id))
+        })
+        .await?;
+        if let Some(id) = contact {
+            self.flush(id);
+        }
+        Ok(())
     }
 
     /// Diz a cada contato que o aparelho está aqui: uma conexão sem nada dentro, que
@@ -604,6 +725,12 @@ impl Node {
     }
 
     pub async fn close(&self) {
+        if let Some(daemon) = self.mdns.as_ref() {
+            if let Ok(Some((fullname, _, _))) = self.announced.lock().map(|mut a| a.take()) {
+                let _ = daemon.unregister(&fullname);
+            }
+            let _ = daemon.shutdown();
+        }
         self.endpoint.close().await;
     }
 }
@@ -665,7 +792,7 @@ mod tests {
 
     /// Espera até o banco dizer o que se quer (a rede é assíncrona).
     async fn until(what: &str, mut ok: impl FnMut() -> bool) {
-        for _ in 0..200 {
+        for _ in 0..400 {
             if ok() {
                 return;
             }
@@ -781,6 +908,51 @@ mod tests {
                 .all(|(_, s)| *s == Status::Delivered)
         })
         .await;
+        alice.close().await;
+        bob.close().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn discovery_finds_a_contact_that_moved() {
+        use crate::messages::{self, Status};
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start(alice_store.clone()).await.unwrap();
+        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
+        if alice.addrs().iter().all(|a| !is_local(a)) {
+            // Sem rede local (só o loopback), não há o que anunciar.
+            return;
+        }
+        alice.close().await;
+
+        // Alice "muda de endereço": volta numa porta nova, e nenhum dos dois sabe onde
+        // o outro está (o aviso ao ligar não chega a Bob).
+        let wrong = "192.0.2.1:9";
+        for store in [&alice_store, &bob_store] {
+            store
+                .lock()
+                .unwrap()
+                .conn()
+                .execute("UPDATE contacts SET addrs = ?1", [wrong])
+                .unwrap();
+        }
+        alice_store
+            .lock()
+            .unwrap()
+            .conn()
+            .execute("UPDATE local_keys SET port = 0", [])
+            .unwrap();
+        let alice = Node::start(alice_store.clone()).await.unwrap();
+        alice.announce_mdns();
+
+        // Bob escreve: só o mDNS diz a ele onde Alice está agora.
+        messages::send_text(&mut bob_store.lock().unwrap(), alice_at_bob, "achei", None).unwrap();
+        bob.flush(alice_at_bob);
+        until("discovery delivers", || {
+            texts(&bob_store, alice_at_bob) == [("achei".to_owned(), Status::Delivered)]
+        })
+        .await;
+        assert_eq!(texts(&alice_store, bob_at_alice).len(), 1);
         alice.close().await;
         bob.close().await;
     }

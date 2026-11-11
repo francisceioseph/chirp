@@ -138,7 +138,27 @@ Um contato que conecta mostra também de onde fala: o endereço vai para a frent
 
 - A porta UDP fica guardada no banco e é a mesma na próxima abertura (se estiver ocupada, vai outra, que fica guardada). Assim, o endereço que os contatos têm continua valendo.
 - Ao ligar, o nó abre uma conexão vazia com cada contato: quem recebe aprende o endereço de agora e entrega o que esperava.
-- Se os dois aparelhos mudam de IP ao mesmo tempo, eles não se acham até a descoberta por mDNS (a seguir).
+- Se os dois aparelhos mudam de IP ao mesmo tempo, quem os junta de novo é a descoberta por mDNS (a seguir).
+
+## A descoberta na rede local (mDNS)
+
+O serviço é `_chirp._udp.local.`, e o anúncio **não leva id fixo nem nome**. O nome da instância e o do host são um token de época:
+
+```
+época = segundos desde 1970 / 900          (15 minutos)
+token = hex(HMAC-SHA256(chave de descoberta, "chirp-discovery-v1" || época (u64, big-endian))[0..10])
+```
+
+- O registro leva os IPs da rede local do aparelho (os mesmos do convite) e a porta do nó; nenhum TXT.
+- A chave de descoberta (32 bytes) vai para cada contato dentro do `Peer`, cifrada, no aperto de mão. Quem acha um anúncio confere o token com o de cada contato, na época de agora e nas vizinhas (pela diferença dos relógios). Quem não é contato vê um número que muda a cada 15 minutos.
+- Achou: os endereços (só os da rede local) vão para a frente da lista do contato, e a caixa de saída dele sai.
+- O anúncio é refeito a cada época e quando os endereços mudam, e sai da rede quando o nó desliga.
+- **O anúncio não é autenticado.** Qualquer um na rede pode repetir um token que viu, com outro endereço. Ele só diz "tente aqui": a conexão confere a chave do nó, e um endereço falso dá numa conexão recusada. Repetindo sem parar, dá para empurrar os endereços verdadeiros para fora da lista (8 por contato) até o próximo anúncio verdadeiro: uma negação de serviço de dentro da rede local, onde ela já é possível de outros jeitos.
+- O mesmo IP e a mesma porta continuam ligando um anúncio ao outro para quem olha a rede: o token esconde quem é de quem não é contato, não esconde o aparelho da rede em que ele está.
+
+Vetores: `token(32 zeros, 0) = a9b1226a9e540fb5b7bb` e `token(32 × 0x07, 1888888) = 1583b99009cc653054cc` (`discovery::tests`).
+
+Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._udp` no `NSBonjourServices`; no iOS, o multicast de verdade ainda pede à Apple o entitlement `com.apple.developer.networking.multicast`. No Android, falta pegar o `MulticastLock` (a permissão já está no manifesto). Sem mDNS, o resto funciona: só não se reencontra quem mudou de IP.
 
 ## O que os testes garantem
 
@@ -152,5 +172,6 @@ Um contato que conecta mostra também de onde fala: o endereço vai para a frent
   - dados do `Peer` fora do formato.
 - `node::tests`: o mesmo sobre QUIC de verdade, entre nós no mesmo processo. O convite não serve a um terceiro, e ninguém respondendo não deixa nada no banco.
 - `messages::tests`: o texto, o entregue e o lido; sem recibos; o reenvio depois de um `ack` perdido; 30 mensagens na fila com os dois escrevendo ao mesmo tempo, na mesma ordem nos dois aparelhos; responder, editar, reagir e apagar para todos (que tira da busca); os prazos, conferidos por quem recebe; o limite do chamar atenção nos dois sentidos; o digitando; o perfil novo; textos inválidos; um estranho que não injeta mensagem; a busca sem acento nem sintaxe do FTS; as páginas do histórico; nenhum texto em claro no arquivo do banco.
-- `node::tests`: mensagens nos dois sentidos com os recibos, sobre QUIC de verdade, e a fila de quem estava desligado, entregue na ordem quando ele volta.
+- `node::tests`: mensagens nos dois sentidos com os recibos, sobre QUIC de verdade, e a fila de quem estava desligado, entregue na ordem quando ele volta. E um contato que "mudou de endereço" (porta nova, e os dois com o endereço errado um do outro), achado só pelo mDNS: com o mDNS desligado, o mesmo teste falha.
+- `discovery::tests`: o token muda com a época e com a chave, os vetores, as épocas vizinhas, um estranho que não casa com ninguém e os endereços que servem.
 - `wire::tests` e `invite::tests`: frames grandes demais, versões e lixo recusados; o convite truncado em cada posição é recusado; 20 mil entradas aleatórias não derrubam o leitor.

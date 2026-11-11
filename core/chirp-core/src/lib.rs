@@ -6,6 +6,7 @@
 pub mod api;
 
 mod contacts;
+mod discovery;
 mod error;
 mod identity;
 mod invite;

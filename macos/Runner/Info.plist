@@ -30,5 +30,11 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Psito Chirp talks to your contacts directly on the local network, without servers.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_chirp._udp</string>
+	</array>
 </dict>
 </plist>

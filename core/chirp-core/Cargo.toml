@@ -18,6 +18,7 @@ futures = "0.3.34"
 getrandom = "0.4.3"
 hmac = "0.13.0"
 iroh = { version = "1.4.1", default-features = false, features = ["tls-ring"] }
+mdns-sd = { version = "0.21.7", default-features = false, features = ["async"] }
 libsignal-protocol = { git = "https://github.com/signalapp/libsignal", tag = "v0.107.0", version = "0.1.0" }
 prost = { version = "0.14.5", default-features = false, features = ["derive", "std"] }
 rand = "0.9"
