@@ -475,4 +475,7 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
   @override
   String get glassEffectHelp =>
       'Die Leisten werden über dem, was darunter scrollt, durchscheinend. Aus, wenn das System weniger Bewegung oder mehr Kontrast verlangt.';
+
+  @override
+  String get themeSystem => 'Systemfarbe';
 }

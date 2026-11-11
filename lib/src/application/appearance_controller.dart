@@ -3,6 +3,8 @@
 // A aparência do app: o padrão até o banco abrir, depois a que está nele. Mudar
 // aparece na hora e grava; se a gravação falha, volta a de antes.
 
+import 'dart:ui' show Color;
+
 import 'package:flutter/foundation.dart';
 
 import '../core/chirp_core.dart';
@@ -12,6 +14,16 @@ class AppearanceController extends ChangeNotifier {
   Appearance get value => _value;
 
   ProfileStore? _store;
+
+  /// A cor de destaque do sistema, se ele tiver uma (o tema "Cor do sistema").
+  Color? _accent;
+  Color? get accent => _accent;
+
+  void setAccent(Color? accent) {
+    if (accent == _accent) return;
+    _accent = accent;
+    notifyListeners();
+  }
 
   /// O banco abriu (ou trocou): lê a aparência dele. Com `null` (o banco apagado),
   /// volta ao padrão.

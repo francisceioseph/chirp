@@ -4,6 +4,7 @@
 import '../../l10n/l10n.dart';
 
 String themeName(ChirpLocalizations l10n, String id) => switch (id) {
+  'system' => l10n.themeSystem,
   'wild-grey' => l10n.themeWildGrey,
   'skylight' => l10n.themeSkylight,
   'old-days' => l10n.themeOldDays,

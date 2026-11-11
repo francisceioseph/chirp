@@ -472,4 +472,7 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
   @override
   String get glassEffectHelp =>
       'As barras ficam translúcidas sobre o que passa por baixo. Fica desligado quando o sistema pede menos animação ou mais contraste.';
+
+  @override
+  String get themeSystem => 'Cor do sistema';
 }

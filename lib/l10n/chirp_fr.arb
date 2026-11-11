@@ -137,5 +137,6 @@
   "conversationPick": "Choisissez une conversation",
   "close": "Fermer",
   "glassEffect": "Effet verre",
-  "glassEffectHelp": "Les barres deviennent translucides au-dessus de ce qui défile. Désactivé quand le système demande moins d’animations ou plus de contraste."
+  "glassEffectHelp": "Les barres deviennent translucides au-dessus de ce qui défile. Désactivé quand le système demande moins d’animations ou plus de contraste.",
+  "themeSystem": "Couleur du système"
 }

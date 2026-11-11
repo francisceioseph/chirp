@@ -495,9 +495,14 @@ Future<void> pumpChirp(
   WidgetTester tester, {
   FakeCore? core,
   FakeVault? vault,
+  Color? accent,
 }) async {
   await tester.pumpWidget(
-    ChirpApp(core: core ?? FakeCore(), vault: vault ?? FakeVault()),
+    ChirpApp(
+      core: core ?? FakeCore(),
+      vault: vault ?? FakeVault(),
+      systemAccent: accent == null ? null : () async => accent,
+    ),
   );
   await tester.pumpAndSettle();
 }

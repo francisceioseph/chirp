@@ -935,6 +935,12 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Bars become translucent over what scrolls beneath. Off when the system asks for less motion or more contrast.'**
   String get glassEffectHelp;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System color'**
+  String get themeSystem;
 }
 
 class _ChirpLocalizationsDelegate

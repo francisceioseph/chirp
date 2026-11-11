@@ -107,6 +107,24 @@ const chirpThemes = <ChirpThemeSpec>[
   ),
 ];
 
-/// O tema de um id; um id desconhecido (de uma versão mais nova) vira o padrão.
-ChirpThemeSpec chirpThemeById(String id) =>
-    chirpThemes.firstWhere((t) => t.id == id, orElse: () => chirpThemes.first);
+/// O id do tema que segue a cor de destaque do sistema.
+const systemThemeId = 'system';
+
+/// O tema "Cor do sistema": a semente é a cor de destaque, no resto o padrão.
+ChirpThemeSpec systemTheme(Color accent) => ChirpThemeSpec(
+  id: systemThemeId,
+  seed: accent,
+  variant: DynamicSchemeVariant.tonalSpot,
+  radius: 16,
+  style: const ChirpStyle(bubbleRadius: 18, tailRadius: 4),
+);
+
+/// O tema de um id; um id desconhecido (de uma versão mais nova) vira o padrão, e o
+/// do sistema sem a cor do sistema (outro aparelho, um iOS) também.
+ChirpThemeSpec chirpThemeById(String id, {Color? accent}) {
+  if (id == systemThemeId && accent != null) return systemTheme(accent);
+  return chirpThemes.firstWhere(
+    (t) => t.id == id,
+    orElse: () => chirpThemes.first,
+  );
+}

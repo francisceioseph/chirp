@@ -211,5 +211,6 @@
   "conversationPick": "Pick a conversation",
   "close": "Close",
   "glassEffect": "Glass effect",
-  "glassEffectHelp": "Bars become translucent over what scrolls beneath. Off when the system asks for less motion or more contrast."
+  "glassEffectHelp": "Bars become translucent over what scrolls beneath. Off when the system asks for less motion or more contrast.",
+  "themeSystem": "System color"
 }

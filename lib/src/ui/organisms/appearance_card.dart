@@ -90,12 +90,21 @@ class AppearanceCard extends StatelessWidget {
                   spacing: 4,
                   runSpacing: 4,
                   children: [
-                    for (final spec in chirpThemes)
+                    for (final spec in [
+                      if (controller.accent case final accent?)
+                        systemTheme(accent),
+                      ...chirpThemes,
+                    ])
                       ThemeSwatch(
                         key: ValueKey(spec.id),
                         spec: spec,
                         name: themeName(l10n, spec.id),
-                        selected: chirpThemeById(value.theme).id == spec.id,
+                        selected:
+                            chirpThemeById(
+                              value.theme,
+                              accent: controller.accent,
+                            ).id ==
+                            spec.id,
                         onTap: () =>
                             _change(context, value.copyWith(theme: spec.id)),
                       ),

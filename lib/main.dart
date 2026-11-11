@@ -8,9 +8,16 @@ import 'chirp_app.dart';
 import 'src/core/chirp_core.dart';
 import 'src/logging.dart';
 import 'src/platform/key_vault.dart';
+import 'src/platform/system_accent.dart';
 
 Future<void> main() async {
   silenceLogsInRelease();
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(ChirpApp(core: await BridgeCore.open(), vault: SystemKeyVault()));
+  runApp(
+    ChirpApp(
+      core: await BridgeCore.open(),
+      vault: SystemKeyVault(),
+      systemAccent: readSystemAccent,
+    ),
+  );
 }

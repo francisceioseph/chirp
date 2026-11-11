@@ -14,10 +14,19 @@ import 'src/ui/pages/startup_page.dart';
 import 'src/ui/theme/chirp_theme.dart';
 
 class ChirpApp extends StatefulWidget {
-  const ChirpApp({super.key, required this.core, required this.vault});
+  const ChirpApp({
+    super.key,
+    required this.core,
+    required this.vault,
+    this.systemAccent,
+  });
 
   final ChirpCore core;
   final KeyVault vault;
+
+  /// Lê a cor de destaque do sistema, para o tema "Cor do sistema" (sem isso, ou
+  /// sem cor, ele não aparece).
+  final Future<Color?> Function()? systemAccent;
 
   @override
   State<ChirpApp> createState() => _ChirpAppState();
@@ -35,6 +44,7 @@ class _ChirpAppState extends State<ChirpApp> {
     super.initState();
     _startup.addListener(_followStore);
     _startup.start();
+    widget.systemAccent?.call().then(_appearance.setAccent);
   }
 
   /// A aparência mora no banco: segue o que a abertura abriu (ou apagou).
@@ -54,7 +64,10 @@ class _ChirpAppState extends State<ChirpApp> {
       listenable: _appearance,
       builder: (context, _) {
         final appearance = _appearance.value;
-        final spec = chirpThemeById(appearance.theme);
+        final spec = chirpThemeById(
+          appearance.theme,
+          accent: _appearance.accent,
+        );
         return MaterialApp(
           onGenerateTitle: (context) => context.l10n.appName,
           debugShowCheckedModeBanner: false,

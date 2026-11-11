@@ -472,4 +472,7 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   @override
   String get glassEffectHelp =>
       'Las barras se vuelven translúcidas sobre lo que pasa por debajo. Se apaga cuando el sistema pide menos animación o más contraste.';
+
+  @override
+  String get themeSystem => 'Color del sistema';
 }

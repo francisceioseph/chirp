@@ -450,4 +450,7 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get glassEffectHelp => '栏在滚动内容上方变为半透明。系统要求减少动画或提高对比度时关闭。';
+
+  @override
+  String get themeSystem => '系统颜色';
 }

@@ -137,5 +137,6 @@
   "conversationPick": "Wähle eine Unterhaltung",
   "close": "Schließen",
   "glassEffect": "Glaseffekt",
-  "glassEffectHelp": "Die Leisten werden über dem, was darunter scrollt, durchscheinend. Aus, wenn das System weniger Bewegung oder mehr Kontrast verlangt."
+  "glassEffectHelp": "Die Leisten werden über dem, was darunter scrollt, durchscheinend. Aus, wenn das System weniger Bewegung oder mehr Kontrast verlangt.",
+  "themeSystem": "Systemfarbe"
 }

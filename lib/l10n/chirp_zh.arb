@@ -137,5 +137,6 @@
   "conversationPick": "选择一个对话",
   "close": "关闭",
   "glassEffect": "玻璃效果",
-  "glassEffectHelp": "栏在滚动内容上方变为半透明。系统要求减少动画或提高对比度时关闭。"
+  "glassEffectHelp": "栏在滚动内容上方变为半透明。系统要求减少动画或提高对比度时关闭。",
+  "themeSystem": "系统颜色"
 }

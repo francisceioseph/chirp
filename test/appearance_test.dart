@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 import 'package:psito_chirp/src/application/appearance_controller.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';
+import 'package:psito_chirp/src/ui/molecules/theme_swatch.dart';
 import 'package:psito_chirp/src/ui/theme/chirp_theme.dart';
 
 import 'helpers.dart';
@@ -152,6 +153,46 @@ void main() {
       );
     }
   }
+
+  group('cor do sistema', () {
+    const accent = Color(0xFF7B1FA2);
+
+    testWidgets('aparece primeiro, e escolher usa a cor de destaque', (
+      tester,
+    ) async {
+      final (core, vault) = await withProfile();
+      await pumpChirp(tester, core: core, vault: vault, accent: accent);
+      await tester.tap(find.byTooltip(l10n.profileTitle));
+      await tester.pumpAndSettle();
+      await showAppearance(tester);
+      final swatches = find.byType(ThemeSwatch);
+      expect(tester.widget<ThemeSwatch>(swatches.first).spec.id, 'system');
+
+      await tester.tap(find.bySemanticsLabel(l10n.themeSystem));
+      await tester.pumpAndSettle();
+      expect(core.store!.savedAppearance.theme, 'system');
+      expect(
+        current(tester).colorScheme.primary,
+        chirpScheme(systemTheme(accent), Brightness.light).primary,
+      );
+    });
+
+    testWidgets('sem a cor do sistema, não aparece e vira o padrão', (
+      tester,
+    ) async {
+      final (core, vault) = await withProfile();
+      core.store!.savedAppearance = const Appearance(theme: 'system');
+      await pumpChirp(tester, core: core, vault: vault);
+      await tester.tap(find.byTooltip(l10n.profileTitle));
+      await tester.pumpAndSettle();
+      await showAppearance(tester);
+      expect(find.bySemanticsLabel(l10n.themeSystem), findsNothing);
+      expect(
+        current(tester).colorScheme.primary,
+        chirpScheme(chirpThemes.first, Brightness.light).primary,
+      );
+    });
+  });
 
   group('efeito vidro', () {
     Future<FakeStore> withGlass(WidgetTester tester) async {

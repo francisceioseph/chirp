@@ -9,19 +9,19 @@ O que a fase 4 do `docs/PLANO.md` (seção 13 e seção 10) pediu, o que foi fei
 - **A forma vem do tema**: cartões, diálogos, chips, campos e o botão flutuante seguem o canto de cada tema; botões são pílulas com cantos grandes e retângulos com pequenos (o Old Days é reto e compacto).
 - **Aparência** no perfil (`AppearanceCard`): claro, escuro ou o do sistema, e o tema, numa grade de amostras com as cores de cada um. Muda na hora; se não gravar, volta e avisa.
 - **Efeito vidro**, opcional e desligado por padrão: a barra da lista e a da conversa ficam translúcidas e borram o que rola por baixo. Some sozinho quando o sistema pede menos animação ou mais contraste, e nunca fica atrás de texto longo (só o título e os botões estão nele).
+- **Cor do sistema**: um nono tema, gerado da cor de destaque do aparelho (a paleta do papel de parede no Android 12+, a cor de destaque no Windows, no macOS e no Linux, pelo `dynamic_color`, sem rede). Aparece primeiro, e só onde existe; escolhido num aparelho e aberto em outro sem cor, vira o padrão. No Linux sem cor escolhida, o portal responde (-1, -1, -1) e o plugin devolve um amarelo inventado (`0xFFFFFF01`), que o `system_accent.dart` descarta.
 - **No núcleo** (`appearance.rs`, migração 4): a aparência fica no banco cifrado, como o resto. Um id de tema estranho (de uma versão mais nova) vira o padrão. Ela vale ao abrir, e volta ao padrão quando o banco é apagado.
 - **A casca pela largura** (`ShellTemplate`): no celular e em janelas estreitas, a lista, com a conversa por cima; a partir de 840 px (a janela "expandida" do M3), a lista e a conversa lado a lado, com a escolhida marcada; a partir de 1200 px, o contato num terceiro painel, que o X ou o Esc fecham. A busca abre o resultado ao lado.
 - **Atalhos** na tela principal: Ctrl+N (ou Cmd+N) adicionar contato, Ctrl+K buscar, Alt+↑ e Alt+↓ trocar de conversa, Esc fechar o painel.
-- 19 textos novos nos sete idiomas (os nomes dos temas são nomes próprios e ficam iguais).
+- 20 textos novos nos sete idiomas (os nomes dos temas são nomes próprios e ficam iguais).
 
 ## Conferido
 
 - Rust: 77 testes, `clippy -D warnings` e `fmt`.
-- Dart: 175 testes. O vidro: a chave grava, a lista começa abaixo da barra, o contraste passa na conversa, some com menos animação e cabe nas janelas pequenas. O `shell_test` passa as três larguras, os atalhos e a busca ao lado, com contraste e rótulos com duas e três colunas. O `appearance_test` passa os oito temas, no claro e no escuro, pelo contraste na lista e numa conversa com bolhas dos dois lados; e a aparência na janela mínima e num celular pequeno, com rótulos.
+- Dart: 177 testes. A cor do sistema: aparece primeiro e pinta o app com ela; sem ela, some e vira o padrão. O vidro: a chave grava, a lista começa abaixo da barra, o contraste passa na conversa, some com menos animação e cabe nas janelas pequenas. O `shell_test` passa as três larguras, os atalhos e a busca ao lado, com contraste e rótulos com duas e três colunas. O `appearance_test` passa os oito temas, no claro e no escuro, pelo contraste na lista e numa conversa com bolhas dos dois lados; e a aparência na janela mínima e num celular pequeno, com rótulos.
 - `integration_test/storage_test.dart` no Linux: escolher o Old Days escuro, fechar e reabrir pelo SQLCipher de verdade traz o tema de volta.
 
 ## Falta
 
-- A cor dinâmica do sistema (Android 12+).
 - A navegação embaixo no celular (hoje a barra de cima tem a busca e o perfil).
 - Os testes `golden_test`, `accessibility_test` e `design_test` da seção 10, e o canvas e o `DESIGN.md` da seção 10.3.
