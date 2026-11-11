@@ -108,8 +108,16 @@ install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)
 
 # O runtime do Visual C++ (vcruntime140, msvcp140) ao lado do executável: um Windows
-# recém-instalado não tem, e o app não abre sem ele (0xC0000135). O UCRT já vem no
-# Windows 10 e 11.
-set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
-set(CMAKE_INSTALL_UCRT_LIBRARIES FALSE)
-include(InstallRequiredSystemLibraries)
+# recém-instalado não tem, e o app não abre sem ele (0xC0000135). Vem do System32 de
+# quem compila, onde o Visual Studio instala o redistribuível; o UCRT já vem no
+# Windows 10 e 11. (O InstallRequiredSystemLibraries não acha o do Visual Studio 18.)
+file(TO_CMAKE_PATH "$ENV{SystemRoot}" SYSTEM_ROOT)
+foreach(CRT_DLL vcruntime140.dll vcruntime140_1.dll msvcp140.dll)
+  set(CRT_PATH "${SYSTEM_ROOT}/System32/${CRT_DLL}")
+  if(EXISTS "${CRT_PATH}")
+    install(FILES "${CRT_PATH}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+      COMPONENT Runtime)
+  else()
+    message(WARNING "${CRT_DLL} not found; the bundle needs the VC++ runtime")
+  endif()
+endforeach()
