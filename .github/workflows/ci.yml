@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  FLUTTER_VERSION: 3.47.4
+
+jobs:
+  # O núcleo em Rust, sozinho: formato, clippy e testes.
+  core:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Test
+        run: cargo test
+
+  # O app no Linux: análise, testes e o build com o núcleo dentro.
+  app:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev ninja-build cmake clang pkg-config
+      - name: Dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze
+      - name: The generated translations match the ARB files
+        run: git diff --exit-code -- 'lib/l10n/*.dart'
+      - name: Test
+        run: flutter test --concurrency=2
+      - name: Build
+        run: flutter build linux --release
+
+  # A versão é a última tag: feat sobe o minor, fix o patch e BREAKING CHANGE o major
+  # (.releaserc.json). O tool/set-version.sh grava no app e no núcleo, e o commit da
+  # versão volta para a master: rode git pull --rebase antes de cada push.
+  release:
+    needs: [core, app]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tag and publish the release
+        run: >-
+          npx --yes
+          -p semantic-release@24.2.9
+          -p @semantic-release/exec@7.1.0
+          -p @semantic-release/git@11.0.1
+          semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # A ponte compila nas outras quatro plataformas? É o risco que a fase 0 quer medir
+  # cedo (docs/PLANO.md, 13). Os apps ficam nos artefatos do run.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            command: flutter build windows --release
+            artifact: build/windows/x64/runner/Release
+          - name: macos
+            os: macos-latest
+            command: flutter build macos --release
+            artifact: build/macos/Build/Products/Release
+          - name: android
+            os: ubuntu-24.04
+            command: flutter build apk --release
+            artifact: build/app/outputs/flutter-apk
+          - name: ios
+            os: macos-latest
+            command: flutter build ios --release --no-codesign
+            artifact: build/ios/iphoneos
+    name: build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-java@v4
+        if: matrix.name == 'android'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: flutter pub get
+      - name: Build
+        run: ${{ matrix.command }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: psito-chirp-${{ matrix.name }}
+          path: ${{ matrix.artifact }}

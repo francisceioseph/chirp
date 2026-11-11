@@ -1,1 +1,10 @@
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - windows/**
+    - macos/**
+    - linux/**
+    - rust_builder/cargokit/**
 include: package:flutter_lints/flutter.yaml

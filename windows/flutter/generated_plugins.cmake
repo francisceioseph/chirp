@@ -3,12 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  emoji_picker_flutter
-  flutter_secure_storage_windows
-  flutter_webrtc
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  chirp_core
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

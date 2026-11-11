@@ -1,0 +1,9 @@
+{
+  "@@locale": "de",
+  "appName": "Psito Chirp",
+  "welcomeTitle": "Gespräche, die unter euch bleiben",
+  "welcomeBody": "Keine Konten, keine Server, keine Protokolle. Deine Nachrichten leben nur auf deinen Geräten.",
+  "coreVersion": "Kern {version} · Protokoll {protocol}",
+  "coreUnavailable": "Der sichere Kern konnte nicht starten.",
+  "foundationNote": "Das ist das Fundament des neuen Chirp. Unterhaltungen kommen in den nächsten Phasen."
+}

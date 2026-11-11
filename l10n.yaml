@@ -1,0 +1,6 @@
+arb-dir: lib/l10n
+template-arb-file: chirp_en.arb
+output-localization-file: chirp_localizations.dart
+output-class: ChirpLocalizations
+nullable-getter: false
+preferred-supported-locales: [en]

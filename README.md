@@ -1,66 +1,27 @@
-# 🐦 ChirpTalk `BETA v1.0`
+# Psito Chirp
 
-**ChirpTalk** is a boutique, decentralized communication platform designed specifically for bird enthusiasts and their cockatiels. The app features a high-end **Glassmorphism** interface, delivering a fluid and sophisticated visual experience across both **Sunny Lutino** and **Wild Grey** themes.
+A private messenger with no servers in the middle: conversations go straight from one device to the other, over the local network, the internet or Bluetooth, encrypted end to end from the very first message. No accounts, no phone numbers, no logs and no telemetry. For Linux, Windows, macOS, Android and iOS.
 
-## ✨ Design & Aesthetics
+> **Status: being rebuilt.** The old prototype (kept in the `prototipo-2026` tag) was not secure: see the diagnosis in [`docs/PLANO.md`](docs/PLANO.md). The new version has a Rust core (cryptography, networking and storage) under a Flutter interface. Right now only the foundation is in place; messaging arrives in the next phases.
 
-The project balances organic and industrial elements using advanced Flutter UI techniques:
+## The plan, in short
 
-* **Glassmorphism Pro:** High-fidelity panels featuring 35px `BackdropFilter` blurs and ambient occlusion borders in "Café" tones for maximum depth.
-* **Dynamic Orbs:** Animated liquid spheres that float in the background, dynamically adapting color and opacity based on the active theme.
-* **Lutino Palette:** A signature color scheme inspired by the Lutino cockatiel, featuring **Cheddar** for accents, **Milk** for surfaces, and **Café** for editorial-grade typography.
+- **Encryption**: the Signal protocol's Double Ratchet with post-quantum key agreement (PQXDH), through `libsignal`.
+- **Networks**: local network with no internet needed, the internet with NAT traversal and an optional self-hostable relay, and Bluetooth LE.
+- **Adding a contact**: scan a QR code in person, open an invite link, or find each other nearby and compare a short code.
+- **Storage**: an encrypted database, with the key in the system keychain.
+- **Interface**: Material 3 with themes, in seven languages.
 
-## 🛠️ Technical Architecture
+## Building
 
-ChirpTalk is built on the principles of reactivity and low coupling:
+You need Flutter 3.47.4 and a stable Rust toolchain. The Rust core is built automatically by `flutter build`.
 
-### **State Management**
-
-Driven by the `ChirpController`, a `ChangeNotifier` that centralizes discovery logic and messaging, ensuring the UI reacts instantly via `ListenableBuilder`.
-
-### **Network Protocol (Flock System)**
-
-* **Discovery:** Real-time peer-to-peer advertisement and automatic discovery service for "Tiels" (network nodes).
-* **Management:** Stream-based message handling and presence state management, featuring automatic cleanup of inactive members after a 15-second timeout.
-
-### **Core Technologies**
-
-* **Flutter & Dart 3:** Leveraging *Enhanced Enums* for connection states and *Records* for clean data handling.
-* **UUID:** Universally Unique Identifiers to ensure distinct identities within the flock.
-* **Animations:** Cascading entry transitions and "Heartbeat" status pulses for continuous visual feedback.
-
-## 🚀 Getting Started
-
-1. Ensure you have Flutter installed (`>= 3.0.0`).
-2. Clone the repository:
 ```bash
-git clone https://github.com/your-username/chirp-talk.git
-
+flutter run -d linux
 ```
 
+On Linux you also need `libgtk-3-dev`, `ninja-build`, `cmake`, `clang` and `pkg-config`.
 
-3. Install dependencies:
-```bash
-flutter pub get
+## License
 
-```
-
-
-4. Run the project:
-```bash
-flutter run
-
-```
-
-
-
-## 📋 Beta Roadmap
-
-* [x] Home Screen refactoring and Glass Panel optimization.
-* [x] `ChirpController` integration for real-time peer discovery.
-* [x] Dynamic Theme System (Lutino/Grey).
-* [ ] Implementation of glass-styled chat bubbles.
-* [ ] Image sharing support within the flock.
-* [ ] Custom notification sounds featuring real cockatiel chirps.
-
-> "Where every chirp counts and every cockatiel has a voice." 🐤
+GPL-3.0. See [LICENSE](LICENSE).

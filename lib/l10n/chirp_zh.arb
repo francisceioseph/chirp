@@ -1,0 +1,9 @@
+{
+  "@@locale": "zh",
+  "appName": "Psito Chirp",
+  "welcomeTitle": "只属于你们之间的对话",
+  "welcomeBody": "无需账号，没有服务器，没有日志。你的消息只保存在你的设备上。",
+  "coreVersion": "核心 {version} · 协议 {protocol}",
+  "coreUnavailable": "安全核心无法启动。",
+  "foundationNote": "这是新版 Chirp 的基础。对话功能将在后续阶段推出。"
+}

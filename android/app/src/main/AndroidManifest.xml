@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" 
                      android:usesPermissionFlags="neverForLocation" />
     <application
-        android:label="chirp"
+        android:label="Psito Chirp"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

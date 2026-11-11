@@ -1,0 +1,22 @@
+{
+  "@@locale": "en",
+  "appName": "Psito Chirp",
+  "@appName": {
+    "description": "The app name, in the window title and the about box."
+  },
+  "welcomeTitle": "Conversations that stay between you",
+  "welcomeBody": "No accounts, no servers, no logs. Your messages live only on your devices.",
+  "coreVersion": "Core {version} · protocol {protocol}",
+  "@coreVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "protocol": {
+        "type": "int"
+      }
+    }
+  },
+  "coreUnavailable": "The secure core could not start.",
+  "foundationNote": "This is the foundation of the new Chirp. Conversations arrive in the next phases."
+}
