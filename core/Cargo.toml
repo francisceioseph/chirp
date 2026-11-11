@@ -11,3 +11,8 @@ repository = "https://github.com/francisceioseph/chirp"
 lto = true
 codegen-units = 1
 panic = "unwind"
+
+# As dependências otimizadas também em desenvolvimento: sem isso, o Argon2 (64 MiB, 3
+# passadas) leva dezenas de segundos no build de debug do app.
+[profile.dev.package."*"]
+opt-level = 3

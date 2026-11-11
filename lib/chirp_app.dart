@@ -1,19 +1,44 @@
 // lib/chirp_app.dart
 //
-// O app inteiro, recebendo o núcleo de fora (como o PlayerView do Psito Player): o
-// main.dart passa o de verdade, e os testes um falso.
+// O app inteiro, recebendo o núcleo e o cofre de fora (como o PlayerView do Psito
+// Player): o main.dart passa os de verdade, e os testes os falsos.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/l10n.dart';
+import 'src/application/startup_controller.dart';
 import 'src/core/chirp_core.dart';
-import 'src/ui/pages/welcome_page.dart';
+import 'src/platform/key_vault.dart';
+import 'src/ui/pages/startup_page.dart';
 import 'src/ui/theme/chirp_theme.dart';
 
-class ChirpApp extends StatelessWidget {
-  const ChirpApp({super.key, required this.core});
+class ChirpApp extends StatefulWidget {
+  const ChirpApp({super.key, required this.core, required this.vault});
 
   final ChirpCore core;
+  final KeyVault vault;
+
+  @override
+  State<ChirpApp> createState() => _ChirpAppState();
+}
+
+class _ChirpAppState extends State<ChirpApp> {
+  late final _startup = StartupController(
+    core: widget.core,
+    vault: widget.vault,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _startup.start();
+  }
+
+  @override
+  void dispose() {
+    _startup.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +54,7 @@ class ChirpApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: ChirpLocalizations.supportedLocales,
-      home: WelcomePage(core: core),
+      home: StartupPage(controller: _startup),
     );
   }
 }

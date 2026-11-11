@@ -42,7 +42,7 @@ jobs:
           channel: stable
           cache: true
       - name: System libraries
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev ninja-build cmake clang pkg-config
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libsecret-1-dev ninja-build cmake clang pkg-config
       - name: Dependencies
         run: flutter pub get
       - name: Analyze

@@ -25,9 +25,142 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   }
 
   @override
-  String get coreUnavailable => 'El núcleo seguro no pudo iniciarse.';
+  String get coreUnavailable => 'El núcleo seguro no pudo iniciar.';
 
   @override
-  String get foundationNote =>
-      'Esta es la base del nuevo Chirp. Las conversaciones llegan en las próximas fases.';
+  String get loading => 'Abriendo Chirp';
+
+  @override
+  String get nameLabel => 'Tu nombre';
+
+  @override
+  String get nameHelp => 'Solo lo verán tus contactos, y siempre cifrado.';
+
+  @override
+  String get nameInvalid =>
+      'Escribe un nombre de hasta 64 caracteres, en una sola línea.';
+
+  @override
+  String get onboardingCreate => 'Crear mi perfil';
+
+  @override
+  String get passphraseCreateTitle => 'Protege Chirp con una contraseña';
+
+  @override
+  String get passphraseCreateBody =>
+      'Este sistema no tiene un llavero donde Chirp pueda guardar su clave, así que tus datos quedarán bloqueados con una contraseña. Si la olvidas, no hay forma de recuperarla.';
+
+  @override
+  String get passphraseUnlockTitle => 'Desbloquear Chirp';
+
+  @override
+  String get passphraseLabel => 'Contraseña';
+
+  @override
+  String get passphraseConfirmLabel => 'Repite la contraseña';
+
+  @override
+  String get passphraseShow => 'Mostrar la contraseña';
+
+  @override
+  String get passphraseHide => 'Ocultar la contraseña';
+
+  @override
+  String passphraseTooShort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Usa al menos $count caracteres.',
+      one: 'Usa al menos $count carácter.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get passphraseMismatch => 'Las contraseñas no coinciden.';
+
+  @override
+  String get passphraseWrong => 'Esa contraseña no abre Chirp.';
+
+  @override
+  String get passphraseCreate => 'Bloquear con esta contraseña';
+
+  @override
+  String get passphraseUnlock => 'Desbloquear';
+
+  @override
+  String get passphraseForgot => 'Olvidé la contraseña';
+
+  @override
+  String get problemCoreBody =>
+      'Los archivos de la app pueden estar incompletos. Instala Chirp de nuevo.';
+
+  @override
+  String get problemVaultTitle => 'El llavero no respondió';
+
+  @override
+  String get problemVaultBody =>
+      'Chirp guarda su clave en el llavero del sistema, y no respondió. Desbloquéalo e inténtalo de nuevo.';
+
+  @override
+  String get problemKeyLostTitle => 'La clave de tus datos ya no está';
+
+  @override
+  String get problemKeyLostBody =>
+      'Tus datos siguen en este dispositivo, pero la clave que los abre ya no está en el llavero del sistema. Sin ella, no se puede leer nada. Puedes borrarlos y empezar de nuevo.';
+
+  @override
+  String get problemNewerTitle => 'Estos datos son de un Chirp más nuevo';
+
+  @override
+  String get problemNewerBody => 'Actualiza Chirp para abrirlos.';
+
+  @override
+  String get problemStorageTitle => 'Chirp no pudo abrir sus datos';
+
+  @override
+  String get problemStorageBody =>
+      'Algo salió mal al leer el disco. Inténtalo de nuevo; si sigue pasando, puedes borrar todo y empezar de nuevo.';
+
+  @override
+  String get tryAgain => 'Intentar de nuevo';
+
+  @override
+  String get eraseEverything => 'Borrar todo y empezar de nuevo';
+
+  @override
+  String get eraseTitle => '¿Borrar todo?';
+
+  @override
+  String get eraseBody =>
+      'Tu perfil, tu clave y todo lo que Chirp guarda en este dispositivo desaparecerán para siempre.';
+
+  @override
+  String get eraseConfirm => 'Borrar';
+
+  @override
+  String get cancel => 'Cancelar';
+
+  @override
+  String get save => 'Guardar';
+
+  @override
+  String get renameTooltip => 'Cambiar el nombre';
+
+  @override
+  String get renameTitle => 'Cambia tu nombre';
+
+  @override
+  String get profileKeyLabel => 'Tu clave';
+
+  @override
+  String get profileKeyHelp =>
+      'Tus contactos comparan este número para saber que de verdad eres tú.';
+
+  @override
+  String get homeNextPhase =>
+      'Tu perfil y tu clave están listos. Las conversaciones llegan en la próxima fase.';
+
+  @override
+  String get somethingWentWrong => 'Algo salió mal. Inténtalo de nuevo.';
 }

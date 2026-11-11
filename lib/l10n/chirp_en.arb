@@ -18,5 +18,57 @@
     }
   },
   "coreUnavailable": "The secure core could not start.",
-  "foundationNote": "This is the foundation of the new Chirp. Conversations arrive in the next phases."
+  "loading": "Opening Chirp",
+  "nameLabel": "Your name",
+  "nameHelp": "Only your contacts will see it, and only encrypted.",
+  "nameInvalid": "Enter a name of up to 64 characters, on one line.",
+  "onboardingCreate": "Create my profile",
+  "passphraseCreateTitle": "Protect Chirp with a passphrase",
+  "passphraseCreateBody": "This system has no keychain where Chirp can keep its key, so your data will be locked with a passphrase. If you forget it, there is no way to recover it.",
+  "passphraseUnlockTitle": "Unlock Chirp",
+  "passphraseLabel": "Passphrase",
+  "@passphraseLabel": {
+    "description": "A long password that locks the local data when the system has no keychain."
+  },
+  "passphraseConfirmLabel": "Repeat the passphrase",
+  "passphraseShow": "Show passphrase",
+  "passphraseHide": "Hide passphrase",
+  "passphraseTooShort": "{count, plural, one{Use at least {count} character.} other{Use at least {count} characters.}}",
+  "@passphraseTooShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passphraseMismatch": "The passphrases do not match.",
+  "passphraseWrong": "That passphrase does not open Chirp.",
+  "passphraseCreate": "Lock with this passphrase",
+  "passphraseUnlock": "Unlock",
+  "passphraseForgot": "I forgot the passphrase",
+  "problemCoreBody": "The app's files may be incomplete. Install Chirp again.",
+  "problemVaultTitle": "The keychain did not answer",
+  "problemVaultBody": "Chirp keeps its key in the system keychain, and it did not answer. Unlock it and try again.",
+  "problemKeyLostTitle": "The key to your data is gone",
+  "problemKeyLostBody": "Your data is still on this device, but the key that opens it is no longer in the system keychain. Without it, nothing can be read. You can erase it and start over.",
+  "problemNewerTitle": "This data is from a newer Chirp",
+  "problemNewerBody": "Update Chirp to open it.",
+  "problemStorageTitle": "Chirp could not open its data",
+  "problemStorageBody": "Something went wrong while reading the disk. Try again; if it keeps happening, you can erase everything and start over.",
+  "tryAgain": "Try again",
+  "eraseEverything": "Erase everything and start over",
+  "eraseTitle": "Erase everything?",
+  "eraseBody": "Your profile, your key and everything Chirp keeps on this device will be gone for good.",
+  "eraseConfirm": "Erase",
+  "cancel": "Cancel",
+  "save": "Save",
+  "renameTooltip": "Change name",
+  "renameTitle": "Change your name",
+  "profileKeyLabel": "Your key",
+  "@profileKeyLabel": {
+    "description": "Heading above the 30-digit fingerprint of the user's identity key."
+  },
+  "profileKeyHelp": "Your contacts compare this number to know it is really you.",
+  "homeNextPhase": "Your profile and your key are ready. Conversations arrive in the next phase.",
+  "somethingWentWrong": "Something went wrong. Try again."
 }

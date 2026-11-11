@@ -138,11 +138,245 @@ abstract class ChirpLocalizations {
   /// **'The secure core could not start.'**
   String get coreUnavailable;
 
-  /// No description provided for @foundationNote.
+  /// No description provided for @loading.
   ///
   /// In en, this message translates to:
-  /// **'This is the foundation of the new Chirp. Conversations arrive in the next phases.'**
-  String get foundationNote;
+  /// **'Opening Chirp'**
+  String get loading;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get nameLabel;
+
+  /// No description provided for @nameHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your contacts will see it, and only encrypted.'**
+  String get nameHelp;
+
+  /// No description provided for @nameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name of up to 64 characters, on one line.'**
+  String get nameInvalid;
+
+  /// No description provided for @onboardingCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my profile'**
+  String get onboardingCreate;
+
+  /// No description provided for @passphraseCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect Chirp with a passphrase'**
+  String get passphraseCreateTitle;
+
+  /// No description provided for @passphraseCreateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This system has no keychain where Chirp can keep its key, so your data will be locked with a passphrase. If you forget it, there is no way to recover it.'**
+  String get passphraseCreateBody;
+
+  /// No description provided for @passphraseUnlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Chirp'**
+  String get passphraseUnlockTitle;
+
+  /// A long password that locks the local data when the system has no keychain.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get passphraseLabel;
+
+  /// No description provided for @passphraseConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat the passphrase'**
+  String get passphraseConfirmLabel;
+
+  /// No description provided for @passphraseShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show passphrase'**
+  String get passphraseShow;
+
+  /// No description provided for @passphraseHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide passphrase'**
+  String get passphraseHide;
+
+  /// No description provided for @passphraseTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Use at least {count} character.} other{Use at least {count} characters.}}'**
+  String passphraseTooShort(int count);
+
+  /// No description provided for @passphraseMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The passphrases do not match.'**
+  String get passphraseMismatch;
+
+  /// No description provided for @passphraseWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That passphrase does not open Chirp.'**
+  String get passphraseWrong;
+
+  /// No description provided for @passphraseCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock with this passphrase'**
+  String get passphraseCreate;
+
+  /// No description provided for @passphraseUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get passphraseUnlock;
+
+  /// No description provided for @passphraseForgot.
+  ///
+  /// In en, this message translates to:
+  /// **'I forgot the passphrase'**
+  String get passphraseForgot;
+
+  /// No description provided for @problemCoreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The app\'s files may be incomplete. Install Chirp again.'**
+  String get problemCoreBody;
+
+  /// No description provided for @problemVaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The keychain did not answer'**
+  String get problemVaultTitle;
+
+  /// No description provided for @problemVaultBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Chirp keeps its key in the system keychain, and it did not answer. Unlock it and try again.'**
+  String get problemVaultBody;
+
+  /// No description provided for @problemKeyLostTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The key to your data is gone'**
+  String get problemKeyLostTitle;
+
+  /// No description provided for @problemKeyLostBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is still on this device, but the key that opens it is no longer in the system keychain. Without it, nothing can be read. You can erase it and start over.'**
+  String get problemKeyLostBody;
+
+  /// No description provided for @problemNewerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This data is from a newer Chirp'**
+  String get problemNewerTitle;
+
+  /// No description provided for @problemNewerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Chirp to open it.'**
+  String get problemNewerBody;
+
+  /// No description provided for @problemStorageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chirp could not open its data'**
+  String get problemStorageTitle;
+
+  /// No description provided for @problemStorageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while reading the disk. Try again; if it keeps happening, you can erase everything and start over.'**
+  String get problemStorageBody;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// No description provided for @eraseEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase everything and start over'**
+  String get eraseEverything;
+
+  /// No description provided for @eraseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase everything?'**
+  String get eraseTitle;
+
+  /// No description provided for @eraseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile, your key and everything Chirp keeps on this device will be gone for good.'**
+  String get eraseBody;
+
+  /// No description provided for @eraseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase'**
+  String get eraseConfirm;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @renameTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Change name'**
+  String get renameTooltip;
+
+  /// No description provided for @renameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change your name'**
+  String get renameTitle;
+
+  /// Heading above the 30-digit fingerprint of the user's identity key.
+  ///
+  /// In en, this message translates to:
+  /// **'Your key'**
+  String get profileKeyLabel;
+
+  /// No description provided for @profileKeyHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Your contacts compare this number to know it is really you.'**
+  String get profileKeyHelp;
+
+  /// No description provided for @homeNextPhase.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile and your key are ready. Conversations arrive in the next phase.'**
+  String get homeNextPhase;
+
+  /// No description provided for @somethingWentWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get somethingWentWrong;
 }
 
 class _ChirpLocalizationsDelegate

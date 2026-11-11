@@ -46,11 +46,22 @@ void main() {
       }
     });
 
-    testWidgets('$code cabe num celular pequeno', (tester) async {
+    for (final (name, available) in [('cadastro', true), ('senha', false)]) {
+      testWidgets('$code: $name cabe num celular pequeno', (tester) async {
+        tester.platformDispatcher.localesTestValue = [Locale(code)];
+        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+        setWindow(tester, 320, 568);
+        await pumpChirp(tester, vault: FakeVault(available: available));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('$code: o perfil cabe num celular pequeno', (tester) async {
       tester.platformDispatcher.localesTestValue = [Locale(code)];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       setWindow(tester, 320, 568);
-      await pumpChirp(tester);
+      final (core, vault) = await withProfile('Calopsita com um nome longo');
+      await pumpChirp(tester, core: core, vault: vault);
       expect(tester.takeException(), isNull);
     });
   }
