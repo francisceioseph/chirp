@@ -134,6 +134,13 @@ jobs:
         run: flutter pub get
       - name: Build
         run: ${{ matrix.command }}
+      # O flutter esconde o erro do Xcode atrás do aviso de assinatura.
+      - name: Xcode errors
+        if: failure() && matrix.name == 'ios'
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO build 2>&1 \
+            | grep -E -A3 "error:|Undefined symbols|ld:" | head -80
       - uses: actions/upload-artifact@v4
         with:
           name: psito-chirp-${{ matrix.name }}
