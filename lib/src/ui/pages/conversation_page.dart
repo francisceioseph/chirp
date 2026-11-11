@@ -26,10 +26,14 @@ class ConversationPage extends StatefulWidget {
     super.key,
     required this.contacts,
     required this.contactId,
+    this.onOpenDetails,
   });
 
   final ContactsController contacts;
   final int contactId;
+
+  /// Abre os detalhes do contato no painel ao lado; sem isso, abrem por cima.
+  final VoidCallback? onOpenDetails;
 
   @override
   State<ConversationPage> createState() => _ConversationPageState();
@@ -143,12 +147,17 @@ class _ConversationPageState extends State<ConversationPage>
     _conversation.cancelComposer();
   }
 
-  void _openDetails() => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) =>
-          ContactPage(controller: widget.contacts, contactId: widget.contactId),
-    ),
-  );
+  void _openDetails() {
+    if (widget.onOpenDetails case final open?) return open();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ContactPage(
+          controller: widget.contacts,
+          contactId: widget.contactId,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

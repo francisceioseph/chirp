@@ -911,6 +911,18 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Mighty Cats'**
   String get themeMightyCats;
+
+  /// No description provided for @conversationPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a conversation'**
+  String get conversationPick;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
 }
 
 class _ChirpLocalizationsDelegate

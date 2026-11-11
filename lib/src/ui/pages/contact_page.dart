@@ -15,10 +15,14 @@ class ContactPage extends StatefulWidget {
     super.key,
     required this.controller,
     required this.contactId,
+    this.onClose,
   });
 
   final ContactsController controller;
   final int contactId;
+
+  /// No painel ao lado, o botão de fechar (por cima, é o voltar).
+  final VoidCallback? onClose;
 
   @override
   State<ContactPage> createState() => _ContactPageState();
@@ -38,6 +42,15 @@ class _ContactPageState extends State<ContactPage> {
         .catchError((Object _) {});
   }
 
+  Widget? _close(BuildContext context) => switch (widget.onClose) {
+    final close? => IconButton(
+      tooltip: context.l10n.close,
+      onPressed: close,
+      icon: const Icon(Icons.close),
+    ),
+    null => null,
+  };
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -47,14 +60,14 @@ class _ContactPageState extends State<ContactPage> {
       builder: (context, _) {
         final contact = widget.controller.byId(widget.contactId);
         if (contact == null) {
-          return Scaffold(appBar: AppBar());
+          return Scaffold(appBar: AppBar(leading: _close(context)));
         }
         final name = contact.displayName.isEmpty
             ? l10n.contactUnnamed
             : contact.displayName;
         final number = _safetyNumber;
         return CenteredPanel(
-          appBar: AppBar(title: Text(name)),
+          appBar: AppBar(leading: _close(context), title: Text(name)),
           children: [
             Center(child: IdentityAvatar(seed: contact.avatarSeed, size: 88)),
             const SizedBox(height: 12),

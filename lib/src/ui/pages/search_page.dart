@@ -16,9 +16,13 @@ import '../time_format.dart';
 import 'conversation_page.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key, required this.contacts});
+  const SearchPage({super.key, required this.contacts, this.onOpen});
 
   final ContactsController contacts;
+
+  /// Abre a conversa de um resultado ao lado da lista (com duas colunas); sem isso,
+  /// ela abre por cima da busca.
+  final ValueChanged<int>? onOpen;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -28,6 +32,20 @@ class _SearchPageState extends State<SearchPage> {
   final _query = TextEditingController();
   Timer? _debounce;
   List<ChatMessage>? _results;
+
+  void _open(BuildContext context, int contactId) {
+    if (widget.onOpen case final open?) {
+      Navigator.of(context).pop();
+      return open(contactId);
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ConversationPage(contacts: widget.contacts, contactId: contactId),
+      ),
+    );
+  }
+
   int _asked = 0;
 
   @override
@@ -114,14 +132,7 @@ class _SearchPageState extends State<SearchPage> {
                     messageTime(context, message.sentAt),
                     style: Theme.of(context).textTheme.labelSmall,
                   ),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => ConversationPage(
-                        contacts: widget.contacts,
-                        contactId: message.contactId,
-                      ),
-                    ),
-                  ),
+                  onTap: () => _open(context, message.contactId),
                 );
               },
             ),

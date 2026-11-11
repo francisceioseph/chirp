@@ -133,5 +133,7 @@
   "themeHuman": "Human",
   "themeSymbian": "Symbian",
   "themeFoundation": "Foundation",
-  "themeMightyCats": "Mighty Cats"
+  "themeMightyCats": "Mighty Cats",
+  "conversationPick": "选择一个对话",
+  "close": "关闭"
 }

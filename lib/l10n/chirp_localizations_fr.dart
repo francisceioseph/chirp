@@ -460,4 +460,10 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
 
   @override
   String get themeMightyCats => 'Mighty Cats';
+
+  @override
+  String get conversationPick => 'Choisissez une conversation';
+
+  @override
+  String get close => 'Fermer';
 }

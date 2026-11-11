@@ -20,10 +20,14 @@ class ConversationTile extends StatelessWidget {
     this.typing = false,
     this.onTap,
     this.now,
+    this.selected = false,
   });
 
   final Conversation conversation;
   final bool typing;
+
+  /// A conversa aberta ao lado (com duas colunas).
+  final bool selected;
   final VoidCallback? onTap;
   final DateTime? now;
 
@@ -91,6 +95,9 @@ class ConversationTile extends StatelessWidget {
     }
 
     return ListTile(
+      selected: selected,
+      selectedTileColor: scheme.secondaryContainer,
+      selectedColor: scheme.onSecondaryContainer,
       leading: IdentityAvatar(seed: contact.avatarSeed, size: 40),
       title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: subtitle,

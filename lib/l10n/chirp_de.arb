@@ -133,5 +133,7 @@
   "themeHuman": "Human",
   "themeSymbian": "Symbian",
   "themeFoundation": "Foundation",
-  "themeMightyCats": "Mighty Cats"
+  "themeMightyCats": "Mighty Cats",
+  "conversationPick": "Wähle eine Unterhaltung",
+  "close": "Schließen"
 }

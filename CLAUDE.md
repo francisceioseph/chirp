@@ -25,7 +25,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
   - `src/platform/key_vault.dart`: o cofre do sistema (`KeyVault`, `SystemKeyVault` pelo `flutter_secure_storage`), onde fica a chave do banco.
   - `src/application/`: os controllers, sem widget. O `StartupController` é a máquina de estados da abertura (núcleo, cofre ou senha, perfil); o `ContactsController` liga a rede, cuida das conversas, dos contatos e dos convites e repassa os eventos do núcleo; o `ConversationController` é uma conversa aberta (as mensagens, responder, editar, o digitando, as chamadas de atenção que chegam); o `AppearanceController` é a aparência, a padrão até o banco abrir.
   - `src/bridge/`: o gerado pelo `flutter_rust_bridge`, e só ele.
-  - `src/ui/`: atomic design (`atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`) e o `theme/`: os temas são sementes com personalidade (`chirp_themes.dart`, um `ChirpThemeSpec` cada), e o formato das bolhas vem do `ChirpStyle` (a `ThemeExtension`).
+  - `src/ui/`: atomic design (`atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`) e o `theme/`: os temas são sementes com personalidade (`chirp_themes.dart`, um `ChirpThemeSpec` cada), e o formato das bolhas vem do `ChirpStyle` (a `ThemeExtension`). A tela principal usa o `ShellTemplate`: uma coluna abaixo de 840 px (a conversa abre por cima, por rota), duas a partir dele e três a partir de 1200 px (o contato ao lado). Os testes rodam em 800×600, numa coluna.
   - `src/logging.dart`: a trava dos logs em release.
   - `l10n/`: os `.arb` e o gerado ao lado, no git.
 

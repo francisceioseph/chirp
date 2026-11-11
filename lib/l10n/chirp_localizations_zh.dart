@@ -438,4 +438,10 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get themeMightyCats => 'Mighty Cats';
+
+  @override
+  String get conversationPick => '选择一个对话';
+
+  @override
+  String get close => '关闭';
 }

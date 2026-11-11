@@ -207,5 +207,7 @@
   },
   "@themeLutino": {
     "description": "Theme names are proper names; keep them in every language."
-  }
+  },
+  "conversationPick": "Pick a conversation",
+  "close": "Close"
 }
