@@ -2,7 +2,7 @@
 
 A private messenger with no servers in the middle: conversations go straight from one device to the other, over the local network, the internet or Bluetooth, encrypted end to end from the very first message. No accounts, no phone numbers, no logs and no telemetry. For Linux, Windows, macOS, Android and iOS.
 
-> **Status: being rebuilt.** The old prototype (kept in the `prototipo-2026` tag) was not secure: see the diagnosis in [`docs/PLANO.md`](docs/PLANO.md). The new version has a Rust core (cryptography, networking and storage) under a Flutter interface. Right now there is the identity, the encrypted storage and adding contacts on the local network, with a post-quantum Signal handshake; messaging arrives in the next phase.
+> **Status: being rebuilt.** The old prototype (kept in the `prototipo-2026` tag) was not secure: see the diagnosis in [`docs/PLANO.md`](docs/PLANO.md). The new version has a Rust core (cryptography, networking and storage) under a Flutter interface. Right now there is the identity, the encrypted storage, adding contacts on the local network with a post-quantum Signal handshake, and one-to-one messaging: delivery and read receipts, typing, replies, edits, deletes for everyone, reactions, "nudges" and search, with an offline queue that survives restarts.
 
 ## The plan, in short
 

@@ -265,4 +265,155 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
 
   @override
   String get networkUnavailable => 'Das lokale Netz ist nicht gestartet.';
+
+  @override
+  String get messageHint => 'Nachricht';
+
+  @override
+  String get send => 'Senden';
+
+  @override
+  String get nudge => 'Anstupsen';
+
+  @override
+  String nudgeSent(String name) {
+    return 'Du hast $name angestupst';
+  }
+
+  @override
+  String nudgeReceived(String name) {
+    return '$name hat dich angestupst';
+  }
+
+  @override
+  String get nudgePreview => 'Hat angestupst';
+
+  @override
+  String get typing => 'schreibt…';
+
+  @override
+  String get messageDeleted => 'Diese Nachricht wurde gelöscht';
+
+  @override
+  String get messageEdited => 'bearbeitet';
+
+  @override
+  String get statusPending => 'Wartet auf Zustellung';
+
+  @override
+  String get statusDelivered => 'Zugestellt';
+
+  @override
+  String get statusRead => 'Gelesen';
+
+  @override
+  String get you => 'Du';
+
+  @override
+  String get reply => 'Antworten';
+
+  @override
+  String replyingTo(String name) {
+    return 'Antwort an $name';
+  }
+
+  @override
+  String get quotedMissing => 'Nachricht nicht auf diesem Gerät';
+
+  @override
+  String get editMessage => 'Bearbeiten';
+
+  @override
+  String get editingMessage => 'Nachricht bearbeiten';
+
+  @override
+  String get copyText => 'Text kopieren';
+
+  @override
+  String get textCopied => 'Kopiert';
+
+  @override
+  String get deleteForMe => 'Für mich löschen';
+
+  @override
+  String get deleteForEveryone => 'Für alle löschen';
+
+  @override
+  String get reaction1 => 'Gefällt mir';
+
+  @override
+  String get reaction2 => 'Liebe ich';
+
+  @override
+  String get reaction3 => 'Lustig';
+
+  @override
+  String get reaction4 => 'Traurig';
+
+  @override
+  String get reaction5 => 'Danke';
+
+  @override
+  String get reaction6 => 'Feiern';
+
+  @override
+  String get react => 'Reagieren';
+
+  @override
+  String get conversationEmpty => 'Noch keine Nachrichten. Sag hallo!';
+
+  @override
+  String get contactDetails => 'Kontaktdetails';
+
+  @override
+  String get searchMessages => 'Nachrichten suchen';
+
+  @override
+  String get searchNothing => 'Nichts gefunden';
+
+  @override
+  String get searchHelp =>
+      'Wörter aus jeder Unterhaltung, ohne Rücksicht auf Akzente und Großschreibung.';
+
+  @override
+  String get messageTooSoon =>
+      'Warte ein paar Sekunden, bevor du das wieder tust.';
+
+  @override
+  String get messageTooLate =>
+      'Die Frist zum Ändern dieser Nachricht ist abgelaufen.';
+
+  @override
+  String get messageInvalid => 'Die Nachricht ist leer oder zu lang.';
+
+  @override
+  String unreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ungelesene Nachrichten',
+      one: '$count ungelesene Nachricht',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatSettingsTitle => 'Unterhaltungen';
+
+  @override
+  String get readReceipts => 'Lesebestätigungen';
+
+  @override
+  String get readReceiptsHelp =>
+      'Wenn aus, siehst du auch nicht, wann deine gelesen werden.';
+
+  @override
+  String get typingIndicator => 'Tippanzeige';
+
+  @override
+  String get typingIndicatorHelp =>
+      'Wenn aus, siehst du auch nicht, wann andere tippen.';
+
+  @override
+  String get messageOptions => 'Nachrichtenoptionen';
 }

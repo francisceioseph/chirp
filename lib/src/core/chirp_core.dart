@@ -49,6 +49,10 @@ enum CoreFailure {
   unreachable,
   protocol,
   unknownContact,
+  unknownMessage,
+  invalidMessage,
+  tooSoon,
+  tooLate,
   storage,
 }
 
@@ -103,6 +107,103 @@ class Contact {
   final bool established;
 }
 
+enum MessageKind {
+  text,
+
+  /// Chamou atenção.
+  nudge,
+}
+
+/// Para as minhas: na fila, entregue, lida. Para as do contato, `pending` é não lida.
+enum MessageStatus { pending, delivered, read }
+
+/// Quantos tipos de reação há; 0 é nenhuma, de 1 a [reactionKinds].
+const reactionKinds = 6;
+
+/// Uma mensagem de uma conversa.
+@immutable
+class ChatMessage {
+  const ChatMessage({
+    required this.id,
+    required this.contactId,
+    required this.outgoing,
+    required this.kind,
+    required this.text,
+    required this.sentAt,
+    required this.receivedAt,
+    required this.status,
+    this.replyTo,
+    this.edited = false,
+    this.deleted = false,
+    this.myReaction = 0,
+    this.theirReaction = 0,
+    this.canEdit = false,
+    this.canDeleteForEveryone = false,
+  });
+
+  final int id;
+  final int contactId;
+  final bool outgoing;
+  final MessageKind kind;
+  final String text;
+
+  /// A mensagem citada, se ela existe neste aparelho.
+  final int? replyTo;
+
+  /// Pelo relógio de quem mandou.
+  final DateTime sentAt;
+
+  /// Quando chegou (ou foi escrita, se é minha).
+  final DateTime receivedAt;
+  final MessageStatus status;
+  final bool edited;
+  final bool deleted;
+  final int myReaction;
+  final int theirReaction;
+  final bool canEdit;
+  final bool canDeleteForEveryone;
+
+  bool get unread => !outgoing && status == MessageStatus.pending;
+}
+
+/// Uma conversa na lista: o contato, a última mensagem e as não lidas.
+@immutable
+class Conversation {
+  const Conversation({required this.contact, this.last, this.unread = 0});
+
+  final Contact contact;
+  final ChatMessage? last;
+  final int unread;
+}
+
+/// Os recibos de leitura e o "digitando". Desligar vale para os dois lados.
+@immutable
+class ChatSettings {
+  const ChatSettings({required this.readReceipts, required this.typing});
+
+  final bool readReceipts;
+  final bool typing;
+}
+
+enum CoreEventKind {
+  /// Um contato novo ou mudado; com o id 0, releia tudo.
+  contact,
+
+  /// A conversa com o contato mudou.
+  messages,
+
+  /// O contato está digitando.
+  typing,
+}
+
+@immutable
+class CoreEvent {
+  const CoreEvent(this.kind, this.contactId);
+
+  final CoreEventKind kind;
+  final int contactId;
+}
+
 /// O que a UI pode pedir ao núcleo.
 abstract interface class ChirpCore {
   /// Nulo quando a biblioteca nativa não abriu.
@@ -153,8 +254,45 @@ abstract interface class ProfileStore {
 
   Future<Contact> setVerified(int contactId, {required bool verified});
 
-  /// Os ids dos contatos que mudaram sem a UI pedir (0: releia todos).
-  Stream<int> contactChanges();
+  /// O que muda sem a UI pedir: contatos, mensagens que chegam, o "digitando".
+  Stream<CoreEvent> events();
+
+  /// As conversas, a mais recente primeiro.
+  Future<List<Conversation>> conversations();
+
+  /// As últimas [limit] mensagens, em ordem; antes de [before] para as anteriores.
+  Future<List<ChatMessage>> messages(
+    int contactId, {
+    int? before,
+    int limit = 100,
+  });
+
+  Future<ChatMessage> sendText(int contactId, String text, {int? replyTo});
+
+  /// Chama a atenção. Uma vez a cada 10 segundos (`CoreFailure.tooSoon`).
+  Future<ChatMessage> sendNudge(int contactId);
+
+  Future<ChatMessage> editMessage(int id, String text);
+
+  Future<ChatMessage> deleteForEveryone(int id);
+
+  Future<void> deleteForMe(int id);
+
+  /// [kind] de 1 a [reactionKinds]; 0 tira a reação.
+  Future<ChatMessage> react(int id, int kind);
+
+  /// Estou digitando (a UI chama de tempos em tempos enquanto digita).
+  Future<void> typing(int contactId);
+
+  /// Li a conversa.
+  Future<void> markRead(int contactId);
+
+  /// Busca em todas as conversas.
+  Future<List<ChatMessage>> search(String query);
+
+  Future<ChatSettings> chatSettings();
+
+  Future<void> setChatSettings(ChatSettings settings);
 }
 
 /// O núcleo de verdade, pela ponte.
@@ -288,8 +426,132 @@ class _BridgeStore implements ProfileStore {
       );
 
   @override
-  Stream<int> contactChanges() => _store.watchContacts();
+  Stream<CoreEvent> events() => _store.watchEvents().map(
+    (e) => CoreEvent(switch (e.kind) {
+      bridge.EventKind.contact => CoreEventKind.contact,
+      bridge.EventKind.messages => CoreEventKind.messages,
+      bridge.EventKind.typing => CoreEventKind.typing,
+    }, e.contactId),
+  );
+
+  @override
+  Future<List<Conversation>> conversations() => _guardAsync(
+    () async => [
+      for (final c in await _store.conversations())
+        Conversation(
+          contact: _contact(c.contact),
+          last: c.last == null ? null : _message(c.last!),
+          unread: c.unread,
+        ),
+    ],
+  );
+
+  @override
+  Future<List<ChatMessage>> messages(
+    int contactId, {
+    int? before,
+    int limit = 100,
+  }) => _guardAsync(
+    () async => [
+      for (final m in await _store.messages(
+        contactId: contactId,
+        before: before,
+        limit: limit,
+      ))
+        _message(m),
+    ],
+  );
+
+  @override
+  Future<ChatMessage> sendText(int contactId, String text, {int? replyTo}) =>
+      _guardAsync(
+        () async => _message(
+          await _store.sendText(
+            contactId: contactId,
+            text: text,
+            replyTo: replyTo,
+          ),
+        ),
+      );
+
+  @override
+  Future<ChatMessage> sendNudge(int contactId) => _guardAsync(
+    () async => _message(await _store.sendNudge(contactId: contactId)),
+  );
+
+  @override
+  Future<ChatMessage> editMessage(int id, String text) => _guardAsync(
+    () async => _message(await _store.editMessage(id: id, text: text)),
+  );
+
+  @override
+  Future<ChatMessage> deleteForEveryone(int id) =>
+      _guardAsync(() async => _message(await _store.deleteForEveryone(id: id)));
+
+  @override
+  Future<void> deleteForMe(int id) =>
+      _guardAsync(() => _store.deleteForMe(id: id));
+
+  @override
+  Future<ChatMessage> react(int id, int kind) =>
+      _guardAsync(() async => _message(await _store.react(id: id, kind: kind)));
+
+  @override
+  Future<void> typing(int contactId) =>
+      _guardAsync(() => _store.typing(contactId: contactId));
+
+  @override
+  Future<void> markRead(int contactId) =>
+      _guardAsync(() => _store.markRead(contactId: contactId));
+
+  @override
+  Future<List<ChatMessage>> search(String query) => _guardAsync(
+    () async => [
+      for (final m in await _store.search(query: query)) _message(m),
+    ],
+  );
+
+  @override
+  Future<ChatSettings> chatSettings() => _guardAsync(() async {
+    final s = await _store.chatSettings();
+    return ChatSettings(readReceipts: s.readReceipts, typing: s.typing);
+  });
+
+  @override
+  Future<void> setChatSettings(ChatSettings settings) => _guardAsync(
+    () => _store.setChatSettings(
+      settings: bridge.ChatSettings(
+        readReceipts: settings.readReceipts,
+        typing: settings.typing,
+      ),
+    ),
+  );
 }
+
+ChatMessage _message(bridge.MessageView m) => ChatMessage(
+  id: m.id,
+  contactId: m.contactId,
+  outgoing: m.outgoing,
+  kind: switch (m.kind) {
+    bridge.MessageKind.text => MessageKind.text,
+    bridge.MessageKind.nudge => MessageKind.nudge,
+  },
+  text: m.text,
+  replyTo: m.replyTo,
+  sentAt: DateTime.fromMillisecondsSinceEpoch(m.sentAt),
+  receivedAt: DateTime.fromMillisecondsSinceEpoch(m.receivedAt),
+  status: switch (m.status) {
+    bridge.MessageStatus.pending => MessageStatus.pending,
+    bridge.MessageStatus.delivered => MessageStatus.delivered,
+    bridge.MessageStatus.read => MessageStatus.read,
+  },
+  edited: m.edited,
+  deleted: m.deleted,
+  myReaction: m.myReaction,
+  theirReaction: m.theirReaction,
+  canEdit: m.canEdit,
+  canDeleteForEveryone: m.canDeleteForEveryone,
+);
 
 Contact _contact(bridge.ContactView c) => Contact(
   id: c.id,
@@ -323,6 +585,10 @@ CoreFailure _failure(bridge.CoreError error) => switch (error) {
   bridge.CoreError.unreachable => CoreFailure.unreachable,
   bridge.CoreError.protocol => CoreFailure.protocol,
   bridge.CoreError.unknownContact => CoreFailure.unknownContact,
+  bridge.CoreError.unknownMessage => CoreFailure.unknownMessage,
+  bridge.CoreError.invalidMessage => CoreFailure.invalidMessage,
+  bridge.CoreError.tooSoon => CoreFailure.tooSoon,
+  bridge.CoreError.tooLate => CoreFailure.tooLate,
   bridge.CoreError.storage => CoreFailure.storage,
 };
 

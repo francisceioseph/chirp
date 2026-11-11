@@ -248,4 +248,149 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get networkUnavailable => '本地网络没有启动。';
+
+  @override
+  String get messageHint => '消息';
+
+  @override
+  String get send => '发送';
+
+  @override
+  String get nudge => '提醒对方';
+
+  @override
+  String nudgeSent(String name) {
+    return '你提醒了 $name';
+  }
+
+  @override
+  String nudgeReceived(String name) {
+    return '$name 在提醒你';
+  }
+
+  @override
+  String get nudgePreview => '发出了提醒';
+
+  @override
+  String get typing => '正在输入…';
+
+  @override
+  String get messageDeleted => '此消息已删除';
+
+  @override
+  String get messageEdited => '已编辑';
+
+  @override
+  String get statusPending => '等待送达';
+
+  @override
+  String get statusDelivered => '已送达';
+
+  @override
+  String get statusRead => '已读';
+
+  @override
+  String get you => '你';
+
+  @override
+  String get reply => '回复';
+
+  @override
+  String replyingTo(String name) {
+    return '回复 $name';
+  }
+
+  @override
+  String get quotedMissing => '此设备上没有这条消息';
+
+  @override
+  String get editMessage => '编辑';
+
+  @override
+  String get editingMessage => '正在编辑消息';
+
+  @override
+  String get copyText => '复制文本';
+
+  @override
+  String get textCopied => '已复制';
+
+  @override
+  String get deleteForMe => '为我删除';
+
+  @override
+  String get deleteForEveryone => '为所有人删除';
+
+  @override
+  String get reaction1 => '赞';
+
+  @override
+  String get reaction2 => '爱心';
+
+  @override
+  String get reaction3 => '好笑';
+
+  @override
+  String get reaction4 => '难过';
+
+  @override
+  String get reaction5 => '谢谢';
+
+  @override
+  String get reaction6 => '庆祝';
+
+  @override
+  String get react => '回应';
+
+  @override
+  String get conversationEmpty => '还没有消息。打个招呼吧！';
+
+  @override
+  String get contactDetails => '联系人详情';
+
+  @override
+  String get searchMessages => '搜索消息';
+
+  @override
+  String get searchNothing => '未找到';
+
+  @override
+  String get searchHelp => '搜索所有对话中的词语，不区分大小写和重音。';
+
+  @override
+  String get messageTooSoon => '请等几秒再试。';
+
+  @override
+  String get messageTooLate => '修改这条消息的时限已过。';
+
+  @override
+  String get messageInvalid => '消息为空或太长。';
+
+  @override
+  String unreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 条未读消息',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatSettingsTitle => '对话';
+
+  @override
+  String get readReceipts => '已读回执';
+
+  @override
+  String get readReceiptsHelp => '关闭后，你也看不到别人何时读了你的消息。';
+
+  @override
+  String get typingIndicator => '输入提示';
+
+  @override
+  String get typingIndicatorHelp => '关闭后，你也看不到别人正在输入。';
+
+  @override
+  String get messageOptions => '消息选项';
 }

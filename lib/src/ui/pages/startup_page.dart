@@ -105,6 +105,7 @@ class _ReadyState extends State<_Ready> {
             return ProfilePage(
               profile: state.profile,
               info: startup.core.info,
+              store: startup.store,
               onRename: () => showRenameDialog(
                 context,
                 current: state.profile.displayName,

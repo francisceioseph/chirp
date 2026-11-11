@@ -5,21 +5,31 @@
 //! desligado e as features padrão do iroh fora): o nó só fala com os endereços que um
 //! convite ou um contato deram. Nenhum pacote vai para terceiros.
 //!
-//! Cada conexão é um aperto de mão (o `session`): no máximo quatro frames, em até
-//! `HANDSHAKE_TIMEOUT`.
+//! Uma conexão que chega é de um de dois tipos, pelo nó de quem conecta:
+//!
+//! - de um contato: as mensagens dele, uma por frame, cada uma confirmada com `Ack`
+//!   depois de gravada (`messages::receive`);
+//! - de qualquer outro: um aperto de mão (o `session`), no máximo quatro frames em até
+//!   `HANDSHAKE_TIMEOUT`.
+//!
+//! Para mandar, o nó esvazia a caixa de saída de cada contato numa conexão, na ordem,
+//! e só tira um envelope com o `Ack`. Tenta de novo a cada `RETRY_INTERVAL`, quando
+//! o contato fala com a gente e quando há algo novo na caixa.
 
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use iroh::address_lookup::MemoryLookup;
-use iroh::endpoint::{presets, Connection, RelayMode};
+use iroh::endpoint::{presets, Connection, IncomingAddr, RecvStream, RelayMode, SendStream};
 use iroh::{Endpoint, EndpointAddr, EndpointId, SecretKey};
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, mpsc};
 
-use crate::contacts::Contact;
+use crate::contacts::{self, Contact, ContactState};
 use crate::error::{CoreError, CoreResult};
 use crate::invite::Invite;
+use crate::messages::{self, Effect};
 use crate::session::{self, InviteKind};
 use crate::store::Store;
 use crate::wire::{self, Body, Peer};
@@ -27,14 +37,28 @@ use crate::wire::{self, Body, Peer};
 pub const ALPN: &[u8] = b"chirp/1";
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(20);
 const MAX_FRAMES: usize = 4;
-/// Quantos apertos de mão ao mesmo tempo; os de além esperam.
-const MAX_HANDSHAKES: usize = 8;
+/// Quantas conexões que chegam ao mesmo tempo; as de além esperam.
+const MAX_INCOMING: usize = 16;
+/// Para conectar a um contato.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+/// Uma conexão de mensagens sem nada por esse tempo é fechada.
+const IDLE_TIMEOUT: Duration = Duration::from_secs(30);
+/// Quantas mensagens numa conexão; o resto vai na próxima.
+const MAX_MESSAGES: usize = 1024;
+/// De quanto em quanto tempo a caixa de saída é tentada de novo.
+const RETRY_INTERVAL: Duration = Duration::from_secs(20);
+/// Um contato que falou com a gente (ou recebeu) há menos que isso está online.
+const ONLINE_FOR: Duration = Duration::from_secs(90);
 
 /// O que muda no núcleo sem a UI pedir.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeEvent {
     /// Um contato novo ou mudado (o id).
     ContactChanged(i64),
+    /// A conversa com o contato mudou: chegou mensagem, recibo, edição.
+    MessagesChanged(i64),
+    /// O contato está digitando.
+    Typing(i64),
 }
 
 pub type SharedStore = Arc<Mutex<Store>>;
@@ -45,6 +69,11 @@ pub struct Node {
     store: SharedStore,
     events: broadcast::Sender<NodeEvent>,
     discovery_key: Vec<u8>,
+    wake: mpsc::UnboundedSender<i64>,
+    /// Os contatos sendo entregues agora, e os que pediram entrega de novo no meio.
+    flushing: Mutex<(HashSet<i64>, HashSet<i64>)>,
+    /// Quando cada contato falou com a gente (ou recebeu) pela última vez.
+    seen: Mutex<HashMap<i64, Instant>>,
 }
 
 /// Um endereço da rede local: IPv4 privado (RFC 1918) ou IPv6 local único (fc00::/7).
@@ -72,31 +101,257 @@ async fn with_store<T: Send + 'static>(
 }
 
 impl Node {
-    /// Liga o nó, com a chave guardada no banco, em todas as interfaces.
+    /// Liga o nó, com a chave guardada no banco, em todas as interfaces. A porta é a da
+    /// última vez, para os contatos acharem o aparelho onde ele estava; se ela estiver
+    /// ocupada, vai outra, que fica guardada.
     pub async fn start(store: SharedStore) -> CoreResult<Arc<Node>> {
-        let keys = with_store(&store, |s| session::local_keys(s.conn())).await?;
-        let secret = SecretKey::from_bytes(&keys.endpoint_secret);
+        let (keys, port) = with_store(&store, |s| {
+            let keys = session::local_keys(s.conn())?;
+            let port: u16 =
+                s.conn()
+                    .query_row("SELECT port FROM local_keys WHERE id = 1", [], |r| r.get(0))?;
+            Ok((keys, port))
+        })
+        .await?;
         let lookup = MemoryLookup::new();
-        let endpoint = Endpoint::builder(presets::Minimal)
-            .relay_mode(RelayMode::Disabled)
-            .clear_address_lookup()
-            .address_lookup(lookup.clone())
-            .secret_key(secret)
-            .alpns(vec![ALPN.to_vec()])
-            .bind()
-            .await
-            .map_err(|_| CoreError::Unreachable)?;
-        let (events, _) = broadcast::channel(64);
+        let builder = |port: u16| -> CoreResult<iroh::endpoint::Builder> {
+            let builder = Endpoint::builder(presets::Minimal)
+                .relay_mode(RelayMode::Disabled)
+                .clear_address_lookup()
+                .address_lookup(lookup.clone())
+                .secret_key(SecretKey::from_bytes(&keys.endpoint_secret))
+                .alpns(vec![ALPN.to_vec()]);
+            if port == 0 {
+                return Ok(builder);
+            }
+            builder
+                .clear_ip_transports()
+                .bind_addr(SocketAddr::from(([0, 0, 0, 0], port)))
+                .and_then(|b| b.bind_addr(SocketAddr::from(([0u16; 8], port))))
+                .map_err(|_| CoreError::Unreachable)
+        };
+        let mut bound = match builder(port) {
+            Ok(b) if port != 0 => b.bind().await.ok(),
+            _ => None,
+        };
+        if bound.is_none() {
+            bound = builder(0)?.bind().await.ok();
+        }
+        let endpoint = bound.ok_or(CoreError::Unreachable)?;
+        if let Some(now) = endpoint
+            .bound_sockets()
+            .iter()
+            .map(|a| a.port())
+            .find(|p| *p != 0)
+        {
+            if now != port {
+                let _ = with_store(&store, move |s| {
+                    s.conn()
+                        .execute("UPDATE local_keys SET port = ?1 WHERE id = 1", [now])?;
+                    Ok(())
+                })
+                .await;
+            }
+        }
+        let (events, _) = broadcast::channel(256);
+        let (wake, woken) = mpsc::unbounded_channel();
         let node = Arc::new(Node {
             endpoint,
             lookup,
             store,
             events,
             discovery_key: keys.discovery_key.to_vec(),
+            wake,
+            flushing: Mutex::new((HashSet::new(), HashSet::new())),
+            seen: Mutex::new(HashMap::new()),
         });
-        let accepting = node.clone();
-        tokio::spawn(async move { accepting.accept_loop().await });
+        tokio::spawn(node.clone().accept_loop());
+        tokio::spawn(node.clone().delivery_loop(woken));
+        tokio::spawn(node.clone().announce());
         Ok(node)
+    }
+
+    /// Diz a cada contato que o aparelho está aqui: uma conexão sem nada dentro, que
+    /// o nó do contato reconhece pela chave. Ele guarda o endereço de agora e entrega o
+    /// que esperava por nós.
+    async fn announce(self: Arc<Self>) {
+        let Ok(contacts) = with_store(&self.store, |s| contacts::list(s.conn())).await else {
+            return;
+        };
+        for contact in contacts {
+            if contact.state != ContactState::Established {
+                continue;
+            }
+            let node = self.clone();
+            tokio::spawn(async move {
+                let Ok(conn) = node.connect(&contact).await else {
+                    return;
+                };
+                node.saw(contact.id);
+                if let Ok((mut send, _recv)) = conn.open_bi().await {
+                    let _ = send.finish();
+                    let _ = tokio::time::timeout(Duration::from_secs(5), conn.closed()).await;
+                }
+                conn.close(0u32.into(), b"");
+            });
+        }
+    }
+
+    /// O contato respondeu há pouco. O "digitando" só vai para quem está online: cada
+    /// aviso gasta uma chave do ratchet, e os que não saem viram chaves puladas do
+    /// outro lado (o libsignal aceita um número limitado delas).
+    pub fn is_online(&self, contact_id: i64) -> bool {
+        self.seen
+            .lock()
+            .ok()
+            .and_then(|seen| seen.get(&contact_id).copied())
+            .is_some_and(|at| at.elapsed() < ONLINE_FOR)
+    }
+
+    fn saw(&self, contact_id: i64) {
+        if let Ok(mut seen) = self.seen.lock() {
+            seen.insert(contact_id, Instant::now());
+        }
+    }
+
+    /// Pede a entrega da caixa de saída do contato, logo.
+    pub fn flush(&self, contact_id: i64) {
+        let _ = self.wake.send(contact_id);
+    }
+
+    fn emit(&self, event: NodeEvent) {
+        let _ = self.events.send(event);
+    }
+
+    async fn delivery_loop(self: Arc<Self>, mut woken: mpsc::UnboundedReceiver<i64>) {
+        let mut tick = tokio::time::interval(RETRY_INTERVAL);
+        loop {
+            let ids = tokio::select! {
+                id = woken.recv() => match id {
+                    Some(id) => vec![id],
+                    None => return,
+                },
+                _ = tick.tick() => {
+                    let waiting = with_store(&self.store, |s| {
+                        messages::drop_ephemeral(s.conn(), None)?;
+                        messages::waiting(s.conn())
+                    })
+                    .await;
+                    waiting.unwrap_or_default()
+                }
+            };
+            if self.endpoint.is_closed() {
+                return;
+            }
+            for id in ids {
+                tokio::spawn(self.clone().flush_now(id));
+            }
+        }
+    }
+
+    /// Esvazia a caixa do contato; uma entrega por contato de cada vez.
+    async fn flush_now(self: Arc<Self>, contact_id: i64) {
+        {
+            let Ok(mut flushing) = self.flushing.lock() else {
+                return;
+            };
+            if !flushing.0.insert(contact_id) {
+                flushing.1.insert(contact_id);
+                return;
+            }
+        }
+        loop {
+            let _ = self.deliver(contact_id).await;
+            let Ok(mut flushing) = self.flushing.lock() else {
+                return;
+            };
+            if !flushing.1.remove(&contact_id) {
+                flushing.0.remove(&contact_id);
+                return;
+            }
+        }
+    }
+
+    async fn deliver(&self, contact_id: i64) -> CoreResult<()> {
+        let (contact, first) = with_store(&self.store, move |s| {
+            let contact = contacts::by_id(s.conn(), contact_id)?;
+            Ok((contact, messages::next_out(s.conn(), contact_id)?))
+        })
+        .await?;
+        if first.is_none() || contact.state != ContactState::Established {
+            return Ok(());
+        }
+        let result = self.deliver_to(&contact).await;
+        // O "digitando" que não saiu agora não vale depois.
+        let _ = with_store(&self.store, move |s| {
+            messages::drop_ephemeral(s.conn(), Some(contact_id))
+        })
+        .await;
+        result
+    }
+
+    async fn deliver_to(&self, contact: &Contact) -> CoreResult<()> {
+        let conn = self.connect(contact).await?;
+        self.saw(contact.id);
+        let result = self.send_all(&conn, contact.id).await;
+        conn.close(0u32.into(), b"");
+        result
+    }
+
+    async fn connect(&self, contact: &Contact) -> CoreResult<Connection> {
+        let remote = EndpointId::from_bytes(
+            contact
+                .endpoint_id
+                .as_slice()
+                .try_into()
+                .map_err(|_| CoreError::Storage)?,
+        )
+        .map_err(|_| CoreError::Storage)?;
+        let addrs: Vec<SocketAddr> = contact
+            .addrs
+            .iter()
+            .filter_map(|a| a.parse().ok())
+            .collect();
+        let addr = EndpointAddr::from_parts(remote, addrs.into_iter().map(iroh::TransportAddr::Ip));
+        self.lookup.add_endpoint_info(addr.clone());
+        tokio::time::timeout(CONNECT_TIMEOUT, self.endpoint.connect(addr, ALPN))
+            .await
+            .map_err(|_| CoreError::Unreachable)?
+            .map_err(|_| CoreError::Unreachable)
+    }
+
+    async fn send_all(&self, conn: &Connection, contact_id: i64) -> CoreResult<()> {
+        let (mut send, mut recv) = conn.open_bi().await.map_err(|_| CoreError::Unreachable)?;
+        for _ in 0..MAX_MESSAGES {
+            let Some(out) = with_store(&self.store, move |s| {
+                messages::next_out(s.conn(), contact_id)
+            })
+            .await?
+            else {
+                break;
+            };
+            let body = if out.prekey {
+                Body::PreKeyMessage(out.ciphertext)
+            } else {
+                Body::Message(out.ciphertext)
+            };
+            wire::write_frame(&mut send, &wire::frame(body)).await?;
+            let reply = tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(&mut recv))
+                .await
+                .map_err(|_| CoreError::Unreachable)??;
+            match reply {
+                Body::Ack(_) => {
+                    let id = out.id;
+                    if with_store(&self.store, move |s| messages::delivered(s.conn(), id)).await? {
+                        self.emit(NodeEvent::MessagesChanged(contact_id));
+                    }
+                }
+                Body::Refused(_) => return Err(CoreError::Protocol),
+                _ => return Err(CoreError::Protocol),
+            }
+        }
+        let _ = send.finish();
+        Ok(())
     }
 
     pub fn id(&self) -> [u8; 32] {
@@ -143,6 +398,13 @@ impl Node {
             EndpointId::from_bytes(&invite.endpoint_id).map_err(|_| CoreError::InvalidInvite)?;
         if remote == self.endpoint.id() {
             return Err(CoreError::OwnInvite);
+        }
+        let key = invite.identity_key;
+        if with_store(&self.store, move |s| contacts::by_identity(s.conn(), &key))
+            .await?
+            .is_some()
+        {
+            return Err(CoreError::AlreadyExists);
         }
         let addr = EndpointAddr::from_parts(
             remote,
@@ -198,7 +460,7 @@ impl Node {
         match result {
             Ok(contact) => {
                 let _ = send.finish();
-                let _ = self.events.send(NodeEvent::ContactChanged(contact.id));
+                self.emit(NodeEvent::ContactChanged(contact.id));
                 Ok(contact)
             }
             Err(error) => {
@@ -211,7 +473,7 @@ impl Node {
     }
 
     async fn accept_loop(self: Arc<Self>) {
-        let slots = Arc::new(tokio::sync::Semaphore::new(MAX_HANDSHAKES));
+        let slots = Arc::new(tokio::sync::Semaphore::new(MAX_INCOMING));
         while let Some(incoming) = self.endpoint.accept().await {
             let Ok(slot) = slots.clone().acquire_owned().await else {
                 return;
@@ -219,15 +481,89 @@ impl Node {
             let node = self.clone();
             tokio::spawn(async move {
                 let _slot = slot;
+                let from = match incoming.remote_addr() {
+                    IncomingAddr::Ip(addr) => Some(addr),
+                    _ => None,
+                };
                 let Ok(conn) = incoming.await else { return };
-                let _ = tokio::time::timeout(HANDSHAKE_TIMEOUT, node.serve(&conn)).await;
+                let _ = node.serve(&conn, from).await;
                 conn.close(0u32.into(), b"");
             });
         }
     }
 
+    async fn serve(&self, conn: &Connection, from: Option<SocketAddr>) -> CoreResult<()> {
+        let remote = *conn.remote_id().as_bytes();
+        let contact = with_store(&self.store, move |s| {
+            contacts::by_endpoint(s.conn(), &remote)
+        })
+        .await?;
+        match contact {
+            Some(contact) => {
+                self.saw(contact.id);
+                // O contato falou daqui: é o endereço mais provável dele agora.
+                if let Some(addr) = from.filter(|a| is_local(a) || a.ip().is_loopback()) {
+                    let id = contact.id;
+                    let _ = with_store(&self.store, move |s| {
+                        contacts::learn_addr(s.conn(), id, &addr.to_string())
+                    })
+                    .await;
+                }
+                let result = self.serve_messages(conn, remote).await;
+                // Está online: o que esperava por ele vai agora.
+                self.flush(contact.id);
+                result
+            }
+            None => tokio::time::timeout(HANDSHAKE_TIMEOUT, self.serve_handshake(conn))
+                .await
+                .unwrap_or(Err(CoreError::Unreachable)),
+        }
+    }
+
+    /// As mensagens de um contato: cada uma é decifrada e gravada antes do `Ack`.
+    async fn serve_messages(&self, conn: &Connection, remote: [u8; 32]) -> CoreResult<()> {
+        let (mut send, mut recv): (SendStream, RecvStream) =
+            tokio::time::timeout(IDLE_TIMEOUT, conn.accept_bi())
+                .await
+                .map_err(|_| CoreError::Unreachable)?
+                .map_err(|_| CoreError::Unreachable)?;
+        for _ in 0..MAX_MESSAGES {
+            let frame = match tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(&mut recv)).await
+            {
+                Ok(Ok(frame)) => frame,
+                // O outro lado terminou (ou sumiu).
+                _ => break,
+            };
+            let (prekey, bytes) = match frame {
+                Body::Message(bytes) => (false, bytes),
+                Body::PreKeyMessage(bytes) => (true, bytes),
+                _ => return Err(CoreError::Protocol),
+            };
+            let result = with_store(&self.store, move |s| {
+                messages::receive(s, &remote, prekey, &bytes)
+            })
+            .await;
+            let reply = match result {
+                Ok(effect) => {
+                    match effect {
+                        Effect::Messages(id) => self.emit(NodeEvent::MessagesChanged(id)),
+                        Effect::Typing(id) => self.emit(NodeEvent::Typing(id)),
+                        Effect::Contact(id) => self.emit(NodeEvent::ContactChanged(id)),
+                        Effect::Nothing => {}
+                    }
+                    Body::Ack(wire::Ack {})
+                }
+                Err(_) => Body::Refused(wire::Refused {}),
+            };
+            wire::write_frame(&mut send, &wire::frame(reply)).await?;
+        }
+        let _ = send.finish();
+        let _ = tokio::time::timeout(Duration::from_secs(2), conn.closed()).await;
+        Ok(())
+    }
+
     /// O lado de quem convidou: responde ao pedido de prekeys e ao Hello.
-    async fn serve(&self, conn: &Connection) -> CoreResult<()> {
+    async fn serve_handshake(&self, conn: &Connection) -> CoreResult<()> {
         let remote = *conn.remote_id().as_bytes();
         let (mut send, mut recv) = conn.accept_bi().await.map_err(|_| CoreError::Unreachable)?;
         for _ in 0..MAX_FRAMES {
@@ -251,7 +587,7 @@ impl Node {
                             wire::write_frame(&mut send, &wire::frame(Body::Message(welcome)))
                                 .await?;
                             let _ = send.finish();
-                            let _ = self.events.send(NodeEvent::ContactChanged(contact.id));
+                            self.emit(NodeEvent::ContactChanged(contact.id));
                             // Espera o outro lado ler antes de fechar.
                             let _ =
                                 tokio::time::timeout(Duration::from_secs(5), conn.closed()).await;
@@ -305,7 +641,9 @@ mod tests {
             .await
             .unwrap()
             .unwrap();
-        let NodeEvent::ContactChanged(id) = event;
+        let NodeEvent::ContactChanged(id) = event else {
+            panic!("{event:?}");
+        };
         let at_alice = crate::contacts::by_id(alice_store.lock().unwrap().conn(), id).unwrap();
         assert_eq!(at_alice.display_name, "Bob");
         assert!(!at_alice.verified);
@@ -323,6 +661,128 @@ mod tests {
         for node in [alice, bob, carol] {
             node.close().await;
         }
+    }
+
+    /// Espera até o banco dizer o que se quer (a rede é assíncrona).
+    async fn until(what: &str, mut ok: impl FnMut() -> bool) {
+        for _ in 0..200 {
+            if ok() {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        panic!("timed out waiting for {what}");
+    }
+
+    fn texts(store: &SharedStore, contact: i64) -> Vec<(String, crate::messages::Status)> {
+        crate::messages::list(store.lock().unwrap().conn(), contact, None, 100)
+            .unwrap()
+            .into_iter()
+            .map(|m| (m.body, m.status))
+            .collect()
+    }
+
+    async fn befriend(alice_store: &SharedStore, alice: &Node, bob: &Node) -> (i64, i64) {
+        let mut events = alice.subscribe();
+        let invite = alice.create_invite(InviteKind::Qr).await.unwrap();
+        let at_bob = bob.join(invite, true).await.unwrap();
+        loop {
+            if let Ok(Ok(NodeEvent::ContactChanged(id))) =
+                tokio::time::timeout(Duration::from_secs(5), events.recv()).await
+            {
+                assert_eq!(contacts(alice_store).len(), 1);
+                return (id, at_bob.id);
+            }
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn messages_go_both_ways_with_receipts() {
+        use crate::messages::{self, Status};
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start(alice_store.clone()).await.unwrap();
+        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
+        let mut bob_events = bob.subscribe();
+
+        messages::send_text(&mut alice_store.lock().unwrap(), bob_at_alice, "oi", None).unwrap();
+        alice.flush(bob_at_alice);
+        until("Bob receives", || {
+            texts(&bob_store, alice_at_bob).len() == 1
+        })
+        .await;
+        until("Alice sees it delivered", || {
+            texts(&alice_store, bob_at_alice) == [("oi".to_owned(), Status::Delivered)]
+        })
+        .await;
+        let event = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Ok(NodeEvent::MessagesChanged(id)) = bob_events.recv().await {
+                    return id;
+                }
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(event, alice_at_bob);
+        // Os dois acabaram de se falar: o "digitando" pode sair.
+        assert!(alice.is_online(bob_at_alice));
+        assert!(bob.is_online(alice_at_bob));
+        assert!(!bob.is_online(999));
+
+        // Bob lê e responde; o recibo e a resposta voltam.
+        messages::mark_read(&mut bob_store.lock().unwrap(), alice_at_bob).unwrap();
+        messages::send_text(&mut bob_store.lock().unwrap(), alice_at_bob, "olá", None).unwrap();
+        bob.flush(alice_at_bob);
+        until("Alice gets the reply and the receipt", || {
+            texts(&alice_store, bob_at_alice)
+                == [
+                    ("oi".to_owned(), Status::Read),
+                    ("olá".to_owned(), Status::Pending),
+                ]
+        })
+        .await;
+        alice.close().await;
+        bob.close().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn messages_wait_for_a_contact_that_was_off() {
+        use crate::messages::{self, Status};
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start(alice_store.clone()).await.unwrap();
+        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
+        bob.close().await;
+
+        for text in ["um", "dois", "três"] {
+            messages::send_text(&mut alice_store.lock().unwrap(), bob_at_alice, text, None)
+                .unwrap();
+        }
+        alice.flush(bob_at_alice);
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        assert!(texts(&alice_store, bob_at_alice)
+            .iter()
+            .all(|(_, s)| *s == Status::Pending));
+
+        // Bob volta (na mesma porta, ou avisando onde está): tudo chega, na ordem.
+        let bob = Node::start(bob_store.clone()).await.unwrap();
+        until("Bob gets the queue", || {
+            texts(&bob_store, alice_at_bob)
+                .iter()
+                .map(|(t, _)| t.as_str())
+                .collect::<Vec<_>>()
+                == ["um", "dois", "três"]
+        })
+        .await;
+        until("Alice sees all delivered", || {
+            texts(&alice_store, bob_at_alice)
+                .iter()
+                .all(|(_, s)| *s == Status::Delivered)
+        })
+        .await;
+        alice.close().await;
+        bob.close().await;
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

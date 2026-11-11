@@ -122,6 +122,10 @@ void main() {
     final store = await ready(tester);
     store.someoneJoined('Canela', verified: false);
     await tester.pumpAndSettle();
+    // Tocar abre a conversa; o título dela abre os detalhes.
+    await tester.tap(find.text('Canela'));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.conversationEmpty), findsOneWidget);
     await tester.tap(find.text('Canela'));
     await tester.pumpAndSettle();
     expect(find.text(l10n.safetyNumberTitle), findsOneWidget);
@@ -136,6 +140,9 @@ void main() {
     await tester.tap(find.text(l10n.markVerified));
     await tester.pumpAndSettle();
     expect((await store.contacts()).single.verified, isTrue);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.contactVerified), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text(l10n.contactVerified), findsOneWidget);
@@ -166,6 +173,8 @@ void main() {
     'colar convite': (tester, store) => openPaste(tester),
     'contato': (tester, store) async {
       store.someoneJoined('Canela');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Canela'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Canela'));
       await tester.pumpAndSettle();

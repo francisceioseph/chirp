@@ -265,4 +265,154 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
 
   @override
   String get networkUnavailable => 'Le réseau local n\'a pas démarré.';
+
+  @override
+  String get messageHint => 'Message';
+
+  @override
+  String get send => 'Envoyer';
+
+  @override
+  String get nudge => 'Attirer l\'attention';
+
+  @override
+  String nudgeSent(String name) {
+    return 'Vous avez attiré l\'attention de $name';
+  }
+
+  @override
+  String nudgeReceived(String name) {
+    return '$name veut attirer votre attention';
+  }
+
+  @override
+  String get nudgePreview => 'A attiré l\'attention';
+
+  @override
+  String get typing => 'écrit…';
+
+  @override
+  String get messageDeleted => 'Ce message a été supprimé';
+
+  @override
+  String get messageEdited => 'modifié';
+
+  @override
+  String get statusPending => 'En attente d\'envoi';
+
+  @override
+  String get statusDelivered => 'Distribué';
+
+  @override
+  String get statusRead => 'Lu';
+
+  @override
+  String get you => 'Vous';
+
+  @override
+  String get reply => 'Répondre';
+
+  @override
+  String replyingTo(String name) {
+    return 'Réponse à $name';
+  }
+
+  @override
+  String get quotedMissing => 'Message absent de cet appareil';
+
+  @override
+  String get editMessage => 'Modifier';
+
+  @override
+  String get editingMessage => 'Modification du message';
+
+  @override
+  String get copyText => 'Copier le texte';
+
+  @override
+  String get textCopied => 'Copié';
+
+  @override
+  String get deleteForMe => 'Supprimer pour moi';
+
+  @override
+  String get deleteForEveryone => 'Supprimer pour tous';
+
+  @override
+  String get reaction1 => 'J\'aime';
+
+  @override
+  String get reaction2 => 'J\'adore';
+
+  @override
+  String get reaction3 => 'Drôle';
+
+  @override
+  String get reaction4 => 'Triste';
+
+  @override
+  String get reaction5 => 'Merci';
+
+  @override
+  String get reaction6 => 'Bravo';
+
+  @override
+  String get react => 'Réagir';
+
+  @override
+  String get conversationEmpty => 'Pas encore de messages. Dites bonjour !';
+
+  @override
+  String get contactDetails => 'Détails du contact';
+
+  @override
+  String get searchMessages => 'Rechercher des messages';
+
+  @override
+  String get searchNothing => 'Aucun résultat';
+
+  @override
+  String get searchHelp =>
+      'Des mots de n\'importe quelle conversation, sans tenir compte des accents ni des majuscules.';
+
+  @override
+  String get messageTooSoon =>
+      'Attendez quelques secondes avant de recommencer.';
+
+  @override
+  String get messageTooLate => 'Le délai pour modifier ce message est passé.';
+
+  @override
+  String get messageInvalid => 'Le message est vide ou trop long.';
+
+  @override
+  String unreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages non lus',
+      one: '$count message non lu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatSettingsTitle => 'Conversations';
+
+  @override
+  String get readReceipts => 'Accusés de lecture';
+
+  @override
+  String get readReceiptsHelp =>
+      'Désactivés, vous ne voyez pas non plus quand on lit les vôtres.';
+
+  @override
+  String get typingIndicator => 'Indicateur de saisie';
+
+  @override
+  String get typingIndicatorHelp =>
+      'Désactivé, vous ne voyez pas non plus quand les autres écrivent.';
+
+  @override
+  String get messageOptions => 'Options du message';
 }

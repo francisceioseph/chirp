@@ -9,6 +9,7 @@ mod contacts;
 mod error;
 mod identity;
 mod invite;
+mod messages;
 mod node;
 mod passphrase;
 mod profile;

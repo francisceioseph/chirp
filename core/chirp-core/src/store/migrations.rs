@@ -65,6 +65,64 @@ const MIGRATIONS: &[&str] = &[
          state           INTEGER NOT NULL,
          created_at      INTEGER NOT NULL
      );",
+    // 3: as mensagens, a caixa de saída e a busca (fase 3).
+    "ALTER TABLE local_keys ADD COLUMN port INTEGER NOT NULL DEFAULT 0;
+     ALTER TABLE contacts ADD COLUMN lamport INTEGER NOT NULL DEFAULT 0;
+     ALTER TABLE contacts ADD COLUMN nudge_in_at INTEGER NOT NULL DEFAULT 0;
+     ALTER TABLE contacts ADD COLUMN nudge_out_at INTEGER NOT NULL DEFAULT 0;
+     CREATE TABLE messages (
+         id          INTEGER PRIMARY KEY,
+         contact_id  INTEGER NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
+         message_id  BLOB NOT NULL,
+         outgoing    INTEGER NOT NULL,
+         kind        INTEGER NOT NULL,
+         body        TEXT NOT NULL,
+         reply_to    BLOB,
+         sent_at     INTEGER NOT NULL,
+         received_at INTEGER NOT NULL,
+         lamport     INTEGER NOT NULL,
+         status      INTEGER NOT NULL,
+         edited      INTEGER NOT NULL DEFAULT 0,
+         deleted     INTEGER NOT NULL DEFAULT 0,
+         UNIQUE (contact_id, message_id)
+     );
+     CREATE INDEX messages_order ON messages (contact_id, lamport, sent_at, id);
+     CREATE TABLE reactions (
+         message  INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE,
+         outgoing INTEGER NOT NULL,
+         kind     INTEGER NOT NULL,
+         PRIMARY KEY (message, outgoing)
+     );
+     CREATE TABLE outbox (
+         id         INTEGER PRIMARY KEY,
+         contact_id INTEGER NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
+         message_id BLOB NOT NULL,
+         prekey     INTEGER NOT NULL,
+         ciphertext BLOB NOT NULL,
+         ephemeral  INTEGER NOT NULL,
+         created_at INTEGER NOT NULL
+     );
+     CREATE INDEX outbox_order ON outbox (contact_id, id);
+     CREATE TABLE settings (
+         id            INTEGER PRIMARY KEY CHECK (id = 1),
+         read_receipts INTEGER NOT NULL,
+         typing        INTEGER NOT NULL
+     );
+     INSERT INTO settings (id, read_receipts, typing) VALUES (1, 1, 1);
+     CREATE VIRTUAL TABLE messages_fts USING fts5 (
+         body, content = 'messages', content_rowid = 'id',
+         tokenize = 'unicode61 remove_diacritics 2'
+     );
+     CREATE TRIGGER messages_fts_insert AFTER INSERT ON messages BEGIN
+         INSERT INTO messages_fts (rowid, body) VALUES (new.id, new.body);
+     END;
+     CREATE TRIGGER messages_fts_delete AFTER DELETE ON messages BEGIN
+         INSERT INTO messages_fts (messages_fts, rowid, body) VALUES ('delete', old.id, old.body);
+     END;
+     CREATE TRIGGER messages_fts_update AFTER UPDATE OF body ON messages BEGIN
+         INSERT INTO messages_fts (messages_fts, rowid, body) VALUES ('delete', old.id, old.body);
+         INSERT INTO messages_fts (rowid, body) VALUES (new.id, new.body);
+     END;",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

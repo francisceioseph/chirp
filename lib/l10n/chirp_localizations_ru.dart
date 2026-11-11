@@ -266,4 +266,156 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get networkUnavailable => 'Локальная сеть не запустилась.';
+
+  @override
+  String get messageHint => 'Сообщение';
+
+  @override
+  String get send => 'Отправить';
+
+  @override
+  String get nudge => 'Привлечь внимание';
+
+  @override
+  String nudgeSent(String name) {
+    return 'Вы привлекли внимание: $name';
+  }
+
+  @override
+  String nudgeReceived(String name) {
+    return '$name привлекает ваше внимание';
+  }
+
+  @override
+  String get nudgePreview => 'Привлекает внимание';
+
+  @override
+  String get typing => 'печатает…';
+
+  @override
+  String get messageDeleted => 'Сообщение удалено';
+
+  @override
+  String get messageEdited => 'изменено';
+
+  @override
+  String get statusPending => 'Ожидает доставки';
+
+  @override
+  String get statusDelivered => 'Доставлено';
+
+  @override
+  String get statusRead => 'Прочитано';
+
+  @override
+  String get you => 'Вы';
+
+  @override
+  String get reply => 'Ответить';
+
+  @override
+  String replyingTo(String name) {
+    return 'Ответ: $name';
+  }
+
+  @override
+  String get quotedMissing => 'Сообщения нет на этом устройстве';
+
+  @override
+  String get editMessage => 'Изменить';
+
+  @override
+  String get editingMessage => 'Редактирование сообщения';
+
+  @override
+  String get copyText => 'Копировать текст';
+
+  @override
+  String get textCopied => 'Скопировано';
+
+  @override
+  String get deleteForMe => 'Удалить у меня';
+
+  @override
+  String get deleteForEveryone => 'Удалить у всех';
+
+  @override
+  String get reaction1 => 'Нравится';
+
+  @override
+  String get reaction2 => 'Обожаю';
+
+  @override
+  String get reaction3 => 'Смешно';
+
+  @override
+  String get reaction4 => 'Грустно';
+
+  @override
+  String get reaction5 => 'Спасибо';
+
+  @override
+  String get reaction6 => 'Ура';
+
+  @override
+  String get react => 'Реакция';
+
+  @override
+  String get conversationEmpty => 'Сообщений пока нет. Поздоровайтесь!';
+
+  @override
+  String get contactDetails => 'Сведения о контакте';
+
+  @override
+  String get searchMessages => 'Поиск сообщений';
+
+  @override
+  String get searchNothing => 'Ничего не найдено';
+
+  @override
+  String get searchHelp =>
+      'Слова из любой переписки, без учёта ударений и регистра.';
+
+  @override
+  String get messageTooSoon =>
+      'Подождите несколько секунд, прежде чем повторить.';
+
+  @override
+  String get messageTooLate => 'Время на изменение этого сообщения истекло.';
+
+  @override
+  String get messageInvalid => 'Сообщение пустое или слишком длинное.';
+
+  @override
+  String unreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count непрочитанного сообщения',
+      many: '$count непрочитанных сообщений',
+      few: '$count непрочитанных сообщения',
+      one: '$count непрочитанное сообщение',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatSettingsTitle => 'Переписка';
+
+  @override
+  String get readReceipts => 'Отчёты о прочтении';
+
+  @override
+  String get readReceiptsHelp =>
+      'Если выключить, вы тоже не увидите, когда прочитают ваши.';
+
+  @override
+  String get typingIndicator => 'Индикатор набора';
+
+  @override
+  String get typingIndicatorHelp =>
+      'Если выключить, вы тоже не увидите, когда печатают другие.';
+
+  @override
+  String get messageOptions => 'Действия с сообщением';
 }

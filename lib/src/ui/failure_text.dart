@@ -18,5 +18,8 @@ String failureText(
   CoreFailure.unreachable => l10n.inviteUnreachable,
   CoreFailure.alreadyExists => l10n.inviteAlreadyContact,
   CoreFailure.protocol => l10n.inviteProtocol,
+  CoreFailure.tooSoon => l10n.messageTooSoon,
+  CoreFailure.tooLate => l10n.messageTooLate,
+  CoreFailure.invalidMessage => l10n.messageInvalid,
   _ => l10n.somethingWentWrong,
 };

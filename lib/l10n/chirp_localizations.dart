@@ -557,6 +557,270 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'The local network did not start.'**
   String get networkUnavailable;
+
+  /// No description provided for @messageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messageHint;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @nudge.
+  ///
+  /// In en, this message translates to:
+  /// **'Get their attention'**
+  String get nudge;
+
+  /// No description provided for @nudgeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'You asked for {name}\'s attention'**
+  String nudgeSent(String name);
+
+  /// No description provided for @nudgeReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} wants your attention'**
+  String nudgeReceived(String name);
+
+  /// No description provided for @nudgePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked for attention'**
+  String get nudgePreview;
+
+  /// No description provided for @typing.
+  ///
+  /// In en, this message translates to:
+  /// **'typing…'**
+  String get typing;
+
+  /// No description provided for @messageDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'This message was deleted'**
+  String get messageDeleted;
+
+  /// No description provided for @messageEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'edited'**
+  String get messageEdited;
+
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to be delivered'**
+  String get statusPending;
+
+  /// No description provided for @statusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get statusDelivered;
+
+  /// No description provided for @statusRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get statusRead;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
+  /// No description provided for @reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get reply;
+
+  /// No description provided for @replyingTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to {name}'**
+  String replyingTo(String name);
+
+  /// No description provided for @quotedMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Message not on this device'**
+  String get quotedMissing;
+
+  /// No description provided for @editMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editMessage;
+
+  /// No description provided for @editingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing message'**
+  String get editingMessage;
+
+  /// No description provided for @copyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get copyText;
+
+  /// No description provided for @textCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get textCopied;
+
+  /// No description provided for @deleteForMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for me'**
+  String get deleteForMe;
+
+  /// No description provided for @deleteForEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for everyone'**
+  String get deleteForEveryone;
+
+  /// No description provided for @reaction1.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get reaction1;
+
+  /// No description provided for @reaction2.
+  ///
+  /// In en, this message translates to:
+  /// **'Love'**
+  String get reaction2;
+
+  /// No description provided for @reaction3.
+  ///
+  /// In en, this message translates to:
+  /// **'Funny'**
+  String get reaction3;
+
+  /// No description provided for @reaction4.
+  ///
+  /// In en, this message translates to:
+  /// **'Sad'**
+  String get reaction4;
+
+  /// No description provided for @reaction5.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks'**
+  String get reaction5;
+
+  /// No description provided for @reaction6.
+  ///
+  /// In en, this message translates to:
+  /// **'Celebrate'**
+  String get reaction6;
+
+  /// No description provided for @react.
+  ///
+  /// In en, this message translates to:
+  /// **'React'**
+  String get react;
+
+  /// No description provided for @conversationEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet. Say hi!'**
+  String get conversationEmpty;
+
+  /// No description provided for @contactDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact details'**
+  String get contactDetails;
+
+  /// No description provided for @searchMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get searchMessages;
+
+  /// No description provided for @searchNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing found'**
+  String get searchNothing;
+
+  /// No description provided for @searchHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Words from any conversation, ignoring accents and case.'**
+  String get searchHelp;
+
+  /// No description provided for @messageTooSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait a few seconds before doing that again.'**
+  String get messageTooSoon;
+
+  /// No description provided for @messageTooLate.
+  ///
+  /// In en, this message translates to:
+  /// **'The time to change this message is over.'**
+  String get messageTooLate;
+
+  /// No description provided for @messageInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The message is empty or too long.'**
+  String get messageInvalid;
+
+  /// No description provided for @unreadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} unread message} other{{count} unread messages}}'**
+  String unreadCount(int count);
+
+  /// No description provided for @chatSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get chatSettingsTitle;
+
+  /// No description provided for @readReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Read receipts'**
+  String get readReceipts;
+
+  /// No description provided for @readReceiptsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, you don\'t see when others read yours either.'**
+  String get readReceiptsHelp;
+
+  /// No description provided for @typingIndicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Typing indicator'**
+  String get typingIndicator;
+
+  /// No description provided for @typingIndicatorHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'When off, you don\'t see when others are typing either.'**
+  String get typingIndicatorHelp;
+
+  /// No description provided for @messageOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Message options'**
+  String get messageOptions;
 }
 
 class _ChirpLocalizationsDelegate

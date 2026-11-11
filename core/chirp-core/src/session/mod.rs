@@ -36,7 +36,7 @@ use crate::error::{CoreError, CoreResult};
 use crate::invite::Invite;
 use crate::random::secret_bytes;
 use crate::store::Store;
-use crate::wire::{self, Content, ContentBody, Hello, Peer, Profile, Welcome};
+use crate::wire::{self, Content, ContentBody, Hello, Peer, PeerProfile, Welcome};
 pub use store::ProtocolStore;
 
 /// Quanto tempo um convite vale (docs/PLANO.md, 6.2).
@@ -357,12 +357,14 @@ pub fn join(
         message_id: random_message_id()?,
         body: Some(ContentBody::Hello(Hello {
             token: invite.token.to_vec(),
-            profile: Some(Profile {
+            profile: Some(PeerProfile {
                 display_name: profile.display_name,
                 version: profile.version,
             }),
             peer: Some(me),
         })),
+        sent_at: 0,
+        lamport: 0,
         padding: vec![],
     }
     .encode_padded();
@@ -502,12 +504,14 @@ pub fn accept_hello(
     let welcome = Content {
         message_id: random_message_id()?,
         body: Some(ContentBody::Welcome(Welcome {
-            profile: Some(Profile {
+            profile: Some(PeerProfile {
                 display_name: profile.display_name,
                 version: profile.version,
             }),
             peer: Some(me),
         })),
+        sent_at: 0,
+        lamport: 0,
         padding: vec![],
     }
     .encode_padded();
@@ -580,6 +584,98 @@ pub fn accept_welcome(
     )?;
     tx.commit()?;
     Ok(contact)
+}
+
+/// A identidade e o id de registro, para cifrar e decifrar dentro de uma transação.
+#[derive(Clone, Copy)]
+pub struct Me {
+    pair: IdentityKeyPair,
+    registration_id: u32,
+}
+
+pub fn me(store: &Store) -> CoreResult<Me> {
+    Ok(Me {
+        pair: identity_pair(store)?,
+        registration_id: local_keys(store.conn())?.registration_id,
+    })
+}
+
+/// Cifra para um contato com a sessão aberta. Devolve se é uma mensagem de prekey (a
+/// sessão ainda não foi confirmada pelo outro lado) e os bytes.
+pub fn encrypt(
+    conn: &Connection,
+    me: &Me,
+    their_key: &[u8],
+    plain: &[u8],
+) -> CoreResult<(bool, Vec<u8>)> {
+    let address = address_of(their_key);
+    let local = address_of(&me.pair.identity_key().serialize());
+    let mut ps = ProtocolStore::new(conn, me.pair, me.registration_id);
+    let mut rng = rand::rng();
+    let message = block_on(message_encrypt(
+        plain,
+        &address,
+        &local,
+        &mut ps.clone_view(),
+        &mut ps,
+        SystemTime::now(),
+        &mut rng,
+    ))?;
+    match message {
+        CiphertextMessage::PreKeySignalMessage(m) => Ok((true, m.serialized().to_vec())),
+        CiphertextMessage::SignalMessage(m) => Ok((false, m.serialized().to_vec())),
+        _ => Err(CoreError::Protocol),
+    }
+}
+
+/// Decifra o que veio de um contato. `None` quando a mensagem já foi decifrada antes
+/// (o reenvio de quem não recebeu o Ack): quem chama confirma de novo e não faz nada.
+pub fn decrypt(
+    conn: &Connection,
+    me: &Me,
+    their_key: &[u8],
+    prekey: bool,
+    bytes: &[u8],
+) -> CoreResult<Option<Vec<u8>>> {
+    use libsignal_protocol::SignalProtocolError;
+    let address = address_of(their_key);
+    let local = address_of(&me.pair.identity_key().serialize());
+    let mut ps = ProtocolStore::new(conn, me.pair, me.registration_id);
+    let mut rng = rand::rng();
+    let result = if prekey {
+        let message = PreKeySignalMessage::try_from(bytes)?;
+        // A sessão é com quem a gente já conhece: outra identidade é recusada.
+        if message.identity_key().serialize().as_ref() != their_key {
+            return Err(CoreError::Protocol);
+        }
+        block_on(message_decrypt_prekey(
+            &message,
+            &address,
+            &local,
+            &mut ps.clone_view(),
+            &mut ps.clone_view(),
+            &mut ps.clone_view(),
+            &ps.clone_view(),
+            &mut ps,
+            &mut rng,
+        ))
+        .map(|d| d.plaintext)
+    } else {
+        let message = SignalMessage::try_from(bytes)?;
+        block_on(message_decrypt_signal(
+            &message,
+            &address,
+            &local,
+            &mut ps.clone_view(),
+            &mut ps,
+            &mut rng,
+        ))
+    };
+    match result {
+        Ok(plain) => Ok(Some(plain)),
+        Err(SignalProtocolError::DuplicatedMessage(..)) => Ok(None),
+        Err(_) => Err(CoreError::Protocol),
+    }
 }
 
 /// Esquece um contato pendente: o contato, a sessão e a identidade dele.

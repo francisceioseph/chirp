@@ -50,6 +50,18 @@ enum CoreError {
   /// Não há contato com esse id.
   unknownContact,
 
+  /// Não há mensagem com esse id, ou ela não é desse jeito (editar a de outra pessoa).
+  unknownMessage,
+
+  /// A mensagem está vazia ou passa do tamanho.
+  invalidMessage,
+
+  /// Cedo demais para repetir (chamar atenção duas vezes em 10 segundos).
+  tooSoon,
+
+  /// Tarde demais para editar ou apagar para todos.
+  tooLate,
+
   /// Falha de disco ou do SQLite que não é nenhuma das acima.
   storage,
 }

@@ -23,6 +23,7 @@ class AddContactPage extends StatefulWidget {
 class _AddContactPageState extends State<AddContactPage> {
   String? _link;
   CoreFailure? _inviteFailure;
+
   /// Os contatos de quando a tela abriu: um que apareça depois é quem leu o código.
   final Set<int> _known = {};
 

@@ -16,6 +16,7 @@ use crate::error::CoreResult;
 use crate::frb_generated::StreamSink;
 use crate::identity::{avatar_seed, fingerprint};
 use crate::invite::Invite;
+use crate::messages::{self, Kind, Message, Status};
 use crate::node::{Node, NodeEvent};
 use crate::passphrase;
 use crate::profile::StoredProfile;
@@ -122,6 +123,121 @@ impl From<Contact> for ContactView {
     }
 }
 
+/// O que muda sem a UI pedir.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventKind {
+    /// Um contato novo ou mudado. Com o id 0, a UI relê tudo (perdeu eventos).
+    Contact,
+    /// A conversa com o contato mudou.
+    Messages,
+    /// O contato está digitando.
+    Typing,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CoreEvent {
+    pub kind: EventKind,
+    pub contact_id: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageKind {
+    Text,
+    /// Chamou atenção.
+    Nudge,
+}
+
+/// Para as minhas: na fila, entregue, lida. Para as do contato: `Pending` é não lida.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageStatus {
+    Pending,
+    Delivered,
+    Read,
+}
+
+/// Uma mensagem como a UI mostra.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageView {
+    pub id: i64,
+    pub contact_id: i64,
+    pub outgoing: bool,
+    pub kind: MessageKind,
+    pub text: String,
+    /// A mensagem citada, se ela existe neste aparelho.
+    pub reply_to: Option<i64>,
+    /// Quando foi mandada (pelo relógio de quem mandou), em milissegundos.
+    pub sent_at: i64,
+    /// Quando chegou aqui (ou foi escrita), em milissegundos.
+    pub received_at: i64,
+    pub status: MessageStatus,
+    pub edited: bool,
+    pub deleted: bool,
+    /// As reações (0 é nenhuma, 1 a `reaction_kinds()`).
+    pub my_reaction: u32,
+    pub their_reaction: u32,
+    /// Ainda dá para editar ou apagar para todos.
+    pub can_edit: bool,
+    pub can_delete_for_everyone: bool,
+}
+
+impl From<Message> for MessageView {
+    fn from(m: Message) -> Self {
+        let age = messages::now_ms() - m.received_at;
+        let own_text = m.outgoing && m.kind == Kind::Text && !m.deleted;
+        Self {
+            id: m.id,
+            contact_id: m.contact_id,
+            outgoing: m.outgoing,
+            kind: match m.kind {
+                Kind::Text => MessageKind::Text,
+                Kind::Nudge => MessageKind::Nudge,
+            },
+            text: m.body,
+            reply_to: m.reply_to,
+            sent_at: m.sent_at,
+            received_at: m.received_at,
+            status: match m.status {
+                Status::Pending => MessageStatus::Pending,
+                Status::Delivered => MessageStatus::Delivered,
+                Status::Read => MessageStatus::Read,
+            },
+            edited: m.edited,
+            deleted: m.deleted,
+            my_reaction: m.my_reaction,
+            their_reaction: m.their_reaction,
+            can_edit: own_text && age <= messages::EDIT_WINDOW_MS,
+            can_delete_for_everyone: own_text && age <= messages::DELETE_WINDOW_MS,
+        }
+    }
+}
+
+/// Uma conversa na lista.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConversationView {
+    pub contact: ContactView,
+    pub last: Option<MessageView>,
+    pub unread: u32,
+}
+
+/// Os recibos de leitura e o "digitando": desligar vale para os dois lados.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ChatSettings {
+    pub read_receipts: bool,
+    pub typing: bool,
+}
+
+/// Quantos tipos de reação há (a UI desenha cada um com um ícone).
+#[frb(sync)]
+pub fn reaction_kinds() -> u32 {
+    messages::REACTIONS
+}
+
+/// O texto mais comprido de uma mensagem, em caracteres.
+#[frb(sync)]
+pub fn max_message_chars() -> u32 {
+    messages::MAX_TEXT_CHARS as u32
+}
+
 /// O runtime do tokio da rede, um por processo.
 fn runtime() -> &'static tokio::runtime::Runtime {
     static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
@@ -195,8 +311,31 @@ impl ChirpStore {
         Ok(self.lock()?.create_profile(&name)?.into())
     }
 
+    /// Troca o nome e manda o perfil novo a cada contato.
     pub fn rename(&self, name: String) -> Result<Profile, CoreError> {
-        Ok(self.lock()?.rename(&name)?.into())
+        let (profile, contacts) = {
+            let mut store = self.lock()?;
+            let profile = store.rename(&name)?;
+            // O nome já mudou aqui; se não der para avisar agora, avisa na próxima.
+            (
+                profile,
+                messages::send_profile(&mut store).unwrap_or_default(),
+            )
+        };
+        for id in contacts {
+            self.flush(id);
+        }
+        Ok(profile.into())
+    }
+
+    /// Pede a entrega ao contato, se a rede está ligada. Sem ela, fica na caixa de
+    /// saída até ligar.
+    fn flush(&self, contact_id: i64) {
+        if let Ok(slot) = self.node.lock() {
+            if let Some(node) = slot.as_ref() {
+                node.flush(contact_id);
+            }
+        }
     }
 
     fn lock(&self) -> CoreResult<std::sync::MutexGuard<'_, Store>> {
@@ -266,29 +405,156 @@ impl ChirpStore {
         Ok(crate::contacts::set_verified(self.lock()?.conn(), contact_id, verified)?.into())
     }
 
-    /// Avisa a UI (com o id) quando um contato muda sem ela pedir: alguém leu um
-    /// convite nosso, por exemplo.
-    pub fn watch_contacts(&self, sink: StreamSink<i64>) -> Result<(), CoreError> {
+    /// Avisa a UI do que muda sem ela pedir: alguém leu um convite nosso, chegou
+    /// mensagem, o contato está digitando.
+    pub fn watch_events(&self, sink: StreamSink<CoreEvent>) -> Result<(), CoreError> {
         let mut events = self.started()?.subscribe();
         runtime().spawn(async move {
             loop {
-                match events.recv().await {
-                    Ok(NodeEvent::ContactChanged(id)) => {
-                        if sink.add(id).is_err() {
-                            break;
-                        }
-                    }
-                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
-                        // Perdeu eventos: um id inválido faz a UI reler a lista toda.
-                        if sink.add(0).is_err() {
-                            break;
-                        }
-                    }
+                let event = match events.recv().await {
+                    Ok(NodeEvent::ContactChanged(id)) => CoreEvent {
+                        kind: EventKind::Contact,
+                        contact_id: id,
+                    },
+                    Ok(NodeEvent::MessagesChanged(id)) => CoreEvent {
+                        kind: EventKind::Messages,
+                        contact_id: id,
+                    },
+                    Ok(NodeEvent::Typing(id)) => CoreEvent {
+                        kind: EventKind::Typing,
+                        contact_id: id,
+                    },
+                    // Perdeu eventos: o id 0 faz a UI reler tudo.
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => CoreEvent {
+                        kind: EventKind::Contact,
+                        contact_id: 0,
+                    },
                     Err(_) => break,
+                };
+                if sink.add(event).is_err() {
+                    break;
                 }
             }
         });
         Ok(())
+    }
+
+    /// As conversas, a mais recente primeiro.
+    pub fn conversations(&self) -> Result<Vec<ConversationView>, CoreError> {
+        Ok(messages::conversations(self.lock()?.conn())?
+            .into_iter()
+            .map(|c| ConversationView {
+                contact: c.contact.into(),
+                last: c.last.map(MessageView::from),
+                unread: c.unread,
+            })
+            .collect())
+    }
+
+    /// As últimas [limit] mensagens da conversa, em ordem; antes de [before] (o id de
+    /// uma mensagem) para carregar as anteriores.
+    pub fn messages(
+        &self,
+        contact_id: i64,
+        before: Option<i64>,
+        limit: u32,
+    ) -> Result<Vec<MessageView>, CoreError> {
+        Ok(
+            messages::list(self.lock()?.conn(), contact_id, before, limit)?
+                .into_iter()
+                .map(MessageView::from)
+                .collect(),
+        )
+    }
+
+    pub fn send_text(
+        &self,
+        contact_id: i64,
+        text: String,
+        reply_to: Option<i64>,
+    ) -> Result<MessageView, CoreError> {
+        let message = messages::send_text(&mut *self.lock()?, contact_id, &text, reply_to)?;
+        self.flush(contact_id);
+        Ok(message.into())
+    }
+
+    /// Chama a atenção do contato. Uma vez a cada 10 segundos (`TooSoon`).
+    pub fn send_nudge(&self, contact_id: i64) -> Result<MessageView, CoreError> {
+        let message = messages::send_nudge(&mut *self.lock()?, contact_id)?;
+        self.flush(contact_id);
+        Ok(message.into())
+    }
+
+    pub fn edit_message(&self, id: i64, text: String) -> Result<MessageView, CoreError> {
+        let message = messages::edit(&mut *self.lock()?, id, &text)?;
+        self.flush(message.contact_id);
+        Ok(message.into())
+    }
+
+    pub fn delete_for_everyone(&self, id: i64) -> Result<MessageView, CoreError> {
+        let message = messages::delete_for_everyone(&mut *self.lock()?, id)?;
+        self.flush(message.contact_id);
+        Ok(message.into())
+    }
+
+    pub fn delete_for_me(&self, id: i64) -> Result<(), CoreError> {
+        messages::delete_for_me(&mut *self.lock()?, id)
+    }
+
+    /// Reage a uma mensagem ([kind] 0 tira a reação).
+    pub fn react(&self, id: i64, kind: u32) -> Result<MessageView, CoreError> {
+        let message = messages::react(&mut *self.lock()?, id, kind)?;
+        self.flush(message.contact_id);
+        Ok(message.into())
+    }
+
+    /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
+    /// Só sai se o contato está online agora.
+    pub fn typing(&self, contact_id: i64) -> Result<(), CoreError> {
+        let online = self
+            .node
+            .lock()
+            .ok()
+            .and_then(|slot| slot.as_ref().map(|n| n.is_online(contact_id)))
+            .unwrap_or(false);
+        if online && messages::typing(&mut *self.lock()?, contact_id)? {
+            self.flush(contact_id);
+        }
+        Ok(())
+    }
+
+    /// Li a conversa: marca e manda o recibo, se ligado.
+    pub fn mark_read(&self, contact_id: i64) -> Result<(), CoreError> {
+        if messages::mark_read(&mut *self.lock()?, contact_id)? {
+            self.flush(contact_id);
+        }
+        Ok(())
+    }
+
+    /// A busca no histórico de todas as conversas.
+    pub fn search(&self, query: String) -> Result<Vec<MessageView>, CoreError> {
+        Ok(messages::search(self.lock()?.conn(), &query, 100)?
+            .into_iter()
+            .map(MessageView::from)
+            .collect())
+    }
+
+    pub fn chat_settings(&self) -> Result<ChatSettings, CoreError> {
+        let s = messages::settings(self.lock()?.conn())?;
+        Ok(ChatSettings {
+            read_receipts: s.read_receipts,
+            typing: s.typing,
+        })
+    }
+
+    pub fn set_chat_settings(&self, settings: ChatSettings) -> Result<(), CoreError> {
+        messages::set_settings(
+            self.lock()?.conn(),
+            messages::Settings {
+                read_receipts: settings.read_receipts,
+                typing: settings.typing,
+            },
+        )
     }
 }
 

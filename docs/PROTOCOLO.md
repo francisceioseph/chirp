@@ -50,6 +50,7 @@ Frame { version = 1; oneof body {
   bytes pre_key_message = 4;          // PreKeySignalMessage do libsignal
   bytes message = 5;                  // SignalMessage do libsignal
   Refused refused = 6;                // {} — sem motivo
+  Ack ack = 7;                        // {} — gravei a mensagem anterior
 }}
 
 Bundle {
@@ -64,12 +65,24 @@ Bundle {
 
 ```
 Content { bytes message_id = 1 (16 aleatórios);
-          oneof body { Hello hello = 2; Welcome welcome = 3; };
+          oneof body { Hello hello = 2; Welcome welcome = 3; Text text = 4;
+                       Receipt receipt = 5; Edit edit = 6; Delete delete = 7;
+                       Reaction reaction = 8; Typing typing = 9; Nudge nudge = 10;
+                       PeerProfile profile = 11; };
+          uint64 sent_at = 13 (ms, relógio de quem manda, só para mostrar);
+          uint64 lamport = 14 (a ordem na conversa);
           bytes padding = 15; }
-Hello   { bytes token = 1; Profile profile = 2; Peer peer = 3; }
-Welcome { Profile profile = 1; Peer peer = 2; }
-Profile { string display_name = 1; uint32 version = 2; }
-Peer    { bytes endpoint_id = 1; repeated string addrs = 2; bytes discovery_key = 3; }
+Hello    { bytes token = 1; PeerProfile profile = 2; Peer peer = 3; }
+Welcome  { PeerProfile profile = 1; Peer peer = 2; }
+PeerProfile { string display_name = 1; uint32 version = 2; }
+Peer     { bytes endpoint_id = 1; repeated string addrs = 2; bytes discovery_key = 3; }
+Text     { string text = 1; bytes reply_to = 2 (o message_id citado, ou vazio); }
+Receipt  { repeated bytes read = 1 (até 256 message_ids lidos); }
+Edit     { bytes target = 1; string text = 2; }
+Delete   { bytes target = 1; }
+Reaction { bytes target = 1; uint32 kind = 2 (1 a 6; 0 tira); }
+Typing   {}
+Nudge    {}
 ```
 
 O conteúdo é preenchido até o próximo degrau (256 B, 1 KiB, 4 KiB, 16 KiB, 60 KiB), para o tamanho cifrado não dizer o que é.
@@ -93,6 +106,40 @@ Uma conexão QUIC e um stream bidirecional; no máximo 4 frames e 20 segundos.
 
 **Verificado**: só quem **leu** o QR frente a frente nasce verificado, porque viu a chave de quem o mostrava. Quem mostrou o QR não conferiu nada de quem leu e nasce não verificado, até comparar o número de segurança. Pelo link, ninguém nasce verificado.
 
+## As mensagens (fase 3)
+
+### Duas conversas no mesmo ALPN
+
+Quem recebe uma conexão olha o nó de quem conecta (a chave autenticada pelo TLS do QUIC):
+
+- **um contato estabelecido**: é uma conexão de mensagens. Cada frame é um `message` (ou `pre_key_message`) da sessão do libsignal; quem recebe decifra, aplica e grava numa transação, e só então responde `ack`. Até 1024 mensagens por conexão, 30 segundos sem nada e ela fecha. Uma mensagem que não decifra recebe `refused`;
+- **qualquer outro nó**: é um aperto de mão, como acima.
+
+Um contato que conecta mostra também de onde fala: o endereço vai para a frente da lista dele (só os da rede local), e o que esperava por ele sai na hora.
+
+### Caixa de saída e caixa de entrada
+
+- **Mandar** é gravar a mensagem, cifrar e guardar o cifrado na caixa de saída, numa transação só com o avanço do ratchet. A rede manda na ordem, um contato por vez, e só tira da caixa com o `ack`. O app pode fechar no meio: o reenvio manda os mesmos bytes, e nenhuma chave é gasta à toa.
+- **Receber** é idempotente: o mesmo cifrado de novo (o `ack` se perdeu) o libsignal reconhece como repetido, e recebe só o `ack`. O `message_id` também é único por conversa.
+- O que decifra mas não serve (fora do formato, fora do prazo, de um alvo que não é do contato) é descartado **e confirmado**, para não voltar para sempre.
+- A caixa é tentada de novo a cada 20 segundos, quando há algo novo e quando o contato conecta.
+
+### Ordem e prazos
+
+- Ordem por um relógio de Lamport por conversa; empate pelo `sent_at` e pela ordem de chegada. Um contato não empurra o relógio mais que 2³² de uma vez.
+- Texto: até 4000 caracteres, sem caracteres de controle além de `\n` e `\t`; o `\r` vira `\n`.
+- **Editar**: só a própria mensagem de texto, por 15 minutos. **Apagar para todos**: por 24 horas; o texto sai do banco e da busca nos dois aparelhos, e as reações vão junto. Quem recebe confere o prazo pela hora em que recebeu (com 5 minutos de folga), não pelo relógio de quem manda.
+- **Chamar atenção**: uma vez a cada 10 segundos por conversa; quem recebe ignora o que vier antes disso.
+- **Recibos de leitura** e **digitando**: desligar vale para os dois lados. Sem os recibos, não se manda e não se aplica.
+- **Digitando** vai só para um contato que falou com a gente há menos de 90 segundos, e é jogado fora se não sair na hora: cada aviso gasta uma chave do ratchet, e os perdidos viram chaves puladas do outro lado, que o libsignal limita.
+- **Perfil**: trocar o nome manda o `profile` a cada contato; quem recebe só aceita uma versão maior que a guardada.
+
+### O nó entre uma abertura e outra
+
+- A porta UDP fica guardada no banco e é a mesma na próxima abertura (se estiver ocupada, vai outra, que fica guardada). Assim, o endereço que os contatos têm continua valendo.
+- Ao ligar, o nó abre uma conexão vazia com cada contato: quem recebe aprende o endereço de agora e entrega o que esperava.
+- Se os dois aparelhos mudam de IP ao mesmo tempo, eles não se acham até a descoberta por mDNS (a seguir).
+
 ## O que os testes garantem
 
 - `session::tests`: o aperto de mão inteiro e cada recusa:
@@ -104,4 +151,6 @@ Uma conexão QUIC e um stream bidirecional; no máximo 4 frames e 20 segundos.
   - o próprio convite, ou o de quem já é contato;
   - dados do `Peer` fora do formato.
 - `node::tests`: o mesmo sobre QUIC de verdade, entre nós no mesmo processo. O convite não serve a um terceiro, e ninguém respondendo não deixa nada no banco.
+- `messages::tests`: o texto, o entregue e o lido; sem recibos; o reenvio depois de um `ack` perdido; 30 mensagens na fila com os dois escrevendo ao mesmo tempo, na mesma ordem nos dois aparelhos; responder, editar, reagir e apagar para todos (que tira da busca); os prazos, conferidos por quem recebe; o limite do chamar atenção nos dois sentidos; o digitando; o perfil novo; textos inválidos; um estranho que não injeta mensagem; a busca sem acento nem sintaxe do FTS; as páginas do histórico; nenhum texto em claro no arquivo do banco.
+- `node::tests`: mensagens nos dois sentidos com os recibos, sobre QUIC de verdade, e a fila de quem estava desligado, entregue na ordem quando ele volta.
 - `wire::tests` e `invite::tests`: frames grandes demais, versões e lixo recusados; o convite truncado em cada posição é recusado; 20 mil entradas aleatórias não derrubam o leitor.

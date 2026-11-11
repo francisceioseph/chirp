@@ -71,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1829722456;
+  int get rustContentHash => 1454814003;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -89,7 +89,15 @@ abstract class RustLibApi extends BaseApi {
     required bool scanned,
   });
 
+  Future<ChatSettings> crateApiStoreChirpStoreChatSettings({
+    required ChirpStore that,
+  });
+
   Future<List<ContactView>> crateApiStoreChirpStoreContacts({
+    required ChirpStore that,
+  });
+
+  Future<List<ConversationView>> crateApiStoreChirpStoreConversations({
     required ChirpStore that,
   });
 
@@ -108,6 +116,34 @@ abstract class RustLibApi extends BaseApi {
     required String passphrase,
   });
 
+  Future<MessageView> crateApiStoreChirpStoreDeleteForEveryone({
+    required ChirpStore that,
+    required PlatformInt64 id,
+  });
+
+  Future<void> crateApiStoreChirpStoreDeleteForMe({
+    required ChirpStore that,
+    required PlatformInt64 id,
+  });
+
+  Future<MessageView> crateApiStoreChirpStoreEditMessage({
+    required ChirpStore that,
+    required PlatformInt64 id,
+    required String text,
+  });
+
+  Future<void> crateApiStoreChirpStoreMarkRead({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  });
+
+  Future<List<MessageView>> crateApiStoreChirpStoreMessages({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    PlatformInt64? before,
+    required int limit,
+  });
+
   Future<ChirpStore> crateApiStoreChirpStoreOpenWithKey({
     required String dir,
     required List<int> key,
@@ -120,6 +156,12 @@ abstract class RustLibApi extends BaseApi {
 
   Future<Profile?> crateApiStoreChirpStoreProfile({required ChirpStore that});
 
+  Future<MessageView> crateApiStoreChirpStoreReact({
+    required ChirpStore that,
+    required PlatformInt64 id,
+    required int kind,
+  });
+
   Future<Profile> crateApiStoreChirpStoreRename({
     required ChirpStore that,
     required String name,
@@ -128,6 +170,28 @@ abstract class RustLibApi extends BaseApi {
   Future<String> crateApiStoreChirpStoreSafetyNumber({
     required ChirpStore that,
     required PlatformInt64 contactId,
+  });
+
+  Future<List<MessageView>> crateApiStoreChirpStoreSearch({
+    required ChirpStore that,
+    required String query,
+  });
+
+  Future<MessageView> crateApiStoreChirpStoreSendNudge({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  });
+
+  Future<MessageView> crateApiStoreChirpStoreSendText({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    required String text,
+    PlatformInt64? replyTo,
+  });
+
+  Future<void> crateApiStoreChirpStoreSetChatSettings({
+    required ChirpStore that,
+    required ChatSettings settings,
   });
 
   Future<ContactView> crateApiStoreChirpStoreSetVerified({
@@ -140,7 +204,12 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiStoreChirpStoreStopNetwork({required ChirpStore that});
 
-  Stream<PlatformInt64> crateApiStoreChirpStoreWatchContacts({
+  Future<void> crateApiStoreChirpStoreTyping({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  });
+
+  Stream<CoreEvent> crateApiStoreChirpStoreWatchEvents({
     required ChirpStore that,
   });
 
@@ -148,9 +217,13 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiInfoInitCore();
 
+  int crateApiStoreMaxMessageChars();
+
   int crateApiStoreMinPassphraseChars();
 
   Uint8List crateApiStoreNewStoreKey();
+
+  int crateApiStoreReactionKinds();
 
   StoreState crateApiStoreStoreState({required String dir});
 
@@ -214,7 +287,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<List<ContactView>> crateApiStoreChirpStoreContacts({
+  Future<ChatSettings> crateApiStoreChirpStoreChatSettings({
     required ChirpStore that,
   }) {
     return handler.executeNormal(
@@ -233,6 +306,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           );
         },
         codec: SseCodec(
+          decodeSuccessData: sse_decode_chat_settings,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreChatSettingsConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreChatSettingsConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_chat_settings",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<List<ContactView>> crateApiStoreChirpStoreContacts({
+    required ChirpStore that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
           decodeSuccessData: sse_decode_list_contact_view,
           decodeErrorData: sse_decode_core_error,
         ),
@@ -245,6 +354,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiStoreChirpStoreContactsConstMeta =>
       const TaskConstMeta(debugName: "ChirpStore_contacts", argNames: ["that"]);
+
+  @override
+  Future<List<ConversationView>> crateApiStoreChirpStoreConversations({
+    required ChirpStore that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_conversation_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreConversationsConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreConversationsConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_conversations",
+        argNames: ["that"],
+      );
 
   @override
   Future<String> crateApiStoreChirpStoreCreateInvite({
@@ -263,7 +408,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 5,
             port: port_,
           );
         },
@@ -301,7 +446,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 6,
             port: port_,
           );
         },
@@ -336,7 +481,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 7,
             port: port_,
           );
         },
@@ -359,6 +504,202 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<MessageView> crateApiStoreChirpStoreDeleteForEveryone({
+    required ChirpStore that,
+    required PlatformInt64 id,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(id, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 8,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreDeleteForEveryoneConstMeta,
+        argValues: [that, id],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreDeleteForEveryoneConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_delete_for_everyone",
+        argNames: ["that", "id"],
+      );
+
+  @override
+  Future<void> crateApiStoreChirpStoreDeleteForMe({
+    required ChirpStore that,
+    required PlatformInt64 id,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(id, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 9,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreDeleteForMeConstMeta,
+        argValues: [that, id],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreDeleteForMeConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_delete_for_me",
+        argNames: ["that", "id"],
+      );
+
+  @override
+  Future<MessageView> crateApiStoreChirpStoreEditMessage({
+    required ChirpStore that,
+    required PlatformInt64 id,
+    required String text,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(id, serializer);
+          sse_encode_String(text, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 10,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreEditMessageConstMeta,
+        argValues: [that, id, text],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreEditMessageConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_edit_message",
+        argNames: ["that", "id", "text"],
+      );
+
+  @override
+  Future<void> crateApiStoreChirpStoreMarkRead({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 11,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreMarkReadConstMeta,
+        argValues: [that, contactId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreMarkReadConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_mark_read",
+        argNames: ["that", "contactId"],
+      );
+
+  @override
+  Future<List<MessageView>> crateApiStoreChirpStoreMessages({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    PlatformInt64? before,
+    required int limit,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          sse_encode_opt_box_autoadd_i_64(before, serializer);
+          sse_encode_u_32(limit, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreMessagesConstMeta,
+        argValues: [that, contactId, before, limit],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreMessagesConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_messages",
+        argNames: ["that", "contactId", "before", "limit"],
+      );
+
+  @override
   Future<ChirpStore> crateApiStoreChirpStoreOpenWithKey({
     required String dir,
     required List<int> key,
@@ -372,7 +713,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 13,
             port: port_,
           );
         },
@@ -408,7 +749,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 14,
             port: port_,
           );
         },
@@ -443,7 +784,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 15,
             port: port_,
           );
         },
@@ -462,6 +803,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "ChirpStore_profile", argNames: ["that"]);
 
   @override
+  Future<MessageView> crateApiStoreChirpStoreReact({
+    required ChirpStore that,
+    required PlatformInt64 id,
+    required int kind,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(id, serializer);
+          sse_encode_u_32(kind, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 16,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreReactConstMeta,
+        argValues: [that, id, kind],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreReactConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_react",
+        argNames: ["that", "id", "kind"],
+      );
+
+  @override
   Future<Profile> crateApiStoreChirpStoreRename({
     required ChirpStore that,
     required String name,
@@ -478,7 +859,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 17,
             port: port_,
           );
         },
@@ -516,7 +897,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 18,
             port: port_,
           );
         },
@@ -538,6 +919,162 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<List<MessageView>> crateApiStoreChirpStoreSearch({
+    required ChirpStore that,
+    required String query,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_String(query, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 19,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSearchConstMeta,
+        argValues: [that, query],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSearchConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_search",
+        argNames: ["that", "query"],
+      );
+
+  @override
+  Future<MessageView> crateApiStoreChirpStoreSendNudge({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 20,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSendNudgeConstMeta,
+        argValues: [that, contactId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSendNudgeConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_send_nudge",
+        argNames: ["that", "contactId"],
+      );
+
+  @override
+  Future<MessageView> crateApiStoreChirpStoreSendText({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    required String text,
+    PlatformInt64? replyTo,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          sse_encode_String(text, serializer);
+          sse_encode_opt_box_autoadd_i_64(replyTo, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 21,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSendTextConstMeta,
+        argValues: [that, contactId, text, replyTo],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSendTextConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_send_text",
+        argNames: ["that", "contactId", "text", "replyTo"],
+      );
+
+  @override
+  Future<void> crateApiStoreChirpStoreSetChatSettings({
+    required ChirpStore that,
+    required ChatSettings settings,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_chat_settings(settings, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 22,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSetChatSettingsConstMeta,
+        argValues: [that, settings],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSetChatSettingsConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_set_chat_settings",
+        argNames: ["that", "settings"],
+      );
+
+  @override
   Future<ContactView> crateApiStoreChirpStoreSetVerified({
     required ChirpStore that,
     required PlatformInt64 contactId,
@@ -556,7 +1093,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 23,
             port: port_,
           );
         },
@@ -590,7 +1127,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 24,
             port: port_,
           );
         },
@@ -624,7 +1161,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 25,
             port: port_,
           );
         },
@@ -646,10 +1183,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Stream<PlatformInt64> crateApiStoreChirpStoreWatchContacts({
+  Future<void> crateApiStoreChirpStoreTyping({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 26,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreTypingConstMeta,
+        argValues: [that, contactId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreTypingConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_typing",
+        argNames: ["that", "contactId"],
+      );
+
+  @override
+  Stream<CoreEvent> crateApiStoreChirpStoreWatchEvents({
     required ChirpStore that,
   }) {
-    final sink = RustStreamSink<PlatformInt64>();
+    final sink = RustStreamSink<CoreEvent>();
     unawaited(
       handler.executeNormal(
         NormalTask(
@@ -659,11 +1234,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
               that,
               serializer,
             );
-            sse_encode_StreamSink_i_64_Sse(sink, serializer);
+            sse_encode_StreamSink_core_event_Sse(sink, serializer);
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 14,
+              funcId: 27,
               port: port_,
             );
           },
@@ -671,7 +1246,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             decodeSuccessData: sse_decode_unit,
             decodeErrorData: sse_decode_core_error,
           ),
-          constMeta: kCrateApiStoreChirpStoreWatchContactsConstMeta,
+          constMeta: kCrateApiStoreChirpStoreWatchEventsConstMeta,
           argValues: [that, sink],
           apiImpl: this,
         ),
@@ -680,9 +1255,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return sink.stream;
   }
 
-  TaskConstMeta get kCrateApiStoreChirpStoreWatchContactsConstMeta =>
+  TaskConstMeta get kCrateApiStoreChirpStoreWatchEventsConstMeta =>
       const TaskConstMeta(
-        debugName: "ChirpStore_watch_contacts",
+        debugName: "ChirpStore_watch_events",
         argNames: ["that", "sink"],
       );
 
@@ -692,7 +1267,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_core_info,
@@ -717,7 +1292,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 29,
             port: port_,
           );
         },
@@ -736,12 +1311,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "init_core", argNames: []);
 
   @override
+  int crateApiStoreMaxMessageChars() {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiStoreMaxMessageCharsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreMaxMessageCharsConstMeta =>
+      const TaskConstMeta(debugName: "max_message_chars", argNames: []);
+
+  @override
   int crateApiStoreMinPassphraseChars() {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -763,7 +1360,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_prim_u_8_strict,
@@ -780,13 +1377,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "new_store_key", argNames: []);
 
   @override
+  int crateApiStoreReactionKinds() {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiStoreReactionKindsConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreReactionKindsConstMeta =>
+      const TaskConstMeta(debugName: "reaction_kinds", argNames: []);
+
+  @override
   StoreState crateApiStoreStoreState({required String dir}) {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(dir, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_store_state,
@@ -812,7 +1431,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 35,
             port: port_,
           );
         },
@@ -872,7 +1491,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<PlatformInt64> dco_decode_StreamSink_i_64_Sse(dynamic raw) {
+  RustStreamSink<CoreEvent> dco_decode_StreamSink_core_event_Sse(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     throw UnimplementedError();
   }
@@ -890,9 +1509,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ChatSettings dco_decode_box_autoadd_chat_settings(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_chat_settings(raw);
+  }
+
+  @protected
+  PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_i_64(raw);
+  }
+
+  @protected
+  MessageView dco_decode_box_autoadd_message_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_message_view(raw);
+  }
+
+  @protected
   Profile dco_decode_box_autoadd_profile(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_profile(raw);
+  }
+
+  @protected
+  ChatSettings dco_decode_chat_settings(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return ChatSettings(
+      readReceipts: dco_decode_bool(arr[0]),
+      typing: dco_decode_bool(arr[1]),
+    );
   }
 
   @protected
@@ -911,9 +1560,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ConversationView dco_decode_conversation_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return ConversationView(
+      contact: dco_decode_contact_view(arr[0]),
+      last: dco_decode_opt_box_autoadd_message_view(arr[1]),
+      unread: dco_decode_u_32(arr[2]),
+    );
+  }
+
+  @protected
   CoreError dco_decode_core_error(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return CoreError.values[raw as int];
+  }
+
+  @protected
+  CoreEvent dco_decode_core_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return CoreEvent(
+      kind: dco_decode_event_kind(arr[0]),
+      contactId: dco_decode_i_64(arr[1]),
+    );
   }
 
   @protected
@@ -926,6 +1600,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       version: dco_decode_String(arr[0]),
       protocol: dco_decode_u_32(arr[1]),
     );
+  }
+
+  @protected
+  EventKind dco_decode_event_kind(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return EventKind.values[raw as int];
   }
 
   @protected
@@ -947,6 +1627,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<ConversationView> dco_decode_list_conversation_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_conversation_view).toList();
+  }
+
+  @protected
+  List<MessageView> dco_decode_list_message_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_message_view).toList();
+  }
+
+  @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as List<int>;
@@ -956,6 +1648,55 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
+  }
+
+  @protected
+  MessageKind dco_decode_message_kind(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return MessageKind.values[raw as int];
+  }
+
+  @protected
+  MessageStatus dco_decode_message_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return MessageStatus.values[raw as int];
+  }
+
+  @protected
+  MessageView dco_decode_message_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 15)
+      throw Exception('unexpected arr length: expect 15 but see ${arr.length}');
+    return MessageView(
+      id: dco_decode_i_64(arr[0]),
+      contactId: dco_decode_i_64(arr[1]),
+      outgoing: dco_decode_bool(arr[2]),
+      kind: dco_decode_message_kind(arr[3]),
+      text: dco_decode_String(arr[4]),
+      replyTo: dco_decode_opt_box_autoadd_i_64(arr[5]),
+      sentAt: dco_decode_i_64(arr[6]),
+      receivedAt: dco_decode_i_64(arr[7]),
+      status: dco_decode_message_status(arr[8]),
+      edited: dco_decode_bool(arr[9]),
+      deleted: dco_decode_bool(arr[10]),
+      myReaction: dco_decode_u_32(arr[11]),
+      theirReaction: dco_decode_u_32(arr[12]),
+      canEdit: dco_decode_bool(arr[13]),
+      canDeleteForEveryone: dco_decode_bool(arr[14]),
+    );
+  }
+
+  @protected
+  PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_i_64(raw);
+  }
+
+  @protected
+  MessageView? dco_decode_opt_box_autoadd_message_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_message_view(raw);
   }
 
   @protected
@@ -1052,7 +1793,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<PlatformInt64> sse_decode_StreamSink_i_64_Sse(
+  RustStreamSink<CoreEvent> sse_decode_StreamSink_core_event_Sse(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1073,9 +1814,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ChatSettings sse_decode_box_autoadd_chat_settings(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_chat_settings(deserializer));
+  }
+
+  @protected
+  PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_i_64(deserializer));
+  }
+
+  @protected
+  MessageView sse_decode_box_autoadd_message_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_message_view(deserializer));
+  }
+
+  @protected
   Profile sse_decode_box_autoadd_profile(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_profile(deserializer));
+  }
+
+  @protected
+  ChatSettings sse_decode_chat_settings(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_readReceipts = sse_decode_bool(deserializer);
+    var var_typing = sse_decode_bool(deserializer);
+    return ChatSettings(readReceipts: var_readReceipts, typing: var_typing);
   }
 
   @protected
@@ -1096,10 +1867,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ConversationView sse_decode_conversation_view(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_contact = sse_decode_contact_view(deserializer);
+    var var_last = sse_decode_opt_box_autoadd_message_view(deserializer);
+    var var_unread = sse_decode_u_32(deserializer);
+    return ConversationView(
+      contact: var_contact,
+      last: var_last,
+      unread: var_unread,
+    );
+  }
+
+  @protected
   CoreError sse_decode_core_error(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return CoreError.values[inner];
+  }
+
+  @protected
+  CoreEvent sse_decode_core_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_kind = sse_decode_event_kind(deserializer);
+    var var_contactId = sse_decode_i_64(deserializer);
+    return CoreEvent(kind: var_kind, contactId: var_contactId);
   }
 
   @protected
@@ -1108,6 +1900,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_version = sse_decode_String(deserializer);
     var var_protocol = sse_decode_u_32(deserializer);
     return CoreInfo(version: var_version, protocol: var_protocol);
+  }
+
+  @protected
+  EventKind sse_decode_event_kind(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return EventKind.values[inner];
   }
 
   @protected
@@ -1135,6 +1934,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<ConversationView> sse_decode_list_conversation_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <ConversationView>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_conversation_view(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<MessageView> sse_decode_list_message_view(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <MessageView>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_message_view(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
@@ -1146,6 +1971,81 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  MessageKind sse_decode_message_kind(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return MessageKind.values[inner];
+  }
+
+  @protected
+  MessageStatus sse_decode_message_status(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return MessageStatus.values[inner];
+  }
+
+  @protected
+  MessageView sse_decode_message_view(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_i_64(deserializer);
+    var var_contactId = sse_decode_i_64(deserializer);
+    var var_outgoing = sse_decode_bool(deserializer);
+    var var_kind = sse_decode_message_kind(deserializer);
+    var var_text = sse_decode_String(deserializer);
+    var var_replyTo = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_sentAt = sse_decode_i_64(deserializer);
+    var var_receivedAt = sse_decode_i_64(deserializer);
+    var var_status = sse_decode_message_status(deserializer);
+    var var_edited = sse_decode_bool(deserializer);
+    var var_deleted = sse_decode_bool(deserializer);
+    var var_myReaction = sse_decode_u_32(deserializer);
+    var var_theirReaction = sse_decode_u_32(deserializer);
+    var var_canEdit = sse_decode_bool(deserializer);
+    var var_canDeleteForEveryone = sse_decode_bool(deserializer);
+    return MessageView(
+      id: var_id,
+      contactId: var_contactId,
+      outgoing: var_outgoing,
+      kind: var_kind,
+      text: var_text,
+      replyTo: var_replyTo,
+      sentAt: var_sentAt,
+      receivedAt: var_receivedAt,
+      status: var_status,
+      edited: var_edited,
+      deleted: var_deleted,
+      myReaction: var_myReaction,
+      theirReaction: var_theirReaction,
+      canEdit: var_canEdit,
+      canDeleteForEveryone: var_canDeleteForEveryone,
+    );
+  }
+
+  @protected
+  PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_i_64(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  MessageView? sse_decode_opt_box_autoadd_message_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_message_view(deserializer));
+    } else {
+      return null;
+    }
   }
 
   @protected
@@ -1253,15 +2153,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_StreamSink_i_64_Sse(
-    RustStreamSink<PlatformInt64> self,
+  void sse_encode_StreamSink_core_event_Sse(
+    RustStreamSink<CoreEvent> self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(
       self.setupAndSerialize(
         codec: SseCodec(
-          decodeSuccessData: sse_decode_i_64,
+          decodeSuccessData: sse_decode_core_event,
           decodeErrorData: sse_decode_AnyhowException,
         ),
       ),
@@ -1282,9 +2182,43 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_chat_settings(
+    ChatSettings self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_chat_settings(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_i_64(
+    PlatformInt64 self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_message_view(
+    MessageView self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_message_view(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_profile(Profile self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_profile(self, serializer);
+  }
+
+  @protected
+  void sse_encode_chat_settings(ChatSettings self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self.readReceipts, serializer);
+    sse_encode_bool(self.typing, serializer);
   }
 
   @protected
@@ -1298,9 +2232,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_conversation_view(
+    ConversationView self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_contact_view(self.contact, serializer);
+    sse_encode_opt_box_autoadd_message_view(self.last, serializer);
+    sse_encode_u_32(self.unread, serializer);
+  }
+
+  @protected
   void sse_encode_core_error(CoreError self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_core_event(CoreEvent self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_event_kind(self.kind, serializer);
+    sse_encode_i_64(self.contactId, serializer);
   }
 
   @protected
@@ -1308,6 +2260,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.version, serializer);
     sse_encode_u_32(self.protocol, serializer);
+  }
+
+  @protected
+  void sse_encode_event_kind(EventKind self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -1335,6 +2293,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_conversation_view(
+    List<ConversationView> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_conversation_view(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_message_view(
+    List<MessageView> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_message_view(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_prim_u_8_loose(
     List<int> self,
     SseSerializer serializer,
@@ -1354,6 +2336,64 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     serializer.buffer.putUint8List(self);
+  }
+
+  @protected
+  void sse_encode_message_kind(MessageKind self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_message_status(MessageStatus self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_message_view(MessageView self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self.id, serializer);
+    sse_encode_i_64(self.contactId, serializer);
+    sse_encode_bool(self.outgoing, serializer);
+    sse_encode_message_kind(self.kind, serializer);
+    sse_encode_String(self.text, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.replyTo, serializer);
+    sse_encode_i_64(self.sentAt, serializer);
+    sse_encode_i_64(self.receivedAt, serializer);
+    sse_encode_message_status(self.status, serializer);
+    sse_encode_bool(self.edited, serializer);
+    sse_encode_bool(self.deleted, serializer);
+    sse_encode_u_32(self.myReaction, serializer);
+    sse_encode_u_32(self.theirReaction, serializer);
+    sse_encode_bool(self.canEdit, serializer);
+    sse_encode_bool(self.canDeleteForEveryone, serializer);
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_64(
+    PlatformInt64? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_i_64(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_message_view(
+    MessageView? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_message_view(self, serializer);
+    }
   }
 
   @protected
@@ -1438,8 +2478,15 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
     scanned: scanned,
   );
 
+  Future<ChatSettings> chatSettings() =>
+      RustLib.instance.api.crateApiStoreChirpStoreChatSettings(that: this);
+
   Future<List<ContactView>> contacts() =>
       RustLib.instance.api.crateApiStoreChirpStoreContacts(that: this);
+
+  /// As conversas, a mais recente primeiro.
+  Future<List<ConversationView>> conversations() =>
+      RustLib.instance.api.crateApiStoreChirpStoreConversations(that: this);
 
   /// Um convite novo, como link. [qr] diz se vai ser mostrado como QR (frente a
   /// frente: o contato nasce verificado) ou mandado como link.
@@ -1449,9 +2496,54 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
   Future<Profile> createProfile({required String name}) => RustLib.instance.api
       .crateApiStoreChirpStoreCreateProfile(that: this, name: name);
 
+  Future<MessageView> deleteForEveryone({required PlatformInt64 id}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreDeleteForEveryone(that: this, id: id);
+
+  Future<void> deleteForMe({required PlatformInt64 id}) => RustLib.instance.api
+      .crateApiStoreChirpStoreDeleteForMe(that: this, id: id);
+
+  Future<MessageView> editMessage({
+    required PlatformInt64 id,
+    required String text,
+  }) => RustLib.instance.api.crateApiStoreChirpStoreEditMessage(
+    that: this,
+    id: id,
+    text: text,
+  );
+
+  /// Li a conversa: marca e manda o recibo, se ligado.
+  Future<void> markRead({required PlatformInt64 contactId}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreMarkRead(that: this, contactId: contactId);
+
+  /// As últimas [limit] mensagens da conversa, em ordem; antes de [before] (o id de
+  /// uma mensagem) para carregar as anteriores.
+  Future<List<MessageView>> messages({
+    required PlatformInt64 contactId,
+    PlatformInt64? before,
+    required int limit,
+  }) => RustLib.instance.api.crateApiStoreChirpStoreMessages(
+    that: this,
+    contactId: contactId,
+    before: before,
+    limit: limit,
+  );
+
   Future<Profile?> profile() =>
       RustLib.instance.api.crateApiStoreChirpStoreProfile(that: this);
 
+  /// Reage a uma mensagem ([kind] 0 tira a reação).
+  Future<MessageView> react({required PlatformInt64 id, required int kind}) =>
+      RustLib.instance.api.crateApiStoreChirpStoreReact(
+        that: this,
+        id: id,
+        kind: kind,
+      );
+
+  /// Troca o nome e manda o perfil novo a cada contato.
   Future<Profile> rename({required String name}) => RustLib.instance.api
       .crateApiStoreChirpStoreRename(that: this, name: name);
 
@@ -1460,6 +2552,34 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
       .instance
       .api
       .crateApiStoreChirpStoreSafetyNumber(that: this, contactId: contactId);
+
+  /// A busca no histórico de todas as conversas.
+  Future<List<MessageView>> search({required String query}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreSearch(that: this, query: query);
+
+  /// Chama a atenção do contato. Uma vez a cada 10 segundos (`TooSoon`).
+  Future<MessageView> sendNudge({required PlatformInt64 contactId}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreSendNudge(that: this, contactId: contactId);
+
+  Future<MessageView> sendText({
+    required PlatformInt64 contactId,
+    required String text,
+    PlatformInt64? replyTo,
+  }) => RustLib.instance.api.crateApiStoreChirpStoreSendText(
+    that: this,
+    contactId: contactId,
+    text: text,
+    replyTo: replyTo,
+  );
+
+  Future<void> setChatSettings({required ChatSettings settings}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreSetChatSettings(that: this, settings: settings);
 
   Future<ContactView> setVerified({
     required PlatformInt64 contactId,
@@ -1479,8 +2599,15 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
   Future<void> stopNetwork() =>
       RustLib.instance.api.crateApiStoreChirpStoreStopNetwork(that: this);
 
-  /// Avisa a UI (com o id) quando um contato muda sem ela pedir: alguém leu um
-  /// convite nosso, por exemplo.
-  Stream<PlatformInt64> watchContacts() =>
-      RustLib.instance.api.crateApiStoreChirpStoreWatchContacts(that: this);
+  /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
+  /// Só sai se o contato está online agora.
+  Future<void> typing({required PlatformInt64 contactId}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreTyping(that: this, contactId: contactId);
+
+  /// Avisa a UI do que muda sem ela pedir: alguém leu um convite nosso, chegou
+  /// mensagem, o contato está digitando.
+  Stream<CoreEvent> watchEvents() =>
+      RustLib.instance.api.crateApiStoreChirpStoreWatchEvents(that: this);
 }

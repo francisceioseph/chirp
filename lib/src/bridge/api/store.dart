@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `lock`, `open`, `runtime`, `started`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `flush`, `lock`, `open`, `runtime`, `started`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -25,13 +25,24 @@ int minPassphraseChars() =>
 Future<void> wipeStore({required String dir}) =>
     RustLib.instance.api.crateApiStoreWipeStore(dir: dir);
 
+/// Quantos tipos de reação há (a UI desenha cada um com um ícone).
+int reactionKinds() => RustLib.instance.api.crateApiStoreReactionKinds();
+
+/// O texto mais comprido de uma mensagem, em caracteres.
+int maxMessageChars() => RustLib.instance.api.crateApiStoreMaxMessageChars();
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>>
 abstract class ChirpStore implements RustOpaqueInterface {
   /// Lê um convite e faz o aperto de mão. [scanned]: veio de um QR lido frente a
   /// frente.
   Future<ContactView> addContact({required String link, required bool scanned});
 
+  Future<ChatSettings> chatSettings();
+
   Future<List<ContactView>> contacts();
+
+  /// As conversas, a mais recente primeiro.
+  Future<List<ConversationView>> conversations();
 
   /// Um convite novo, como link. [qr] diz se vai ser mostrado como QR (frente a
   /// frente: o contato nasce verificado) ou mandado como link.
@@ -47,6 +58,26 @@ abstract class ChirpStore implements RustOpaqueInterface {
     dir: dir,
     passphrase: passphrase,
   );
+
+  Future<MessageView> deleteForEveryone({required PlatformInt64 id});
+
+  Future<void> deleteForMe({required PlatformInt64 id});
+
+  Future<MessageView> editMessage({
+    required PlatformInt64 id,
+    required String text,
+  });
+
+  /// Li a conversa: marca e manda o recibo, se ligado.
+  Future<void> markRead({required PlatformInt64 contactId});
+
+  /// As últimas [limit] mensagens da conversa, em ordem; antes de [before] (o id de
+  /// uma mensagem) para carregar as anteriores.
+  Future<List<MessageView>> messages({
+    required PlatformInt64 contactId,
+    PlatformInt64? before,
+    required int limit,
+  });
 
   /// Abre (ou cria) com a chave do cofre.
   static Future<ChirpStore> openWithKey({
@@ -68,10 +99,28 @@ abstract class ChirpStore implements RustOpaqueInterface {
 
   Future<Profile?> profile();
 
+  /// Reage a uma mensagem ([kind] 0 tira a reação).
+  Future<MessageView> react({required PlatformInt64 id, required int kind});
+
+  /// Troca o nome e manda o perfil novo a cada contato.
   Future<Profile> rename({required String name});
 
   /// O número de segurança com um contato: 60 dígitos, igual nos dois aparelhos.
   Future<String> safetyNumber({required PlatformInt64 contactId});
+
+  /// A busca no histórico de todas as conversas.
+  Future<List<MessageView>> search({required String query});
+
+  /// Chama a atenção do contato. Uma vez a cada 10 segundos (`TooSoon`).
+  Future<MessageView> sendNudge({required PlatformInt64 contactId});
+
+  Future<MessageView> sendText({
+    required PlatformInt64 contactId,
+    required String text,
+    PlatformInt64? replyTo,
+  });
+
+  Future<void> setChatSettings({required ChatSettings settings});
 
   Future<ContactView> setVerified({
     required PlatformInt64 contactId,
@@ -85,9 +134,32 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// Desliga o nó (antes de apagar tudo, por exemplo).
   Future<void> stopNetwork();
 
-  /// Avisa a UI (com o id) quando um contato muda sem ela pedir: alguém leu um
-  /// convite nosso, por exemplo.
-  Stream<PlatformInt64> watchContacts();
+  /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
+  /// Só sai se o contato está online agora.
+  Future<void> typing({required PlatformInt64 contactId});
+
+  /// Avisa a UI do que muda sem ela pedir: alguém leu um convite nosso, chegou
+  /// mensagem, o contato está digitando.
+  Stream<CoreEvent> watchEvents();
+}
+
+/// Os recibos de leitura e o "digitando": desligar vale para os dois lados.
+class ChatSettings {
+  final bool readReceipts;
+  final bool typing;
+
+  const ChatSettings({required this.readReceipts, required this.typing});
+
+  @override
+  int get hashCode => readReceipts.hashCode ^ typing.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatSettings &&
+          runtimeType == other.runtimeType &&
+          readReceipts == other.readReceipts &&
+          typing == other.typing;
 }
 
 /// Um contato como a UI mostra.
@@ -128,6 +200,157 @@ class ContactView {
           avatarSeed == other.avatarSeed &&
           verified == other.verified &&
           established == other.established;
+}
+
+/// Uma conversa na lista.
+class ConversationView {
+  final ContactView contact;
+  final MessageView? last;
+  final int unread;
+
+  const ConversationView({
+    required this.contact,
+    this.last,
+    required this.unread,
+  });
+
+  @override
+  int get hashCode => contact.hashCode ^ last.hashCode ^ unread.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConversationView &&
+          runtimeType == other.runtimeType &&
+          contact == other.contact &&
+          last == other.last &&
+          unread == other.unread;
+}
+
+class CoreEvent {
+  final EventKind kind;
+  final PlatformInt64 contactId;
+
+  const CoreEvent({required this.kind, required this.contactId});
+
+  @override
+  int get hashCode => kind.hashCode ^ contactId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CoreEvent &&
+          runtimeType == other.runtimeType &&
+          kind == other.kind &&
+          contactId == other.contactId;
+}
+
+/// O que muda sem a UI pedir.
+enum EventKind {
+  /// Um contato novo ou mudado. Com o id 0, a UI relê tudo (perdeu eventos).
+  contact,
+
+  /// A conversa com o contato mudou.
+  messages,
+
+  /// O contato está digitando.
+  typing,
+}
+
+enum MessageKind {
+  text,
+
+  /// Chamou atenção.
+  nudge,
+}
+
+/// Para as minhas: na fila, entregue, lida. Para as do contato: `Pending` é não lida.
+enum MessageStatus { pending, delivered, read }
+
+/// Uma mensagem como a UI mostra.
+class MessageView {
+  final PlatformInt64 id;
+  final PlatformInt64 contactId;
+  final bool outgoing;
+  final MessageKind kind;
+  final String text;
+
+  /// A mensagem citada, se ela existe neste aparelho.
+  final PlatformInt64? replyTo;
+
+  /// Quando foi mandada (pelo relógio de quem mandou), em milissegundos.
+  final PlatformInt64 sentAt;
+
+  /// Quando chegou aqui (ou foi escrita), em milissegundos.
+  final PlatformInt64 receivedAt;
+  final MessageStatus status;
+  final bool edited;
+  final bool deleted;
+
+  /// As reações (0 é nenhuma, 1 a `reaction_kinds()`).
+  final int myReaction;
+  final int theirReaction;
+
+  /// Ainda dá para editar ou apagar para todos.
+  final bool canEdit;
+  final bool canDeleteForEveryone;
+
+  const MessageView({
+    required this.id,
+    required this.contactId,
+    required this.outgoing,
+    required this.kind,
+    required this.text,
+    this.replyTo,
+    required this.sentAt,
+    required this.receivedAt,
+    required this.status,
+    required this.edited,
+    required this.deleted,
+    required this.myReaction,
+    required this.theirReaction,
+    required this.canEdit,
+    required this.canDeleteForEveryone,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      contactId.hashCode ^
+      outgoing.hashCode ^
+      kind.hashCode ^
+      text.hashCode ^
+      replyTo.hashCode ^
+      sentAt.hashCode ^
+      receivedAt.hashCode ^
+      status.hashCode ^
+      edited.hashCode ^
+      deleted.hashCode ^
+      myReaction.hashCode ^
+      theirReaction.hashCode ^
+      canEdit.hashCode ^
+      canDeleteForEveryone.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MessageView &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          contactId == other.contactId &&
+          outgoing == other.outgoing &&
+          kind == other.kind &&
+          text == other.text &&
+          replyTo == other.replyTo &&
+          sentAt == other.sentAt &&
+          receivedAt == other.receivedAt &&
+          status == other.status &&
+          edited == other.edited &&
+          deleted == other.deleted &&
+          myReaction == other.myReaction &&
+          theirReaction == other.theirReaction &&
+          canEdit == other.canEdit &&
+          canDeleteForEveryone == other.canDeleteForEveryone;
 }
 
 /// O perfil como a UI mostra.

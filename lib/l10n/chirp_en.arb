@@ -114,5 +114,77 @@
     }
   },
   "markVerified": "Mark as verified",
-  "networkUnavailable": "The local network did not start."
+  "networkUnavailable": "The local network did not start.",
+  "messageHint": "Message",
+  "send": "Send",
+  "nudge": "Get their attention",
+  "nudgeSent": "You asked for {name}'s attention",
+  "nudgeReceived": "{name} wants your attention",
+  "nudgePreview": "Asked for attention",
+  "typing": "typing…",
+  "messageDeleted": "This message was deleted",
+  "messageEdited": "edited",
+  "statusPending": "Waiting to be delivered",
+  "statusDelivered": "Delivered",
+  "statusRead": "Read",
+  "you": "You",
+  "reply": "Reply",
+  "replyingTo": "Replying to {name}",
+  "quotedMissing": "Message not on this device",
+  "editMessage": "Edit",
+  "editingMessage": "Editing message",
+  "copyText": "Copy text",
+  "textCopied": "Copied",
+  "deleteForMe": "Delete for me",
+  "deleteForEveryone": "Delete for everyone",
+  "reaction1": "Like",
+  "reaction2": "Love",
+  "reaction3": "Funny",
+  "reaction4": "Sad",
+  "reaction5": "Thanks",
+  "reaction6": "Celebrate",
+  "react": "React",
+  "conversationEmpty": "No messages yet. Say hi!",
+  "contactDetails": "Contact details",
+  "searchMessages": "Search messages",
+  "searchNothing": "Nothing found",
+  "searchHelp": "Words from any conversation, ignoring accents and case.",
+  "messageTooSoon": "Wait a few seconds before doing that again.",
+  "messageTooLate": "The time to change this message is over.",
+  "messageInvalid": "The message is empty or too long.",
+  "unreadCount": "{count, plural, one{{count} unread message} other{{count} unread messages}}",
+  "chatSettingsTitle": "Conversations",
+  "readReceipts": "Read receipts",
+  "readReceiptsHelp": "When off, you don't see when others read yours either.",
+  "typingIndicator": "Typing indicator",
+  "typingIndicatorHelp": "When off, you don't see when others are typing either.",
+  "messageOptions": "Message options",
+  "@nudgeSent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@nudgeReceived": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@replyingTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@unreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

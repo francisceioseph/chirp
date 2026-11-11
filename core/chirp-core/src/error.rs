@@ -47,6 +47,18 @@ pub enum CoreError {
     /// Não há contato com esse id.
     #[error("there is no such contact")]
     UnknownContact,
+    /// Não há mensagem com esse id, ou ela não é desse jeito (editar a de outra pessoa).
+    #[error("there is no such message")]
+    UnknownMessage,
+    /// A mensagem está vazia ou passa do tamanho.
+    #[error("the message is not valid")]
+    InvalidMessage,
+    /// Cedo demais para repetir (chamar atenção duas vezes em 10 segundos).
+    #[error("too soon")]
+    TooSoon,
+    /// Tarde demais para editar ou apagar para todos.
+    #[error("too late")]
+    TooLate,
     /// Falha de disco ou do SQLite que não é nenhuma das acima.
     #[error("storage failure")]
     Storage,

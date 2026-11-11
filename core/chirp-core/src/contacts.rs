@@ -128,6 +128,53 @@ pub fn by_identity(conn: &Connection, identity_key: &[u8]) -> CoreResult<Option<
     .transpose()
 }
 
+/// O contato estabelecido que fala por este nó.
+pub fn by_endpoint(conn: &Connection, endpoint_id: &[u8]) -> CoreResult<Option<Contact>> {
+    conn.query_row(
+        &format!(
+            "SELECT {COLUMNS} FROM contacts WHERE endpoint_id = ?1 AND state = ?2
+             ORDER BY id LIMIT 1"
+        ),
+        (endpoint_id, ContactState::Established as i64),
+        from_row,
+    )
+    .optional()?
+    .map(finish)
+    .transpose()
+}
+
+/// O endereço de onde o contato acabou de falar vai para a frente da lista: é o mais
+/// provável de servir na próxima vez.
+pub fn learn_addr(conn: &Connection, id: i64, addr: &str) -> CoreResult<()> {
+    let contact = by_id(conn, id)?;
+    if contact.addrs.first().map(String::as_str) == Some(addr) {
+        return Ok(());
+    }
+    let mut addrs = vec![addr.to_owned()];
+    addrs.extend(contact.addrs.into_iter().filter(|a| a != addr));
+    addrs.truncate(8);
+    conn.execute(
+        "UPDATE contacts SET addrs = ?2 WHERE id = ?1",
+        (id, addrs.join("\n")),
+    )?;
+    Ok(())
+}
+
+/// O perfil novo que o contato mandou, se for mais novo que o guardado.
+pub fn update_profile(
+    conn: &Connection,
+    id: i64,
+    display_name: &str,
+    version: u32,
+) -> CoreResult<bool> {
+    let changed = conn.execute(
+        "UPDATE contacts SET display_name = ?2, profile_version = ?3
+         WHERE id = ?1 AND profile_version < ?3",
+        (id, display_name, version),
+    )?;
+    Ok(changed > 0)
+}
+
 pub fn list(conn: &Connection) -> CoreResult<Vec<Contact>> {
     let mut stmt = conn.prepare(&format!(
         "SELECT {COLUMNS} FROM contacts ORDER BY display_name COLLATE NOCASE, id"

@@ -1,7 +1,8 @@
 // lib/src/ui/pages/contacts_page.dart
 //
-// A tela principal desta fase: os contatos, o botão de adicionar e o perfil no canto.
-// As conversas tomam o lugar da lista na fase 3.
+// A tela principal: as conversas (a mais recente primeiro, com as não lidas), a busca,
+// o botão de adicionar contato e o perfil no canto. Um contato sem mensagens aparece
+// com o estado dele (verificado ou não).
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
@@ -10,10 +11,11 @@ import '../../core/chirp_core.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../failure_text.dart';
-import '../molecules/contact_tile.dart';
+import '../molecules/conversation_tile.dart';
 import '../templates/centered_panel.dart';
 import 'add_contact_page.dart';
-import 'contact_page.dart';
+import 'conversation_page.dart';
+import 'search_page.dart';
 
 class ContactsPage extends StatelessWidget {
   const ContactsPage({
@@ -33,13 +35,17 @@ class ContactsPage extends StatelessWidget {
     ),
   );
 
-  void _openContact(BuildContext context, Contact contact) =>
+  void _openConversation(BuildContext context, Contact contact) =>
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) =>
-              ContactPage(controller: controller, contactId: contact.id),
+              ConversationPage(contacts: controller, contactId: contact.id),
         ),
       );
+
+  void _openSearch(BuildContext context) => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => SearchPage(contacts: controller)),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -47,12 +53,18 @@ class ContactsPage extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final contacts = controller.contacts;
+        final conversations = controller.conversations;
         final networkFailure = controller.networkFailure;
         return Scaffold(
           appBar: AppBar(
             title: Text(l10n.appName),
             actions: [
+              if (conversations.isNotEmpty)
+                IconButton(
+                  tooltip: l10n.searchMessages,
+                  onPressed: () => _openSearch(context),
+                  icon: const Icon(Icons.search),
+                ),
               IconButton(
                 tooltip: l10n.profileTitle,
                 onPressed: onOpenProfile,
@@ -86,7 +98,7 @@ class ContactsPage extends StatelessWidget {
               Expanded(
                 child: !controller.loaded
                     ? const Center(child: CircularProgressIndicator())
-                    : contacts.isEmpty
+                    : conversations.isEmpty
                     ? CenteredPanel(
                         children: [
                           Icon(
@@ -102,11 +114,16 @@ class ContactsPage extends StatelessWidget {
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.only(bottom: 88),
-                        itemCount: contacts.length,
-                        itemBuilder: (context, i) => ContactTile(
-                          contact: contacts[i],
-                          onTap: () => _openContact(context, contacts[i]),
-                        ),
+                        itemCount: conversations.length,
+                        itemBuilder: (context, i) {
+                          final contact = conversations[i].contact;
+                          return ConversationTile(
+                            key: ValueKey(contact.id),
+                            conversation: conversations[i],
+                            typing: controller.isTyping(contact.id),
+                            onTap: () => _openConversation(context, contact),
+                          );
+                        },
                       ),
               ),
             ],

@@ -90,8 +90,19 @@ class FakeStore implements ProfileStore {
   final List<String> invites = [];
   bool networkStarted = false;
   CoreFailure? networkFailure;
-  final _changes = StreamController<int>.broadcast();
+  final _events = StreamController<CoreEvent>.broadcast();
   final Map<int, bool> _verified = {};
+
+  /// As mensagens, de todas as conversas, na ordem.
+  final List<ChatMessage> sent = [];
+  int _nextMessage = 1;
+
+  /// Quantas vezes a UI avisou que estava digitando.
+  int typingCalls = 0;
+  ChatSettings settings = const ChatSettings(readReceipts: true, typing: true);
+
+  /// O "agora" das mensagens.
+  DateTime now = DateTime(2026, 11, 11, 10, 30);
 
   /// Alguém leu um convite nosso.
   void someoneJoined(String name, {bool verified = true}) {
@@ -103,8 +114,228 @@ class FakeStore implements ProfileStore {
       established: true,
     );
     people.add(contact);
-    _changes.add(contact.id);
+    _events.add(CoreEvent(CoreEventKind.contact, contact.id));
   }
+
+  ChatMessage _put(ChatMessage message) {
+    final i = sent.indexWhere((m) => m.id == message.id);
+    if (i < 0) {
+      sent.add(message);
+    } else {
+      sent[i] = message;
+    }
+    return message;
+  }
+
+  ChatMessage _new(
+    int contactId, {
+    required bool outgoing,
+    String text = '',
+    MessageKind kind = MessageKind.text,
+    int? replyTo,
+  }) => _put(
+    ChatMessage(
+      id: _nextMessage++,
+      contactId: contactId,
+      outgoing: outgoing,
+      kind: kind,
+      text: text,
+      replyTo: replyTo,
+      sentAt: now,
+      receivedAt: now,
+      status: MessageStatus.pending,
+      canEdit: outgoing && kind == MessageKind.text,
+      canDeleteForEveryone: outgoing && kind == MessageKind.text,
+    ),
+  );
+
+  ChatMessage _byId(int id) => sent.firstWhere(
+    (m) => m.id == id,
+    orElse: () => throw const CoreException(CoreFailure.unknownMessage),
+  );
+
+  ChatMessage _copy(
+    ChatMessage m, {
+    String? text,
+    MessageStatus? status,
+    bool? edited,
+    bool? deleted,
+    int? myReaction,
+    int? theirReaction,
+  }) => ChatMessage(
+    id: m.id,
+    contactId: m.contactId,
+    outgoing: m.outgoing,
+    kind: m.kind,
+    text: text ?? m.text,
+    replyTo: m.replyTo,
+    sentAt: m.sentAt,
+    receivedAt: m.receivedAt,
+    status: status ?? m.status,
+    edited: edited ?? m.edited,
+    deleted: deleted ?? m.deleted,
+    myReaction: myReaction ?? m.myReaction,
+    theirReaction: theirReaction ?? m.theirReaction,
+    canEdit: (deleted ?? m.deleted) ? false : m.canEdit,
+    canDeleteForEveryone: (deleted ?? m.deleted)
+        ? false
+        : m.canDeleteForEveryone,
+  );
+
+  /// Chega uma mensagem do contato.
+  ChatMessage incoming(int contactId, String text, {int? replyTo}) {
+    final m = _new(contactId, outgoing: false, text: text, replyTo: replyTo);
+    _events.add(CoreEvent(CoreEventKind.messages, contactId));
+    return m;
+  }
+
+  /// O contato chama atenção.
+  void theyNudge(int contactId) {
+    _new(contactId, outgoing: false, kind: MessageKind.nudge);
+    _events.add(CoreEvent(CoreEventKind.messages, contactId));
+  }
+
+  /// O contato está digitando.
+  void theyType(int contactId) =>
+      _events.add(CoreEvent(CoreEventKind.typing, contactId));
+
+  /// A rede entrega (e o contato lê) as minhas.
+  void deliver(int contactId, {bool read = false}) {
+    for (final m in [...sent]) {
+      if (m.contactId == contactId && m.outgoing) {
+        _put(
+          _copy(m, status: read ? MessageStatus.read : MessageStatus.delivered),
+        );
+      }
+    }
+    _events.add(CoreEvent(CoreEventKind.messages, contactId));
+  }
+
+  /// O contato reage a uma mensagem.
+  void theyReact(int id, int kind) {
+    final m = _put(_copy(_byId(id), theirReaction: kind));
+    _events.add(CoreEvent(CoreEventKind.messages, m.contactId));
+  }
+
+  @override
+  Stream<CoreEvent> events() => _events.stream;
+
+  @override
+  Future<List<Conversation>> conversations() async {
+    final all = await contacts();
+    final list = [
+      for (final c in all)
+        Conversation(
+          contact: c,
+          last: sent.where((m) => m.contactId == c.id).lastOrNull,
+          unread: sent.where((m) => m.contactId == c.id && m.unread).length,
+        ),
+    ];
+    list.sort((a, b) => (b.last?.id ?? 0).compareTo(a.last?.id ?? 0));
+    return list;
+  }
+
+  @override
+  Future<List<ChatMessage>> messages(
+    int contactId, {
+    int? before,
+    int limit = 100,
+  }) async {
+    final all = [
+      for (final m in sent)
+        if (m.contactId == contactId && (before == null || m.id < before)) m,
+    ];
+    return all.length <= limit ? all : all.sublist(all.length - limit);
+  }
+
+  void _established(int contactId) {
+    if (!people.any((c) => c.id == contactId && c.established)) {
+      throw const CoreException(CoreFailure.unknownContact);
+    }
+  }
+
+  @override
+  Future<ChatMessage> sendText(
+    int contactId,
+    String text, {
+    int? replyTo,
+  }) async {
+    _established(contactId);
+    final trimmed = text.trim();
+    if (trimmed.isEmpty || trimmed.length > 4000) {
+      throw const CoreException(CoreFailure.invalidMessage);
+    }
+    return _new(contactId, outgoing: true, text: trimmed, replyTo: replyTo);
+  }
+
+  DateTime? _lastNudge;
+
+  @override
+  Future<ChatMessage> sendNudge(int contactId) async {
+    _established(contactId);
+    final last = _lastNudge;
+    if (last != null && now.difference(last) < const Duration(seconds: 10)) {
+      throw const CoreException(CoreFailure.tooSoon);
+    }
+    _lastNudge = now;
+    return _new(contactId, outgoing: true, kind: MessageKind.nudge);
+  }
+
+  @override
+  Future<ChatMessage> editMessage(int id, String text) async {
+    final m = _byId(id);
+    if (!m.canEdit) throw const CoreException(CoreFailure.tooLate);
+    return _put(_copy(m, text: text.trim(), edited: true));
+  }
+
+  @override
+  Future<ChatMessage> deleteForEveryone(int id) async {
+    final m = _byId(id);
+    if (!m.canDeleteForEveryone) throw const CoreException(CoreFailure.tooLate);
+    return _put(
+      _copy(m, text: '', deleted: true, myReaction: 0, theirReaction: 0),
+    );
+  }
+
+  @override
+  Future<void> deleteForMe(int id) async {
+    _byId(id);
+    sent.removeWhere((m) => m.id == id);
+  }
+
+  @override
+  Future<ChatMessage> react(int id, int kind) async =>
+      _put(_copy(_byId(id), myReaction: kind));
+
+  @override
+  Future<void> typing(int contactId) async => typingCalls++;
+
+  @override
+  Future<void> markRead(int contactId) async {
+    for (final m in [...sent]) {
+      if (m.contactId == contactId && m.unread) {
+        _put(_copy(m, status: MessageStatus.read));
+      }
+    }
+  }
+
+  @override
+  Future<List<ChatMessage>> search(String query) async {
+    final words = query.toLowerCase().split(RegExp(r'\s+'))
+      ..removeWhere((w) => w.isEmpty);
+    if (words.isEmpty) return const [];
+    return [
+      for (final m in sent.reversed)
+        if (!m.deleted && words.every(m.text.toLowerCase().contains)) m,
+    ];
+  }
+
+  @override
+  Future<ChatSettings> chatSettings() async => settings;
+
+  @override
+  Future<void> setChatSettings(ChatSettings settings) async =>
+      this.settings = settings;
 
   @override
   Future<void> startNetwork() async {
@@ -166,9 +397,6 @@ class FakeStore implements ProfileStore {
   }
 
   @override
-  Stream<int> contactChanges() => _changes.stream;
-
-  @override
   Future<Profile?> profile() async => saved;
 
   @override
@@ -180,6 +408,19 @@ class FakeStore implements ProfileStore {
   @override
   Future<Profile> rename(String name) async =>
       saved = _profile(name, saved!.version + 1);
+
+  /// Um contato já estabelecido, para as conversas.
+  Contact befriend(String name) {
+    final contact = Contact(
+      id: people.length + 1,
+      displayName: name,
+      avatarSeed: people.length * 7919 + 13,
+      verified: true,
+      established: true,
+    );
+    people.add(contact);
+    return contact;
+  }
 
   static Profile _profile(String name, int version) {
     final trimmed = name.trim();
