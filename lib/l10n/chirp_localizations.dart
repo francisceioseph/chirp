@@ -923,6 +923,18 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
+
+  /// No description provided for @glassEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'Glass effect'**
+  String get glassEffect;
+
+  /// No description provided for @glassEffectHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Bars become translucent over what scrolls beneath. Off when the system asks for less motion or more contrast.'**
+  String get glassEffectHelp;
 }
 
 class _ChirpLocalizationsDelegate

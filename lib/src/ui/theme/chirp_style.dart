@@ -1,14 +1,18 @@
 // lib/src/ui/theme/chirp_style.dart
 //
-// O que o Material 3 não diz e cada tema do Chirp diz: o formato das bolhas. Os
-// widgets leem pelo `ChirpStyle.of(context)`.
+// O que o Material 3 não diz e cada tema do Chirp diz: o formato das bolhas, e o
+// efeito vidro, se escolhido. Os widgets leem pelo `ChirpStyle.of(context)`.
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
 @immutable
 class ChirpStyle extends ThemeExtension<ChirpStyle> {
-  const ChirpStyle({this.bubbleRadius = 16, this.tailRadius = 4});
+  const ChirpStyle({
+    this.bubbleRadius = 16,
+    this.tailRadius = 4,
+    this.glass = false,
+  });
 
   /// O canto redondo das bolhas.
   final double bubbleRadius;
@@ -16,8 +20,18 @@ class ChirpStyle extends ThemeExtension<ChirpStyle> {
   /// O canto do lado de quem falou (a "cauda").
   final double tailRadius;
 
+  /// O efeito vidro foi escolhido (veja [glassOn]).
+  final bool glass;
+
   static ChirpStyle of(BuildContext context) =>
       Theme.of(context).extension<ChirpStyle>() ?? const ChirpStyle();
+
+  /// O vidro vale agora: escolhido, e o sistema não pede menos animação nem mais
+  /// contraste (o vidro mexe com o que passa por baixo e tira contraste).
+  static bool glassOn(BuildContext context) =>
+      of(context).glass &&
+      !MediaQuery.disableAnimationsOf(context) &&
+      !MediaQuery.highContrastOf(context);
 
   /// A bolha de uma mensagem: a cauda fica embaixo, do lado de quem mandou.
   BorderRadius bubble({required bool mine}) => BorderRadius.only(
@@ -28,9 +42,14 @@ class ChirpStyle extends ThemeExtension<ChirpStyle> {
   );
 
   @override
-  ChirpStyle copyWith({double? bubbleRadius, double? tailRadius}) => ChirpStyle(
+  ChirpStyle copyWith({
+    double? bubbleRadius,
+    double? tailRadius,
+    bool? glass,
+  }) => ChirpStyle(
     bubbleRadius: bubbleRadius ?? this.bubbleRadius,
     tailRadius: tailRadius ?? this.tailRadius,
+    glass: glass ?? this.glass,
   );
 
   @override
@@ -39,6 +58,7 @@ class ChirpStyle extends ThemeExtension<ChirpStyle> {
     return ChirpStyle(
       bubbleRadius: lerpDouble(bubbleRadius, other.bubbleRadius, t)!,
       tailRadius: lerpDouble(tailRadius, other.tailRadius, t)!,
+      glass: t < 0.5 ? glass : other.glass,
     );
   }
 }

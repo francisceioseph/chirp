@@ -1,6 +1,6 @@
 // lib/src/ui/organisms/appearance_card.dart
 //
-// A aparência: claro, escuro ou o do sistema, e o tema. Muda na hora; se não gravar,
+// A aparência: claro, escuro ou o do sistema, o tema e o efeito vidro. Muda na hora; se não gravar,
 // volta e avisa.
 import 'package:flutter/material.dart';
 
@@ -100,6 +100,15 @@ class AppearanceCard extends StatelessWidget {
                             _change(context, value.copyWith(theme: spec.id)),
                       ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.glassEffect),
+                  subtitle: Text(l10n.glassEffectHelp),
+                  value: value.glass,
+                  onChanged: (glass) =>
+                      _change(context, value.copyWith(glass: glass)),
                 ),
               ],
             ),

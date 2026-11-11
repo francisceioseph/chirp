@@ -36,7 +36,11 @@ ColorScheme chirpScheme(ChirpThemeSpec spec, Brightness brightness) {
   );
 }
 
-ThemeData chirpTheme(Brightness brightness, {ChirpThemeSpec? spec}) {
+ThemeData chirpTheme(
+  Brightness brightness, {
+  ChirpThemeSpec? spec,
+  bool glass = false,
+}) {
   spec ??= chirpThemes.first;
   final scheme = chirpScheme(spec, brightness);
   final corners = BorderRadius.circular(spec.radius);
@@ -50,7 +54,7 @@ ThemeData chirpTheme(Brightness brightness, {ChirpThemeSpec? spec}) {
     colorScheme: scheme,
     useMaterial3: true,
     visualDensity: spec.density,
-    extensions: [spec.style],
+    extensions: [spec.style.copyWith(glass: glass)],
     cardTheme: CardThemeData(shape: rounded),
     dialogTheme: DialogThemeData(shape: rounded),
     chipTheme: ChipThemeData(shape: rounded),

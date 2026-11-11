@@ -58,8 +58,16 @@ class _ChirpAppState extends State<ChirpApp> {
         return MaterialApp(
           onGenerateTitle: (context) => context.l10n.appName,
           debugShowCheckedModeBanner: false,
-          theme: chirpTheme(Brightness.light, spec: spec),
-          darkTheme: chirpTheme(Brightness.dark, spec: spec),
+          theme: chirpTheme(
+            Brightness.light,
+            spec: spec,
+            glass: appearance.glass,
+          ),
+          darkTheme: chirpTheme(
+            Brightness.dark,
+            spec: spec,
+            glass: appearance.glass,
+          ),
           themeMode: switch (appearance.mode) {
             AppearanceMode.system => ThemeMode.system,
             AppearanceMode.light => ThemeMode.light,

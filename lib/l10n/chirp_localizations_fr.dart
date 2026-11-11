@@ -466,4 +466,11 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
 
   @override
   String get close => 'Fermer';
+
+  @override
+  String get glassEffect => 'Effet verre';
+
+  @override
+  String get glassEffectHelp =>
+      'Les barres deviennent translucides au-dessus de ce qui défile. Désactivé quand le système demande moins d’animations ou plus de contraste.';
 }

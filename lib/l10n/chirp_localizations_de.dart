@@ -468,4 +468,11 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
 
   @override
   String get close => 'Schließen';
+
+  @override
+  String get glassEffect => 'Glaseffekt';
+
+  @override
+  String get glassEffectHelp =>
+      'Die Leisten werden über dem, was darunter scrollt, durchscheinend. Aus, wenn das System weniger Bewegung oder mehr Kontrast verlangt.';
 }

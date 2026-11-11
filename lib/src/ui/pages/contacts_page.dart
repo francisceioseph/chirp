@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';
 import '../../core/chirp_core.dart';
+import '../atoms/chirp_app_bar.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../failure_text.dart';
@@ -162,8 +163,10 @@ class _ContactsPageState extends State<ContactsPage> {
     final l10n = context.l10n;
     final conversations = _controller.conversations;
     final networkFailure = _controller.networkFailure;
+    final top = ChirpAppBar.topInset(context);
     return Scaffold(
-      appBar: AppBar(
+      extendBodyBehindAppBar: ChirpAppBar.extendsBody(context),
+      appBar: ChirpAppBar(
         title: Text(l10n.appName),
         actions: [
           if (conversations.isNotEmpty)
@@ -189,7 +192,8 @@ class _ContactsPageState extends State<ContactsPage> {
           : null,
       body: Column(
         children: [
-          if (networkFailure != null)
+          if (networkFailure != null) ...[
+            SizedBox(height: top),
             MaterialBanner(
               content: Text(
                 '${l10n.networkUnavailable} '
@@ -202,6 +206,7 @@ class _ContactsPageState extends State<ContactsPage> {
                 ),
               ],
             ),
+          ],
           Expanded(
             child: !_controller.loaded
                 ? const Center(child: CircularProgressIndicator())
@@ -220,7 +225,11 @@ class _ContactsPageState extends State<ContactsPage> {
                     ],
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 88),
+                    // Com o aviso de rede em cima, a lista já começa embaixo dele.
+                    padding: EdgeInsets.only(
+                      top: networkFailure == null ? top : 0,
+                      bottom: 88,
+                    ),
                     itemCount: conversations.length,
                     itemBuilder: (context, i) {
                       final contact = conversations[i].contact;

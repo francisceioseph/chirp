@@ -135,5 +135,7 @@
   "themeFoundation": "Foundation",
   "themeMightyCats": "Mighty Cats",
   "conversationPick": "Выберите переписку",
-  "close": "Закрыть"
+  "close": "Закрыть",
+  "glassEffect": "Эффект стекла",
+  "glassEffectHelp": "Панели становятся полупрозрачными над тем, что прокручивается под ними. Выключен, если система просит меньше анимации или больше контраста."
 }

@@ -465,4 +465,11 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
 
   @override
   String get close => 'Cerrar';
+
+  @override
+  String get glassEffect => 'Efecto vidrio';
+
+  @override
+  String get glassEffectHelp =>
+      'Las barras se vuelven translúcidas sobre lo que pasa por debajo. Se apaga cuando el sistema pide menos animación o más contraste.';
 }

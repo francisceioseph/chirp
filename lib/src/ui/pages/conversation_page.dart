@@ -12,6 +12,7 @@ import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';
 import '../../application/conversation_controller.dart';
 import '../../core/chirp_core.dart';
+import '../atoms/chirp_app_bar.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../failure_text.dart';
@@ -194,7 +195,10 @@ class _ConversationPageState extends State<ConversationPage>
             : ListView.builder(
                 controller: _scroll,
                 reverse: true,
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: EdgeInsets.only(
+                  top: ChirpAppBar.topInset(context) + 8,
+                  bottom: 8,
+                ),
                 itemCount: messages.length,
                 itemBuilder: (context, i) {
                   final message = messages[messages.length - 1 - i];
@@ -217,7 +221,8 @@ class _ConversationPageState extends State<ConversationPage>
             return Transform.translate(offset: Offset(dx, 0), child: child);
           },
           child: Scaffold(
-            appBar: AppBar(
+            extendBodyBehindAppBar: ChirpAppBar.extendsBody(context),
+            appBar: ChirpAppBar(
               titleSpacing: 0,
               title: Semantics(
                 button: true,

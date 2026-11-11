@@ -1,5 +1,7 @@
 // A aparência da fase 4: os temas por semente, o claro e o escuro, gravados no banco
 // e de volta ao padrão quando o banco é apagado.
+import 'dart:ui' show AccessibilityFeatures;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
@@ -78,8 +80,8 @@ void main() {
     final store = await openProfile(tester);
     await showAppearance(tester);
     expect(
-      ChirpStyle.of(tester.element(find.text(l10n.themeLabel))),
-      chirpThemeById('lutino').style,
+      ChirpStyle.of(tester.element(find.text(l10n.themeLabel))).bubbleRadius,
+      chirpThemeById('lutino').style.bubbleRadius,
     );
 
     await tester.tap(find.bySemanticsLabel(l10n.themeSkylight));
@@ -90,6 +92,8 @@ void main() {
       chirpThemeById('skylight').style.bubbleRadius,
     );
 
+    await tester.ensureVisible(find.text(l10n.modeDark));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(l10n.modeDark));
     await tester.pumpAndSettle();
     expect(store.savedAppearance.mode, AppearanceMode.dark);
@@ -149,6 +153,75 @@ void main() {
     }
   }
 
+  group('efeito vidro', () {
+    Future<FakeStore> withGlass(WidgetTester tester) async {
+      final (core, vault) = await withProfile();
+      final store = core.store!
+        ..savedAppearance = const Appearance(glass: true)
+        ..someoneJoined('Canela');
+      store.incoming(1, 'Oi, tudo bem?');
+      await pumpChirp(tester, core: core, vault: vault);
+      return store;
+    }
+
+    Scaffold scaffoldOf(WidgetTester tester, String text) => tester.widget(
+      find.ancestor(of: find.text(text), matching: find.byType(Scaffold)).first,
+    );
+
+    testWidgets('a chave grava o vidro', (tester) async {
+      final store = await openProfile(tester);
+      await tester.scrollUntilVisible(
+        find.text(l10n.glassEffect),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text(l10n.glassEffect));
+      await tester.pumpAndSettle();
+      expect(store.savedAppearance.glass, isTrue);
+    });
+
+    testWidgets('a lista e a conversa passam por baixo da barra borrada', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await withGlass(tester);
+      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(scaffoldOf(tester, 'Canela').extendBodyBehindAppBar, isTrue);
+      // A primeira conversa começa abaixo da barra, não atrás dela.
+      final bar = tester.getBottomLeft(find.byType(AppBar));
+      expect(tester.getTopLeft(find.text('Canela')).dy, greaterThan(bar.dy));
+
+      await tester.tap(find.text('Canela'));
+      await tester.pumpAndSettle();
+      expect(find.byType(BackdropFilter), findsOneWidget);
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+      handle.dispose();
+    });
+
+    testWidgets('com menos animação pedida, o vidro some', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const _Features(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await withGlass(tester);
+      expect(find.byType(BackdropFilter), findsNothing);
+      expect(scaffoldOf(tester, 'Canela').extendBodyBehindAppBar, isFalse);
+    });
+
+    for (final (w, h) in [(240.0, 160.0), (320.0, 568.0)]) {
+      testWidgets('com vidro, cabe em ${w.toInt()}×${h.toInt()}', (
+        tester,
+      ) async {
+        setWindow(tester, w, h);
+        await withGlass(tester);
+        await tester.tap(find.text('Canela'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
   for (final (w, h) in [(240.0, 160.0), (320.0, 568.0)]) {
     testWidgets('a aparência cabe em ${w.toInt()}×${h.toInt()}', (
       tester,
@@ -162,4 +235,14 @@ void main() {
       handle.dispose();
     });
   }
+}
+
+class _Features implements AccessibilityFeatures {
+  const _Features({this.disableAnimations = false});
+
+  @override
+  final bool disableAnimations;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => false;
 }

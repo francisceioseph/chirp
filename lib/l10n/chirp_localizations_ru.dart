@@ -469,4 +469,11 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get close => 'Закрыть';
+
+  @override
+  String get glassEffect => 'Эффект стекла';
+
+  @override
+  String get glassEffectHelp =>
+      'Панели становятся полупрозрачными над тем, что прокручивается под ними. Выключен, если система просит меньше анимации или больше контраста.';
 }
