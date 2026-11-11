@@ -1,6 +1,8 @@
 #include "win32_window.h"
 
 #include <dwmapi.h>
+
+#include <algorithm>
 #include <flutter_windows.h>
 
 #include "resource.h"
@@ -134,11 +136,24 @@ bool Win32Window::Create(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
-  HWND window = CreateWindow(
-      window_class, title.c_str(), WS_OVERLAPPEDWINDOW,
-      Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
-      Scale(size.width, scale_factor), Scale(size.height, scale_factor),
-      nullptr, nullptr, GetModuleHandle(nullptr), this);
+  // A janela cabe na área útil do monitor (sem a barra de tarefas): numa tela
+  // pequena, o tamanho pedido passaria da borda.
+  int x = Scale(origin.x, scale_factor);
+  int y = Scale(origin.y, scale_factor);
+  int width = Scale(size.width, scale_factor);
+  int height = Scale(size.height, scale_factor);
+  MONITORINFO info = {sizeof(MONITORINFO)};
+  if (GetMonitorInfo(monitor, &info)) {
+    const RECT& area = info.rcWork;
+    x = area.left + x;
+    y = area.top + y;
+    width = (std::min)(width, static_cast<int>(area.right - x));
+    height = (std::min)(height, static_cast<int>(area.bottom - y));
+  }
+
+  HWND window = CreateWindow(window_class, title.c_str(), WS_OVERLAPPEDWINDOW,
+                             x, y, width, height, nullptr, nullptr,
+                             GetModuleHandle(nullptr), this);
 
   if (!window) {
     return false;
