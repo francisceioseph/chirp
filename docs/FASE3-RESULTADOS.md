@@ -28,6 +28,7 @@ O que a fase 3 do `docs/PLANO.md` (seção 13) pediu, o que foi feito e o que fi
 - O nó, rastreado com `strace` no teste da descoberta: só mandou pacotes aos endereços do próprio aparelho (IPv4 e os IPv6 dele, entre os dois nós do teste), ao multicast do mDNS (`224.0.0.251` e `ff02::fb`) e ao endereço falso do teste. Nada de DNS, relay ou servidor.
 - Dart: 138 testes, com o núcleo falso: mandar e receber, as não lidas, os recibos, o digitando, responder, editar, apagar, reagir, chamar atenção e o limite dele, o Enter, o teclado nas opções, a busca e os ajustes; e as telas novas na janela mínima e num celular pequeno, nos dois temas, com contraste e rótulos. O `flutter analyze` não acusa nada.
 - `integration_test/messages_test.dart` no Linux: dois bancos de verdade no mesmo processo, pela ponte, viram contatos e conversam (entregue, lida, resposta, reação, edição, chamar atenção, busca e ajustes).
+- Entre dois computadores: o app de Windows (o pacote do CI, na VM) e o `examples/invite_host.rs` no Linux, que responde cada texto com um eco. O Windows colou o link, os dois viram o mesmo número de segurança, o texto chegou, o eco voltou citando, o Linux viu a mensagem dele como lida e recebeu o chamar atenção. O firewall do Windows pergunta na primeira abertura, e recusar não atrapalha quem conecta para fora.
 
 ## Revisão
 
@@ -48,4 +49,3 @@ O que a revisão do diff pegou e já foi corrigido:
 - **Formatação leve** (negrito, itálico, código) e a lista de contatos em grupos.
 - **Sons** de mensagem e de contato, com o "não perturbe", ficam com as notificações da fase 6.
 - **Uma mensagem que nunca decifra** (uma sessão corrompida) fica na caixa de saída, tentando de novo. Falta um jeito de refazer a sessão.
-- **O teste entre dois computadores** (Linux e a VM Windows) espera o CI: o GitHub Actions está fora do ar, e o pacote de Windows sai de lá.
