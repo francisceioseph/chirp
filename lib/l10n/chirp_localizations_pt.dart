@@ -158,9 +158,110 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
       'Seus contatos comparam este número para saber que é você mesmo.';
 
   @override
-  String get homeNextPhase =>
-      'Seu perfil e sua chave estão prontos. As conversas chegam na próxima fase.';
+  String get somethingWentWrong => 'Algo deu errado. Tente de novo.';
 
   @override
-  String get somethingWentWrong => 'Algo deu errado. Tente de novo.';
+  String get profileTitle => 'Seu perfil';
+
+  @override
+  String get addContact => 'Adicionar contato';
+
+  @override
+  String get contactsEmptyTitle => 'Nenhum contato ainda';
+
+  @override
+  String get contactsEmptyBody =>
+      'Mostre seu código para alguém por perto, ou cole o convite que mandaram para você. Na mesma rede, sem precisar de internet.';
+
+  @override
+  String get contactPending => 'Esperando o outro aparelho';
+
+  @override
+  String get contactVerified => 'Verificado';
+
+  @override
+  String get contactUnverified => 'Não verificado';
+
+  @override
+  String get contactUnnamed => 'Ainda sem nome';
+
+  @override
+  String contactAdded(String name) {
+    return '$name agora é um contato.';
+  }
+
+  @override
+  String get inviteTabShow => 'Meu código';
+
+  @override
+  String get inviteTabPaste => 'Colar convite';
+
+  @override
+  String get inviteQrLabel => 'Código do convite, em QR';
+
+  @override
+  String get inviteQrHelp =>
+      'Deixe a outra pessoa ler este código, ou mande o link. Cada código vale uma vez, por 24 horas.';
+
+  @override
+  String get inviteCopyLink => 'Copiar o link do convite';
+
+  @override
+  String get inviteLinkCopied =>
+      'Link copiado. Mande por um canal em que você confia: ele vale uma vez, por 24 horas.';
+
+  @override
+  String get inviteNewCode => 'Código novo';
+
+  @override
+  String get pasteLabel => 'Link do convite';
+
+  @override
+  String get pasteHelp => 'Começa com chirp://invite';
+
+  @override
+  String get pasteAdd => 'Adicionar';
+
+  @override
+  String get pasteConnecting => 'Conectando';
+
+  @override
+  String get qrScanLater =>
+      'Ler o código pela câmera chega numa versão seguinte. Por enquanto, cole o link.';
+
+  @override
+  String get inviteInvalid =>
+      'Isto não é um convite do Chirp, ou falta um pedaço.';
+
+  @override
+  String get inviteRefused =>
+      'Este convite venceu ou já foi usado. Peça um novo.';
+
+  @override
+  String get inviteOwn => 'Este é o seu próprio convite.';
+
+  @override
+  String get inviteUnreachable =>
+      'Não deu para falar com o outro aparelho. Vocês estão na mesma rede, com o Chirp aberto?';
+
+  @override
+  String get inviteAlreadyContact => 'Esta pessoa já é um contato.';
+
+  @override
+  String get inviteProtocol =>
+      'O outro aparelho respondeu algo inesperado. Tente um convite novo.';
+
+  @override
+  String get safetyNumberTitle => 'Número de segurança';
+
+  @override
+  String safetyNumberHelp(String name) {
+    return 'Compare estes números com $name, pessoalmente ou numa ligação. Se forem iguais, ninguém está no meio da conversa.';
+  }
+
+  @override
+  String get markVerified => 'Marcar como verificado';
+
+  @override
+  String get networkUnavailable => 'A rede local não ligou.';
 }

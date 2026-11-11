@@ -5,17 +5,22 @@
 //! `chirp.db`, o banco cifrado, e `chirp.salt`, só quando a chave vem de uma senha.
 
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use flutter_rust_bridge::frb;
 use zeroize::Zeroizing;
 
+use crate::contacts::{Contact, ContactState};
 pub use crate::error::CoreError;
 use crate::error::CoreResult;
+use crate::frb_generated::StreamSink;
 use crate::identity::{avatar_seed, fingerprint};
+use crate::invite::Invite;
+use crate::node::{Node, NodeEvent};
 use crate::passphrase;
 use crate::profile::StoredProfile;
 use crate::random::secret_bytes;
+use crate::session::{self, InviteKind};
 use crate::store::Store;
 
 const DB_FILE: &str = "chirp.db";
@@ -93,10 +98,48 @@ pub fn wipe_store(dir: String) -> Result<(), CoreError> {
     Ok(())
 }
 
-/// O banco aberto. Um de cada vez: a trava serializa quem chama.
+/// Um contato como a UI mostra.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContactView {
+    pub id: i64,
+    pub display_name: String,
+    pub avatar_seed: u32,
+    /// O número de segurança foi conferido (QR frente a frente, ou marcado à mão).
+    pub verified: bool,
+    /// O aperto de mão fechou dos dois lados.
+    pub established: bool,
+}
+
+impl From<Contact> for ContactView {
+    fn from(contact: Contact) -> Self {
+        Self {
+            id: contact.id,
+            avatar_seed: avatar_seed(&contact.identity_key),
+            display_name: contact.display_name,
+            verified: contact.verified,
+            established: contact.state == ContactState::Established,
+        }
+    }
+}
+
+/// O runtime do tokio da rede, um por processo.
+fn runtime() -> &'static tokio::runtime::Runtime {
+    static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
+    RUNTIME.get_or_init(|| {
+        tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(2)
+            .enable_all()
+            .build()
+            .expect("the network runtime starts")
+    })
+}
+
+/// O banco aberto, e o nó da rede depois do `start_network`. A trava serializa quem
+/// chama.
 #[frb(opaque)]
 pub struct ChirpStore {
-    inner: Mutex<Store>,
+    inner: Arc<Mutex<Store>>,
+    node: Mutex<Option<Arc<Node>>>,
 }
 
 impl ChirpStore {
@@ -139,7 +182,8 @@ impl ChirpStore {
     fn open(dir: &Path, key: &[u8; 32]) -> CoreResult<ChirpStore> {
         std::fs::create_dir_all(dir)?;
         Ok(ChirpStore {
-            inner: Mutex::new(Store::open(&dir.join(DB_FILE), key)?),
+            inner: Arc::new(Mutex::new(Store::open(&dir.join(DB_FILE), key)?)),
+            node: Mutex::new(None),
         })
     }
 
@@ -157,6 +201,94 @@ impl ChirpStore {
 
     fn lock(&self) -> CoreResult<std::sync::MutexGuard<'_, Store>> {
         self.inner.lock().map_err(|_| CoreError::Storage)
+    }
+
+    /// Liga o nó da rede local. Pede o perfil (a identidade); chamar de novo não faz
+    /// nada.
+    pub fn start_network(&self) -> Result<(), CoreError> {
+        self.started().map(|_| ())
+    }
+
+    /// Desliga o nó (antes de apagar tudo, por exemplo).
+    pub fn stop_network(&self) -> Result<(), CoreError> {
+        let node = self.node.lock().map_err(|_| CoreError::Storage)?.take();
+        if let Some(node) = node {
+            runtime().block_on(node.close());
+        }
+        Ok(())
+    }
+
+    fn started(&self) -> CoreResult<Arc<Node>> {
+        let mut slot = self.node.lock().map_err(|_| CoreError::Storage)?;
+        if let Some(node) = slot.as_ref() {
+            return Ok(node.clone());
+        }
+        if self.lock()?.profile()?.is_none() {
+            return Err(CoreError::NoProfile);
+        }
+        let node = runtime().block_on(Node::start(self.inner.clone()))?;
+        *slot = Some(node.clone());
+        Ok(node)
+    }
+
+    /// Um convite novo, como link. [qr] diz se vai ser mostrado como QR (frente a
+    /// frente: o contato nasce verificado) ou mandado como link.
+    pub fn create_invite(&self, qr: bool) -> Result<String, CoreError> {
+        let node = self.started()?;
+        let kind = if qr { InviteKind::Qr } else { InviteKind::Link };
+        Ok(runtime().block_on(node.create_invite(kind))?.to_link())
+    }
+
+    /// Lê um convite e faz o aperto de mão. [scanned]: veio de um QR lido frente a
+    /// frente.
+    pub fn add_contact(&self, link: String, scanned: bool) -> Result<ContactView, CoreError> {
+        let invite = Invite::from_link(&link)?;
+        let node = self.started()?;
+        Ok(runtime().block_on(node.join(invite, scanned))?.into())
+    }
+
+    pub fn contacts(&self) -> Result<Vec<ContactView>, CoreError> {
+        Ok(crate::contacts::list(self.lock()?.conn())?
+            .into_iter()
+            .map(ContactView::from)
+            .collect())
+    }
+
+    /// O número de segurança com um contato: 60 dígitos, igual nos dois aparelhos.
+    pub fn safety_number(&self, contact_id: i64) -> Result<String, CoreError> {
+        let store = self.lock()?;
+        let contact = crate::contacts::by_id(store.conn(), contact_id)?;
+        let own = session::identity_pair(&store)?;
+        session::safety_number(&own.identity_key().serialize(), &contact.identity_key)
+    }
+
+    pub fn set_verified(&self, contact_id: i64, verified: bool) -> Result<ContactView, CoreError> {
+        Ok(crate::contacts::set_verified(self.lock()?.conn(), contact_id, verified)?.into())
+    }
+
+    /// Avisa a UI (com o id) quando um contato muda sem ela pedir: alguém leu um
+    /// convite nosso, por exemplo.
+    pub fn watch_contacts(&self, sink: StreamSink<i64>) -> Result<(), CoreError> {
+        let mut events = self.started()?.subscribe();
+        runtime().spawn(async move {
+            loop {
+                match events.recv().await {
+                    Ok(NodeEvent::ContactChanged(id)) => {
+                        if sink.add(id).is_err() {
+                            break;
+                        }
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                        // Perdeu eventos: um id inválido faz a UI reler a lista toda.
+                        if sink.add(0).is_err() {
+                            break;
+                        }
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+        Ok(())
     }
 }
 

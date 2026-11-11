@@ -157,9 +157,110 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
       'Your contacts compare this number to know it is really you.';
 
   @override
-  String get homeNextPhase =>
-      'Your profile and your key are ready. Conversations arrive in the next phase.';
+  String get somethingWentWrong => 'Something went wrong. Try again.';
 
   @override
-  String get somethingWentWrong => 'Something went wrong. Try again.';
+  String get profileTitle => 'Your profile';
+
+  @override
+  String get addContact => 'Add contact';
+
+  @override
+  String get contactsEmptyTitle => 'No contacts yet';
+
+  @override
+  String get contactsEmptyBody =>
+      'Show your code to someone nearby, or paste the invite they sent you. On the same network, no internet needed.';
+
+  @override
+  String get contactPending => 'Waiting for the other device';
+
+  @override
+  String get contactVerified => 'Verified';
+
+  @override
+  String get contactUnverified => 'Not verified';
+
+  @override
+  String get contactUnnamed => 'No name yet';
+
+  @override
+  String contactAdded(String name) {
+    return '$name is now a contact.';
+  }
+
+  @override
+  String get inviteTabShow => 'My code';
+
+  @override
+  String get inviteTabPaste => 'Paste invite';
+
+  @override
+  String get inviteQrLabel => 'Invite code, as a QR';
+
+  @override
+  String get inviteQrHelp =>
+      'Let the other person scan this code, or send them the link. Each code works once, for 24 hours.';
+
+  @override
+  String get inviteCopyLink => 'Copy invite link';
+
+  @override
+  String get inviteLinkCopied =>
+      'Link copied. Send it over a channel you trust: it works once, for 24 hours.';
+
+  @override
+  String get inviteNewCode => 'New code';
+
+  @override
+  String get pasteLabel => 'Invite link';
+
+  @override
+  String get pasteHelp => 'Starts with chirp://invite';
+
+  @override
+  String get pasteAdd => 'Add';
+
+  @override
+  String get pasteConnecting => 'Connecting';
+
+  @override
+  String get qrScanLater =>
+      'Reading the code with the camera comes in a later version. For now, paste the link.';
+
+  @override
+  String get inviteInvalid =>
+      'This is not a Chirp invite, or part of it is missing.';
+
+  @override
+  String get inviteRefused =>
+      'This invite has expired or was already used. Ask for a new one.';
+
+  @override
+  String get inviteOwn => 'This is your own invite.';
+
+  @override
+  String get inviteUnreachable =>
+      'Could not reach the other device. Are you both on the same network, with Chirp open?';
+
+  @override
+  String get inviteAlreadyContact => 'This person is already a contact.';
+
+  @override
+  String get inviteProtocol =>
+      'The other device answered something unexpected. Try a new invite.';
+
+  @override
+  String get safetyNumberTitle => 'Safety number';
+
+  @override
+  String safetyNumberHelp(String name) {
+    return 'Compare these numbers with $name, in person or on a call. If they match, nobody is in the middle of your conversation.';
+  }
+
+  @override
+  String get markVerified => 'Mark as verified';
+
+  @override
+  String get networkUnavailable => 'The local network did not start.';
 }

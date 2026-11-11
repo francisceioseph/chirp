@@ -18,6 +18,9 @@ void main() {
     await tester.pump();
     await tester.tap(create);
     await tester.pumpAndSettle();
+    expect(find.text(l10n.contactsEmptyTitle), findsOneWidget);
+    await tester.tap(find.byTooltip(l10n.profileTitle));
+    await tester.pumpAndSettle();
     expect(find.text('Lutino'), findsOneWidget);
     expect(find.text(l10n.profileKeyLabel), findsOneWidget);
     expect(
@@ -25,12 +28,14 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(l10n.coreVersion('9.9.9', 1)), findsOneWidget);
-    expect(find.byType(IdentityAvatar), findsOneWidget);
+    expect(find.byType(IdentityAvatar), findsWidgets);
   });
 
   testWidgets('troca o nome pelo diálogo', (tester) async {
     final (core, vault) = await withProfile();
     await pumpChirp(tester, core: core, vault: vault);
+    await tester.tap(find.byTooltip(l10n.profileTitle));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip(l10n.renameTooltip));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), ' ');
@@ -95,7 +100,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'calopsita lutino');
     await tester.tap(find.text(l10n.passphraseUnlock));
     await tester.pumpAndSettle();
-    expect(find.text('Lutino'), findsOneWidget);
+    expect(find.text(l10n.contactsEmptyTitle), findsOneWidget);
   });
 
   testWidgets('chave perdida: apagar pergunta antes', (tester) async {

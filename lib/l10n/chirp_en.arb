@@ -69,6 +69,50 @@
     "description": "Heading above the 30-digit fingerprint of the user's identity key."
   },
   "profileKeyHelp": "Your contacts compare this number to know it is really you.",
-  "homeNextPhase": "Your profile and your key are ready. Conversations arrive in the next phase.",
-  "somethingWentWrong": "Something went wrong. Try again."
+  "somethingWentWrong": "Something went wrong. Try again.",
+  "profileTitle": "Your profile",
+  "addContact": "Add contact",
+  "contactsEmptyTitle": "No contacts yet",
+  "contactsEmptyBody": "Show your code to someone nearby, or paste the invite they sent you. On the same network, no internet needed.",
+  "contactPending": "Waiting for the other device",
+  "contactVerified": "Verified",
+  "contactUnverified": "Not verified",
+  "contactUnnamed": "No name yet",
+  "contactAdded": "{name} is now a contact.",
+  "@contactAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteTabShow": "My code",
+  "inviteTabPaste": "Paste invite",
+  "inviteQrLabel": "Invite code, as a QR",
+  "inviteQrHelp": "Let the other person scan this code, or send them the link. Each code works once, for 24 hours.",
+  "inviteCopyLink": "Copy invite link",
+  "inviteLinkCopied": "Link copied. Send it over a channel you trust: it works once, for 24 hours.",
+  "inviteNewCode": "New code",
+  "pasteLabel": "Invite link",
+  "pasteHelp": "Starts with chirp://invite",
+  "pasteAdd": "Add",
+  "pasteConnecting": "Connecting",
+  "qrScanLater": "Reading the code with the camera comes in a later version. For now, paste the link.",
+  "inviteInvalid": "This is not a Chirp invite, or part of it is missing.",
+  "inviteRefused": "This invite has expired or was already used. Ask for a new one.",
+  "inviteOwn": "This is your own invite.",
+  "inviteUnreachable": "Could not reach the other device. Are you both on the same network, with Chirp open?",
+  "inviteAlreadyContact": "This person is already a contact.",
+  "inviteProtocol": "The other device answered something unexpected. Try a new invite.",
+  "safetyNumberTitle": "Safety number",
+  "safetyNumberHelp": "Compare these numbers with {name}, in person or on a call. If they match, nobody is in the middle of your conversation.",
+  "@safetyNumberHelp": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "markVerified": "Mark as verified",
+  "networkUnavailable": "The local network did not start."
 }

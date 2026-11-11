@@ -1,0 +1,267 @@
+//! O que vai no fio (docs/PROTOCOLO.md): os frames do transporte e o conteúdo que vai
+//! cifrado dentro da sessão, em Protobuf (`prost`, sem `.proto` nem `protoc`).
+//!
+//! Um frame é `tamanho (u32, big-endian) || Frame`, com no máximo `MAX_FRAME` bytes.
+//! Nada aqui é confiável antes de decifrar: os tamanhos são conferidos antes de ler.
+
+use prost::Message;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+
+use crate::error::{CoreError, CoreResult};
+
+/// A versão do protocolo no fio (a mesma do `api::info`).
+pub const VERSION: u32 = 1;
+
+/// O maior frame aceito: 64 KiB (docs/PLANO.md, 6.4).
+pub const MAX_FRAME: usize = 64 * 1024;
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Frame {
+    #[prost(uint32, tag = "1")]
+    pub version: u32,
+    #[prost(oneof = "Body", tags = "2, 3, 4, 5, 6")]
+    pub body: Option<Body>,
+}
+
+#[derive(Clone, PartialEq, prost::Oneof)]
+pub enum Body {
+    /// Quem leu o convite pede as prekeys, mostrando o token.
+    #[prost(message, tag = "2")]
+    BundleRequest(BundleRequest),
+    /// As prekeys do convite, assinadas pela identidade de quem convidou.
+    #[prost(message, tag = "3")]
+    Bundle(Bundle),
+    /// Uma mensagem que abre a sessão (PreKeySignalMessage do libsignal).
+    #[prost(bytes, tag = "4")]
+    PreKeyMessage(Vec<u8>),
+    /// Uma mensagem de uma sessão aberta (SignalMessage).
+    #[prost(bytes, tag = "5")]
+    Message(Vec<u8>),
+    /// O pedido foi recusado. Sem motivo: quem pergunta não aprende nada.
+    #[prost(message, tag = "6")]
+    Refused(Refused),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct BundleRequest {
+    #[prost(bytes = "vec", tag = "1")]
+    pub token: Vec<u8>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Bundle {
+    #[prost(uint32, tag = "1")]
+    pub registration_id: u32,
+    #[prost(uint32, tag = "2")]
+    pub prekey_id: u32,
+    #[prost(bytes = "vec", tag = "3")]
+    pub prekey: Vec<u8>,
+    #[prost(uint32, tag = "4")]
+    pub signed_prekey_id: u32,
+    #[prost(bytes = "vec", tag = "5")]
+    pub signed_prekey: Vec<u8>,
+    #[prost(bytes = "vec", tag = "6")]
+    pub signed_prekey_signature: Vec<u8>,
+    #[prost(uint32, tag = "7")]
+    pub kyber_prekey_id: u32,
+    #[prost(bytes = "vec", tag = "8")]
+    pub kyber_prekey: Vec<u8>,
+    #[prost(bytes = "vec", tag = "9")]
+    pub kyber_prekey_signature: Vec<u8>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Refused {}
+
+/// O conteúdo decifrado.
+#[derive(Clone, PartialEq, Message)]
+pub struct Content {
+    #[prost(bytes = "vec", tag = "1")]
+    pub message_id: Vec<u8>,
+    #[prost(oneof = "ContentBody", tags = "2, 3")]
+    pub body: Option<ContentBody>,
+    /// Até o próximo degrau de tamanho (docs/PLANO.md, 6.5).
+    #[prost(bytes = "vec", tag = "15")]
+    pub padding: Vec<u8>,
+}
+
+#[derive(Clone, PartialEq, prost::Oneof)]
+pub enum ContentBody {
+    /// A primeira mensagem de quem leu o convite.
+    #[prost(message, tag = "2")]
+    Hello(Hello),
+    /// A resposta de quem convidou, que fecha o aperto de mão.
+    #[prost(message, tag = "3")]
+    Welcome(Welcome),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Hello {
+    /// O token do convite, de novo, agora dentro da sessão: liga a sessão ao convite.
+    #[prost(bytes = "vec", tag = "1")]
+    pub token: Vec<u8>,
+    #[prost(message, optional, tag = "2")]
+    pub profile: Option<Profile>,
+    #[prost(message, optional, tag = "3")]
+    pub peer: Option<Peer>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Welcome {
+    #[prost(message, optional, tag = "1")]
+    pub profile: Option<Profile>,
+    #[prost(message, optional, tag = "2")]
+    pub peer: Option<Peer>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Profile {
+    #[prost(string, tag = "1")]
+    pub display_name: String,
+    #[prost(uint32, tag = "2")]
+    pub version: u32,
+}
+
+/// Como achar o aparelho na rede: o nó do transporte, os endereços de agora e a chave
+/// dos tokens de descoberta. Só vai cifrado, só para o contato.
+#[derive(Clone, PartialEq, Message)]
+pub struct Peer {
+    #[prost(bytes = "vec", tag = "1")]
+    pub endpoint_id: Vec<u8>,
+    #[prost(string, repeated, tag = "2")]
+    pub addrs: Vec<String>,
+    #[prost(bytes = "vec", tag = "3")]
+    pub discovery_key: Vec<u8>,
+}
+
+/// Os degraus do preenchimento: o tamanho cifrado não diz "curta" ou "foto".
+const PAD_STEPS: [usize; 5] = [256, 1024, 4096, 16 * 1024, 60 * 1024];
+
+impl Content {
+    /// Codifica com o preenchimento até o próximo degrau.
+    pub fn encode_padded(mut self) -> Vec<u8> {
+        self.padding.clear();
+        let bare = self.encoded_len();
+        // O campo do preenchimento custa a tag (1 byte) e o tamanho (até 3 bytes).
+        let Some(target) = PAD_STEPS.iter().copied().find(|step| *step >= bare + 4) else {
+            return self.encode_to_vec();
+        };
+        let mut fill = target - bare - 4;
+        // Acerta o byte que o tamanho em varint pode ganhar ou perder.
+        for _ in 0..4 {
+            self.padding = vec![0; fill];
+            let len = self.encoded_len();
+            if len == target {
+                break;
+            }
+            fill = (fill + target).saturating_sub(len);
+        }
+        self.encode_to_vec()
+    }
+}
+
+pub fn frame(body: Body) -> Frame {
+    Frame {
+        version: VERSION,
+        body: Some(body),
+    }
+}
+
+pub async fn write_frame<W: AsyncWrite + Unpin>(out: &mut W, frame: &Frame) -> CoreResult<()> {
+    let bytes = frame.encode_to_vec();
+    if bytes.len() > MAX_FRAME {
+        return Err(CoreError::Protocol);
+    }
+    out.write_u32(bytes.len() as u32)
+        .await
+        .map_err(|_| CoreError::Unreachable)?;
+    out.write_all(&bytes)
+        .await
+        .map_err(|_| CoreError::Unreachable)?;
+    Ok(())
+}
+
+/// Lê um frame. O tamanho é conferido antes de alocar, e uma versão diferente é
+/// recusada.
+pub async fn read_frame<R: AsyncRead + Unpin>(input: &mut R) -> CoreResult<Body> {
+    let len = input.read_u32().await.map_err(|_| CoreError::Unreachable)? as usize;
+    if len > MAX_FRAME {
+        return Err(CoreError::Protocol);
+    }
+    let mut bytes = vec![0u8; len];
+    input
+        .read_exact(&mut bytes)
+        .await
+        .map_err(|_| CoreError::Unreachable)?;
+    decode_frame(&bytes)
+}
+
+pub fn decode_frame(bytes: &[u8]) -> CoreResult<Body> {
+    let frame = Frame::decode(bytes).map_err(|_| CoreError::Protocol)?;
+    if frame.version != VERSION {
+        return Err(CoreError::Protocol);
+    }
+    frame.body.ok_or(CoreError::Protocol)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn padding_lands_on_a_step() {
+        for name_len in [0, 10, 200, 900, 3000] {
+            let content = Content {
+                message_id: vec![7; 16],
+                body: Some(ContentBody::Welcome(Welcome {
+                    profile: Some(Profile {
+                        display_name: "a".repeat(name_len),
+                        version: 1,
+                    }),
+                    peer: None,
+                })),
+                padding: vec![],
+            };
+            let len = content.encode_padded().len();
+            assert!(PAD_STEPS.contains(&len), "{name_len} -> {len}");
+        }
+    }
+
+    #[tokio::test]
+    async fn frames_round_trip() {
+        let (mut a, mut b) = tokio::io::duplex(1024);
+        let sent = frame(Body::BundleRequest(BundleRequest {
+            token: vec![1, 2, 3],
+        }));
+        write_frame(&mut a, &sent).await.unwrap();
+        assert_eq!(read_frame(&mut b).await.unwrap(), sent.body.unwrap());
+    }
+
+    #[tokio::test]
+    async fn an_oversized_frame_is_refused_before_reading() {
+        let (mut a, mut b) = tokio::io::duplex(64);
+        a.write_u32((MAX_FRAME + 1) as u32).await.unwrap();
+        assert_eq!(read_frame(&mut b).await, Err(CoreError::Protocol));
+    }
+
+    #[test]
+    fn garbage_and_other_versions_are_refused() {
+        assert_eq!(decode_frame(&[0xff, 0xff, 0xff]), Err(CoreError::Protocol));
+        let other = Frame {
+            version: VERSION + 1,
+            body: Some(Body::Refused(Refused {})),
+        };
+        assert_eq!(
+            decode_frame(&other.encode_to_vec()),
+            Err(CoreError::Protocol)
+        );
+        let empty = Frame {
+            version: VERSION,
+            body: None,
+        };
+        assert_eq!(
+            decode_frame(&empty.encode_to_vec()),
+            Err(CoreError::Protocol)
+        );
+    }
+}

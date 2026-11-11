@@ -11,6 +11,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:psito_chirp/chirp_app.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';
 import 'package:psito_chirp/src/platform/key_vault.dart';
+import 'package:psito_chirp/src/ui/atoms/identity_avatar.dart';
 import 'package:psito_chirp/src/ui/molecules/fingerprint_text.dart';
 
 import '../test/helpers.dart' show FakeVault;
@@ -44,6 +45,17 @@ Future<void> _waitFor(WidgetTester tester, Finder finder) async {
     );
     await tester.pump();
   }
+  await tester.pumpAndSettle();
+}
+
+/// Da lista de contatos (a tela principal) para o perfil, pelo avatar no canto.
+Future<void> _openProfile(WidgetTester tester) async {
+  final button = find.ancestor(
+    of: find.byType(IdentityAvatar),
+    matching: find.byType(IconButton),
+  );
+  await _waitFor(tester, button);
+  await tester.tap(button);
   await tester.pumpAndSettle();
 }
 
@@ -83,6 +95,7 @@ void main() {
     expect(core.storeState(), StoreState.keyInVault);
     expect(await vault.read(), hasLength(32));
     await _submit(tester, _name);
+    await _openProfile(tester);
     expect(find.text(_name), findsOneWidget);
     final fingerprint = tester
         .widget<FingerprintText>(find.byType(FingerprintText))
@@ -90,6 +103,7 @@ void main() {
     expect(fingerprint, matches(RegExp(r'^\d{5}( \d{5}){5}$')));
 
     await _open(tester, core, vault);
+    await _openProfile(tester);
     expect(find.text(_name), findsOneWidget);
     expect(
       tester.widget<FingerprintText>(find.byType(FingerprintText)).fingerprint,
@@ -116,7 +130,7 @@ void main() {
     await _waitFor(tester, find.textContaining('/64'));
     expect(core.storeState(), StoreState.passphrase);
     await _submit(tester, _name);
-    await _waitFor(tester, find.text(_name));
+    await _openProfile(tester);
     expect(find.text(_name), findsOneWidget);
 
     await _open(tester, core, vault);
@@ -129,7 +143,7 @@ void main() {
     );
     expect(find.text(_name), findsNothing);
     await _submit(tester, 'calopsita lutino');
-    await _waitFor(tester, find.text(_name));
+    await _openProfile(tester);
     expect(find.text(_name), findsOneWidget);
 
     final bytes = _bytes(dir);

@@ -158,10 +158,111 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
       'Deine Kontakte vergleichen diese Nummer, um zu wissen, dass du es wirklich bist.';
 
   @override
-  String get homeNextPhase =>
-      'Dein Profil und dein Schlüssel sind bereit. Gespräche kommen in der nächsten Phase.';
-
-  @override
   String get somethingWentWrong =>
       'Etwas ist schiefgegangen. Versuche es noch einmal.';
+
+  @override
+  String get profileTitle => 'Dein Profil';
+
+  @override
+  String get addContact => 'Kontakt hinzufügen';
+
+  @override
+  String get contactsEmptyTitle => 'Noch keine Kontakte';
+
+  @override
+  String get contactsEmptyBody =>
+      'Zeig deinen Code jemandem in der Nähe oder füge die Einladung ein, die man dir geschickt hat. Im selben Netz, ganz ohne Internet.';
+
+  @override
+  String get contactPending => 'Warte auf das andere Gerät';
+
+  @override
+  String get contactVerified => 'Verifiziert';
+
+  @override
+  String get contactUnverified => 'Nicht verifiziert';
+
+  @override
+  String get contactUnnamed => 'Noch ohne Namen';
+
+  @override
+  String contactAdded(String name) {
+    return '$name ist jetzt ein Kontakt.';
+  }
+
+  @override
+  String get inviteTabShow => 'Mein Code';
+
+  @override
+  String get inviteTabPaste => 'Einladung einfügen';
+
+  @override
+  String get inviteQrLabel => 'Einladungscode als QR';
+
+  @override
+  String get inviteQrHelp =>
+      'Lass die andere Person diesen Code scannen oder schick ihr den Link. Jeder Code gilt einmal, 24 Stunden lang.';
+
+  @override
+  String get inviteCopyLink => 'Einladungslink kopieren';
+
+  @override
+  String get inviteLinkCopied =>
+      'Link kopiert. Schick ihn über einen Weg, dem du vertraust: Er gilt einmal, 24 Stunden lang.';
+
+  @override
+  String get inviteNewCode => 'Neuer Code';
+
+  @override
+  String get pasteLabel => 'Einladungslink';
+
+  @override
+  String get pasteHelp => 'Beginnt mit chirp://invite';
+
+  @override
+  String get pasteAdd => 'Hinzufügen';
+
+  @override
+  String get pasteConnecting => 'Verbinde';
+
+  @override
+  String get qrScanLater =>
+      'Das Lesen des Codes mit der Kamera kommt in einer späteren Version. Füge vorerst den Link ein.';
+
+  @override
+  String get inviteInvalid =>
+      'Das ist keine Chirp-Einladung, oder ein Teil fehlt.';
+
+  @override
+  String get inviteRefused =>
+      'Diese Einladung ist abgelaufen oder wurde schon benutzt. Bitte um eine neue.';
+
+  @override
+  String get inviteOwn => 'Das ist deine eigene Einladung.';
+
+  @override
+  String get inviteUnreachable =>
+      'Das andere Gerät war nicht erreichbar. Seid ihr im selben Netz, mit geöffnetem Chirp?';
+
+  @override
+  String get inviteAlreadyContact => 'Diese Person ist schon ein Kontakt.';
+
+  @override
+  String get inviteProtocol =>
+      'Das andere Gerät hat etwas Unerwartetes geantwortet. Versuch eine neue Einladung.';
+
+  @override
+  String get safetyNumberTitle => 'Sicherheitsnummer';
+
+  @override
+  String safetyNumberHelp(String name) {
+    return 'Vergleiche diese Zahlen mit $name, persönlich oder bei einem Anruf. Stimmen sie überein, sitzt niemand in der Mitte eures Gesprächs.';
+  }
+
+  @override
+  String get markVerified => 'Als verifiziert markieren';
+
+  @override
+  String get networkUnavailable => 'Das lokale Netz ist nicht gestartet.';
 }

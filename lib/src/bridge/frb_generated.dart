@@ -71,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => -234670836;
+  int get rustContentHash => 1829722456;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -83,6 +83,21 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<ContactView> crateApiStoreChirpStoreAddContact({
+    required ChirpStore that,
+    required String link,
+    required bool scanned,
+  });
+
+  Future<List<ContactView>> crateApiStoreChirpStoreContacts({
+    required ChirpStore that,
+  });
+
+  Future<String> crateApiStoreChirpStoreCreateInvite({
+    required ChirpStore that,
+    required bool qr,
+  });
+
   Future<Profile> crateApiStoreChirpStoreCreateProfile({
     required ChirpStore that,
     required String name,
@@ -108,6 +123,25 @@ abstract class RustLibApi extends BaseApi {
   Future<Profile> crateApiStoreChirpStoreRename({
     required ChirpStore that,
     required String name,
+  });
+
+  Future<String> crateApiStoreChirpStoreSafetyNumber({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  });
+
+  Future<ContactView> crateApiStoreChirpStoreSetVerified({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    required bool verified,
+  });
+
+  Future<void> crateApiStoreChirpStoreStartNetwork({required ChirpStore that});
+
+  Future<void> crateApiStoreChirpStoreStopNetwork({required ChirpStore that});
+
+  Stream<PlatformInt64> crateApiStoreChirpStoreWatchContacts({
+    required ChirpStore that,
   });
 
   CoreInfo crateApiInfoCoreInfo();
@@ -140,6 +174,117 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<ContactView> crateApiStoreChirpStoreAddContact({
+    required ChirpStore that,
+    required String link,
+    required bool scanned,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_String(link, serializer);
+          sse_encode_bool(scanned, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_contact_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreAddContactConstMeta,
+        argValues: [that, link, scanned],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreAddContactConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_add_contact",
+        argNames: ["that", "link", "scanned"],
+      );
+
+  @override
+  Future<List<ContactView>> crateApiStoreChirpStoreContacts({
+    required ChirpStore that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_contact_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreContactsConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreContactsConstMeta =>
+      const TaskConstMeta(debugName: "ChirpStore_contacts", argNames: ["that"]);
+
+  @override
+  Future<String> crateApiStoreChirpStoreCreateInvite({
+    required ChirpStore that,
+    required bool qr,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_bool(qr, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreCreateInviteConstMeta,
+        argValues: [that, qr],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreCreateInviteConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_create_invite",
+        argNames: ["that", "qr"],
+      );
+
+  @override
   Future<Profile> crateApiStoreChirpStoreCreateProfile({
     required ChirpStore that,
     required String name,
@@ -156,7 +301,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 4,
             port: port_,
           );
         },
@@ -191,7 +336,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 5,
             port: port_,
           );
         },
@@ -227,7 +372,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 6,
             port: port_,
           );
         },
@@ -263,7 +408,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 7,
             port: port_,
           );
         },
@@ -298,7 +443,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 8,
             port: port_,
           );
         },
@@ -333,7 +478,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 9,
             port: port_,
           );
         },
@@ -355,12 +500,199 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<String> crateApiStoreChirpStoreSafetyNumber({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 10,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSafetyNumberConstMeta,
+        argValues: [that, contactId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSafetyNumberConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_safety_number",
+        argNames: ["that", "contactId"],
+      );
+
+  @override
+  Future<ContactView> crateApiStoreChirpStoreSetVerified({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    required bool verified,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          sse_encode_bool(verified, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 11,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_contact_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSetVerifiedConstMeta,
+        argValues: [that, contactId, verified],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSetVerifiedConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_set_verified",
+        argNames: ["that", "contactId", "verified"],
+      );
+
+  @override
+  Future<void> crateApiStoreChirpStoreStartNetwork({required ChirpStore that}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreStartNetworkConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreStartNetworkConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_start_network",
+        argNames: ["that"],
+      );
+
+  @override
+  Future<void> crateApiStoreChirpStoreStopNetwork({required ChirpStore that}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreStopNetworkConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreStopNetworkConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_stop_network",
+        argNames: ["that"],
+      );
+
+  @override
+  Stream<PlatformInt64> crateApiStoreChirpStoreWatchContacts({
+    required ChirpStore that,
+  }) {
+    final sink = RustStreamSink<PlatformInt64>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+              that,
+              serializer,
+            );
+            sse_encode_StreamSink_i_64_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 14,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: sse_decode_core_error,
+          ),
+          constMeta: kCrateApiStoreChirpStoreWatchContactsConstMeta,
+          argValues: [that, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreWatchContactsConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_watch_contacts",
+        argNames: ["that", "sink"],
+      );
+
+  @override
   CoreInfo crateApiInfoCoreInfo() {
     return handler.executeSync(
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_core_info,
@@ -385,7 +717,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 16,
             port: port_,
           );
         },
@@ -409,7 +741,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -431,7 +763,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_prim_u_8_strict,
@@ -454,7 +786,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(dir, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_store_state,
@@ -480,7 +812,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 20,
             port: port_,
           );
         },
@@ -505,6 +837,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   RustArcDecrementStrongCountFnType
   get rust_arc_decrement_strong_count_ChirpStore => wire
       .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore;
+
+  @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return AnyhowException(raw as String);
+  }
 
   @protected
   ChirpStore
@@ -534,15 +872,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<PlatformInt64> dco_decode_StreamSink_i_64_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
   }
 
   @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
   Profile dco_decode_box_autoadd_profile(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_profile(raw);
+  }
+
+  @protected
+  ContactView dco_decode_contact_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return ContactView(
+      id: dco_decode_i_64(arr[0]),
+      displayName: dco_decode_String(arr[1]),
+      avatarSeed: dco_decode_u_32(arr[2]),
+      verified: dco_decode_bool(arr[3]),
+      established: dco_decode_bool(arr[4]),
+    );
   }
 
   @protected
@@ -567,6 +932,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int dco_decode_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeI64(raw);
+  }
+
+  @protected
+  List<ContactView> dco_decode_list_contact_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_contact_view).toList();
   }
 
   @protected
@@ -632,6 +1009,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_String(deserializer);
+    return AnyhowException(inner);
+  }
+
+  @protected
   ChirpStore
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
     SseDeserializer deserializer,
@@ -668,6 +1052,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<PlatformInt64> sse_decode_StreamSink_i_64_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -675,9 +1067,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
   Profile sse_decode_box_autoadd_profile(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_profile(deserializer));
+  }
+
+  @protected
+  ContactView sse_decode_contact_view(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_i_64(deserializer);
+    var var_displayName = sse_decode_String(deserializer);
+    var var_avatarSeed = sse_decode_u_32(deserializer);
+    var var_verified = sse_decode_bool(deserializer);
+    var var_established = sse_decode_bool(deserializer);
+    return ContactView(
+      id: var_id,
+      displayName: var_displayName,
+      avatarSeed: var_avatarSeed,
+      verified: var_verified,
+      established: var_established,
+    );
   }
 
   @protected
@@ -699,6 +1114,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
+  }
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getPlatformInt64();
+  }
+
+  @protected
+  List<ContactView> sse_decode_list_contact_view(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <ContactView>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_contact_view(deserializer));
+    }
+    return ans_;
   }
 
   @protected
@@ -772,9 +1205,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8() != 0;
+    sse_encode_String(self.message, serializer);
   }
 
   @protected
@@ -817,15 +1253,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_StreamSink_i_64_Sse(
+    RustStreamSink<PlatformInt64> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_i_64,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
   }
 
   @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
   void sse_encode_box_autoadd_profile(Profile self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_profile(self, serializer);
+  }
+
+  @protected
+  void sse_encode_contact_view(ContactView self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self.id, serializer);
+    sse_encode_String(self.displayName, serializer);
+    sse_encode_u_32(self.avatarSeed, serializer);
+    sse_encode_bool(self.verified, serializer);
+    sse_encode_bool(self.established, serializer);
   }
 
   @protected
@@ -845,6 +1314,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
+  }
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putPlatformInt64(self);
+  }
+
+  @protected
+  void sse_encode_list_contact_view(
+    List<ContactView> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_contact_view(item, serializer);
+    }
   }
 
   @protected
@@ -919,12 +1406,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putBigUint64(self);
   }
-
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self ? 1 : 0);
-  }
 }
 
 @sealed
@@ -946,6 +1427,25 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
         RustLib.instance.api.rust_arc_decrement_strong_count_ChirpStorePtr,
   );
 
+  /// Lê um convite e faz o aperto de mão. [scanned]: veio de um QR lido frente a
+  /// frente.
+  Future<ContactView> addContact({
+    required String link,
+    required bool scanned,
+  }) => RustLib.instance.api.crateApiStoreChirpStoreAddContact(
+    that: this,
+    link: link,
+    scanned: scanned,
+  );
+
+  Future<List<ContactView>> contacts() =>
+      RustLib.instance.api.crateApiStoreChirpStoreContacts(that: this);
+
+  /// Um convite novo, como link. [qr] diz se vai ser mostrado como QR (frente a
+  /// frente: o contato nasce verificado) ou mandado como link.
+  Future<String> createInvite({required bool qr}) => RustLib.instance.api
+      .crateApiStoreChirpStoreCreateInvite(that: this, qr: qr);
+
   Future<Profile> createProfile({required String name}) => RustLib.instance.api
       .crateApiStoreChirpStoreCreateProfile(that: this, name: name);
 
@@ -954,4 +1454,33 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
 
   Future<Profile> rename({required String name}) => RustLib.instance.api
       .crateApiStoreChirpStoreRename(that: this, name: name);
+
+  /// O número de segurança com um contato: 60 dígitos, igual nos dois aparelhos.
+  Future<String> safetyNumber({required PlatformInt64 contactId}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreSafetyNumber(that: this, contactId: contactId);
+
+  Future<ContactView> setVerified({
+    required PlatformInt64 contactId,
+    required bool verified,
+  }) => RustLib.instance.api.crateApiStoreChirpStoreSetVerified(
+    that: this,
+    contactId: contactId,
+    verified: verified,
+  );
+
+  /// Liga o nó da rede local. Pede o perfil (a identidade); chamar de novo não faz
+  /// nada.
+  Future<void> startNetwork() =>
+      RustLib.instance.api.crateApiStoreChirpStoreStartNetwork(that: this);
+
+  /// Desliga o nó (antes de apagar tudo, por exemplo).
+  Future<void> stopNetwork() =>
+      RustLib.instance.api.crateApiStoreChirpStoreStopNetwork(that: this);
+
+  /// Avisa a UI (com o id) quando um contato muda sem ela pedir: alguém leu um
+  /// convite nosso, por exemplo.
+  Stream<PlatformInt64> watchContacts() =>
+      RustLib.instance.api.crateApiStoreChirpStoreWatchContacts(that: this);
 }

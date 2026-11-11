@@ -99,8 +99,21 @@ impl Store {
         self.profile()?.ok_or(CoreError::Storage)
     }
 
-    /// A identidade guardada, para a sessão (fase 2).
-    #[cfg_attr(not(test), allow(dead_code))]
+    pub(crate) fn conn(&self) -> &Connection {
+        &self.conn
+    }
+
+    pub(crate) fn conn_mut(&mut self) -> &mut Connection {
+        &mut self.conn
+    }
+
+    /// Um banco na memória, cifrado do mesmo jeito, para os testes.
+    #[cfg(test)]
+    pub(crate) fn memory() -> Self {
+        Self::open(Path::new(":memory:"), &[9; 32]).unwrap()
+    }
+
+    /// A identidade guardada.
     pub fn identity(&self) -> CoreResult<Option<Identity>> {
         let secret: Option<Zeroizing<Vec<u8>>> = self
             .conn

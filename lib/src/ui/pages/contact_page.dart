@@ -1,0 +1,97 @@
+// lib/src/ui/pages/contact_page.dart
+//
+// Um contato: o avatar, o nome, o número de segurança e o "marcar como verificado".
+import 'package:flutter/material.dart';
+
+import '../../../l10n/l10n.dart';
+import '../../application/contacts_controller.dart';
+import '../atoms/identity_avatar.dart';
+import '../atoms/panel_text.dart';
+import '../molecules/fingerprint_text.dart';
+import '../templates/centered_panel.dart';
+
+class ContactPage extends StatefulWidget {
+  const ContactPage({
+    super.key,
+    required this.controller,
+    required this.contactId,
+  });
+
+  final ContactsController controller;
+  final int contactId;
+
+  @override
+  State<ContactPage> createState() => _ContactPageState();
+}
+
+class _ContactPageState extends State<ContactPage> {
+  String? _safetyNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller
+        .safetyNumber(widget.contactId)
+        .then((number) {
+          if (mounted) setState(() => _safetyNumber = number);
+        })
+        .catchError((Object _) {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    return ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) {
+        final contact = widget.controller.byId(widget.contactId);
+        if (contact == null) {
+          return Scaffold(appBar: AppBar());
+        }
+        final name = contact.displayName.isEmpty
+            ? l10n.contactUnnamed
+            : contact.displayName;
+        final number = _safetyNumber;
+        return CenteredPanel(
+          appBar: AppBar(title: Text(name)),
+          children: [
+            Center(child: IdentityAvatar(seed: contact.avatarSeed, size: 88)),
+            const SizedBox(height: 12),
+            PanelTitle(name),
+            if (!contact.established) ...[
+              const SizedBox(height: 8),
+              PanelBody(l10n.contactPending),
+            ],
+            const SizedBox(height: 24),
+            Text(
+              l10n.safetyNumberTitle,
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            if (number == null)
+              const Center(child: CircularProgressIndicator())
+            else
+              FingerprintText(fingerprint: number, perLine: 4),
+            const SizedBox(height: 8),
+            PanelBody(l10n.safetyNumberHelp(name)),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: Text(l10n.markVerified),
+              secondary: Icon(
+                contact.verified ? Icons.verified_user : Icons.shield_outlined,
+                color: contact.verified
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              value: contact.verified,
+              onChanged: (value) =>
+                  widget.controller.setVerified(contact.id, verified: value),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}

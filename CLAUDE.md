@@ -10,7 +10,9 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
   - `chirp-core/`: o núcleo (criptografia, rede, armazenamento), sem Flutter. O Flutter só fala com o módulo `api/`; o `frb_generated.rs` é gerado.
     - `store/`: o banco SQLCipher (`Store`) e as migrações pela `user_version`; uma migração publicada nunca muda, a mudança vira a próxima.
     - `identity.rs` (o par Curve25519 no formato do libsignal e a impressão digital), `profile.rs`, `passphrase.rs` (Argon2id, quando não há cofre), `random.rs` (só o `getrandom`) e `error.rs` (o `CoreError`, sem texto).
-    - `api/store.rs`: o `ChirpStore` opaco e as funções do banco. Os arquivos ficam na pasta de suporte do app: `chirp.db` e, só com senha, `chirp.salt`.
+    - `session/`: a sessão pelo libsignal (as lojas sobre o banco, os convites com as prekeys deles e o aperto de mão BundleRequest, Bundle, Hello e Welcome, cada passo numa transação). `invite.rs` (o QR e o link), `wire.rs` (os frames e o conteúdo em Protobuf pelo `prost`, sem `.proto`), `contacts.rs` e `node.rs` (o endpoint do iroh: só rede local, sem relay nem descoberta por servidor).
+    - `api/store.rs`: o `ChirpStore` opaco, as funções do banco, a rede (`start_network`, `create_invite`, `add_contact`, `watch_contacts`) e o runtime do tokio. Os arquivos ficam na pasta de suporte do app: `chirp.db` e, só com senha, `chirp.salt`.
+  - O protocolo no fio está em `docs/PROTOCOLO.md`: mudou o formato, muda lá também.
 - `rust_builder/`: o plugin que compila o núcleo dentro do `flutter build` (cargokit, gerado pelo `flutter_rust_bridge_codegen integrate`). Aponta para `core/chirp-core`.
 - `flutter_rust_bridge.yaml`: de `crate::api` para `lib/src/bridge/`.
 - `lib/`
@@ -18,7 +20,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
   - `chirp_app.dart`: o app, recebendo o `ChirpCore` e o `KeyVault` de fora, como o `PlayerView` do Player. Os testes passam falsos em memória (`FakeCore`, `FakeVault` e o `withProfile` do `test/helpers.dart`).
   - `src/core/chirp_core.dart`: a porta para o núcleo (`ChirpCore`, `ProfileStore`, `CoreFailure`) e a implementação pela ponte (`BridgeCore`). A UI nunca importa `src/bridge/`.
   - `src/platform/key_vault.dart`: o cofre do sistema (`KeyVault`, `SystemKeyVault` pelo `flutter_secure_storage`), onde fica a chave do banco.
-  - `src/application/`: os controllers, sem widget. O `StartupController` é a máquina de estados da abertura (núcleo, cofre ou senha, perfil).
+  - `src/application/`: os controllers, sem widget. O `StartupController` é a máquina de estados da abertura (núcleo, cofre ou senha, perfil); o `ContactsController` liga a rede e cuida dos contatos e convites.
   - `src/bridge/`: o gerado pelo `flutter_rust_bridge`, e só ele.
   - `src/ui/`: atomic design (`atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`) e o `theme/`.
   - `src/logging.dart`: a trava dos logs em release.
@@ -27,7 +29,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 ## Comandos
 
 - `flutter run -d linux`: o app, com o núcleo compilado pelo cargokit.
-- No Linux, o `libsecret-1-dev` (o cofre) além do que o Flutter pede.
+- No Linux, o `libsecret-1-dev` (o cofre) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
 - `flutter_rust_bridge_codegen generate`: depois de mudar `core/chirp-core/src/api/`. Instalado com `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked` (a mesma versão do `flutter_rust_bridge` no `pubspec.yaml` e no `Cargo.toml`).
 - `cd core && cargo test && cargo clippy --all-targets -- -D warnings && cargo fmt --all --check`
 - `flutter analyze` e `flutter test -j 2` (o host tem pouca memória: não rode sem o `-j`).

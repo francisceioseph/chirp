@@ -8,6 +8,10 @@ import 'package:flutter/material.dart';
 /// O amarelo-queijo da calopsita lutino, o tema padrão.
 const lutinoSeed = Color(0xFFFFC107);
 
+/// O QR fica escuro sobre claro nos dois temas: leitores de QR esperam assim.
+const qrDark = Color(0xFF000000);
+const qrLight = Color(0xFFFFFFFF);
+
 ThemeData chirpTheme(Brightness brightness, {Color seed = lutinoSeed}) {
   final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
   return ThemeData(

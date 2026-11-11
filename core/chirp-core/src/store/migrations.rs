@@ -17,6 +17,54 @@ const MIGRATIONS: &[&str] = &[
          display_name TEXT NOT NULL,
          version      INTEGER NOT NULL
      );",
+    // 2: as chaves do Signal, os contatos e os convites (fase 2).
+    "CREATE TABLE local_keys (
+         id              INTEGER PRIMARY KEY CHECK (id = 1),
+         registration_id INTEGER NOT NULL,
+         endpoint_secret BLOB NOT NULL,
+         discovery_key   BLOB NOT NULL
+     );
+     CREATE TABLE prekeys (
+         id     INTEGER PRIMARY KEY,
+         record BLOB NOT NULL
+     );
+     CREATE TABLE signed_prekeys (
+         id     INTEGER PRIMARY KEY,
+         record BLOB NOT NULL
+     );
+     CREATE TABLE kyber_prekeys (
+         id     INTEGER PRIMARY KEY,
+         record BLOB NOT NULL
+     );
+     CREATE TABLE identities (
+         address      TEXT PRIMARY KEY,
+         identity_key BLOB NOT NULL
+     );
+     CREATE TABLE sessions (
+         address TEXT PRIMARY KEY,
+         record  BLOB NOT NULL
+     );
+     CREATE TABLE invites (
+         token_hash      BLOB PRIMARY KEY,
+         kind            INTEGER NOT NULL,
+         expires_at      INTEGER NOT NULL,
+         prekey_id       INTEGER NOT NULL,
+         signed_prekey_id INTEGER NOT NULL,
+         kyber_prekey_id INTEGER NOT NULL,
+         used            INTEGER NOT NULL DEFAULT 0
+     );
+     CREATE TABLE contacts (
+         id              INTEGER PRIMARY KEY,
+         identity_key    BLOB NOT NULL UNIQUE,
+         endpoint_id     BLOB NOT NULL,
+         addrs           TEXT NOT NULL,
+         discovery_key   BLOB NOT NULL,
+         display_name    TEXT NOT NULL,
+         profile_version INTEGER NOT NULL,
+         verified        INTEGER NOT NULL,
+         state           INTEGER NOT NULL,
+         created_at      INTEGER NOT NULL
+     );",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

@@ -160,9 +160,110 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
       'Ваши контакты сверяют это число, чтобы знать, что это действительно вы.';
 
   @override
-  String get homeNextPhase =>
-      'Ваш профиль и ключ готовы. Разговоры появятся на следующем этапе.';
+  String get somethingWentWrong => 'Что-то пошло не так. Попробуйте снова.';
 
   @override
-  String get somethingWentWrong => 'Что-то пошло не так. Попробуйте снова.';
+  String get profileTitle => 'Ваш профиль';
+
+  @override
+  String get addContact => 'Добавить контакт';
+
+  @override
+  String get contactsEmptyTitle => 'Контактов пока нет';
+
+  @override
+  String get contactsEmptyBody =>
+      'Покажите свой код кому-нибудь рядом или вставьте приглашение, которое вам прислали. В одной сети, без интернета.';
+
+  @override
+  String get contactPending => 'Ждём другое устройство';
+
+  @override
+  String get contactVerified => 'Проверен';
+
+  @override
+  String get contactUnverified => 'Не проверен';
+
+  @override
+  String get contactUnnamed => 'Пока без имени';
+
+  @override
+  String contactAdded(String name) {
+    return '$name теперь в ваших контактах.';
+  }
+
+  @override
+  String get inviteTabShow => 'Мой код';
+
+  @override
+  String get inviteTabPaste => 'Вставить приглашение';
+
+  @override
+  String get inviteQrLabel => 'Код приглашения в виде QR';
+
+  @override
+  String get inviteQrHelp =>
+      'Дайте другому человеку отсканировать этот код или отправьте ссылку. Каждый код действует один раз, 24 часа.';
+
+  @override
+  String get inviteCopyLink => 'Скопировать ссылку-приглашение';
+
+  @override
+  String get inviteLinkCopied =>
+      'Ссылка скопирована. Отправьте её по каналу, которому доверяете: она действует один раз, 24 часа.';
+
+  @override
+  String get inviteNewCode => 'Новый код';
+
+  @override
+  String get pasteLabel => 'Ссылка-приглашение';
+
+  @override
+  String get pasteHelp => 'Начинается с chirp://invite';
+
+  @override
+  String get pasteAdd => 'Добавить';
+
+  @override
+  String get pasteConnecting => 'Подключаемся';
+
+  @override
+  String get qrScanLater =>
+      'Чтение кода камерой появится в следующей версии. Пока вставьте ссылку.';
+
+  @override
+  String get inviteInvalid =>
+      'Это не приглашение Chirp, или в нём чего-то не хватает.';
+
+  @override
+  String get inviteRefused =>
+      'Срок приглашения истёк, или оно уже использовано. Попросите новое.';
+
+  @override
+  String get inviteOwn => 'Это ваше собственное приглашение.';
+
+  @override
+  String get inviteUnreachable =>
+      'Не удалось связаться с другим устройством. Вы в одной сети, и Chirp открыт?';
+
+  @override
+  String get inviteAlreadyContact => 'Этот человек уже в ваших контактах.';
+
+  @override
+  String get inviteProtocol =>
+      'Другое устройство ответило что-то неожиданное. Попробуйте новое приглашение.';
+
+  @override
+  String get safetyNumberTitle => 'Код безопасности';
+
+  @override
+  String safetyNumberHelp(String name) {
+    return 'Сравните эти числа с собеседником ($name) лично или по телефону. Если они совпадают, никто не вклинился в ваш разговор.';
+  }
+
+  @override
+  String get markVerified => 'Отметить как проверенный';
+
+  @override
+  String get networkUnavailable => 'Локальная сеть не запустилась.';
 }

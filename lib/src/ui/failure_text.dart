@@ -12,5 +12,11 @@ String failureText(
   CoreFailure.wrongKey => l10n.passphraseWrong,
   CoreFailure.weakPassphrase => l10n.passphraseTooShort(minPassphraseChars),
   CoreFailure.invalidName => l10n.nameInvalid,
+  CoreFailure.invalidInvite => l10n.inviteInvalid,
+  CoreFailure.inviteRefused => l10n.inviteRefused,
+  CoreFailure.ownInvite => l10n.inviteOwn,
+  CoreFailure.unreachable => l10n.inviteUnreachable,
+  CoreFailure.alreadyExists => l10n.inviteAlreadyContact,
+  CoreFailure.protocol => l10n.inviteProtocol,
   _ => l10n.somethingWentWrong,
 };

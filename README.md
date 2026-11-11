@@ -2,7 +2,7 @@
 
 A private messenger with no servers in the middle: conversations go straight from one device to the other, over the local network, the internet or Bluetooth, encrypted end to end from the very first message. No accounts, no phone numbers, no logs and no telemetry. For Linux, Windows, macOS, Android and iOS.
 
-> **Status: being rebuilt.** The old prototype (kept in the `prototipo-2026` tag) was not secure: see the diagnosis in [`docs/PLANO.md`](docs/PLANO.md). The new version has a Rust core (cryptography, networking and storage) under a Flutter interface. Right now there is the foundation, the identity and the encrypted storage; messaging arrives in the next phases.
+> **Status: being rebuilt.** The old prototype (kept in the `prototipo-2026` tag) was not secure: see the diagnosis in [`docs/PLANO.md`](docs/PLANO.md). The new version has a Rust core (cryptography, networking and storage) under a Flutter interface. Right now there is the identity, the encrypted storage and adding contacts on the local network, with a post-quantum Signal handshake; messaging arrives in the next phase.
 
 ## The plan, in short
 
@@ -20,8 +20,8 @@ You need Flutter 3.47.4 and a stable Rust toolchain. The Rust core is built auto
 flutter run -d linux
 ```
 
-On Linux you also need `libgtk-3-dev`, `libsecret-1-dev`, `ninja-build`, `cmake`, `clang` and `pkg-config`.
+Building the core needs `protoc` (`protobuf-compiler`). On Linux you also need `libgtk-3-dev`, `libsecret-1-dev`, `ninja-build`, `cmake`, `clang` and `pkg-config`.
 
 ## License
 
-GPL-3.0. See [LICENSE](LICENSE).
+GPL-3.0. See [LICENSE](LICENSE). The app links [libsignal](https://github.com/signalapp/libsignal), which is AGPL-3.0, so the binaries follow the AGPL-3.0 as a whole.

@@ -82,6 +82,9 @@ class StartupController extends ChangeNotifier {
 
   ProfileStore? _store;
 
+  /// O banco aberto, quando o estado é o cadastro ou o pronto.
+  ProfileStore? get store => _store;
+
   Future<void> start() async {
     _store = null;
     _set(const StartupLoading());
@@ -187,6 +190,11 @@ class StartupController extends ChangeNotifier {
     if (_busy) return;
     var wiped = false;
     await _run(() async {
+      try {
+        await _store?.stopNetwork();
+      } on CoreException {
+        // Apaga do mesmo jeito.
+      }
       _store = null;
       try {
         await vault.delete();

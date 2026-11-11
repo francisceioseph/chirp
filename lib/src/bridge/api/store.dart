@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `lock`, `open`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `from`
+// These functions are ignored because they are not marked as `pub`: `lock`, `open`, `runtime`, `started`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -27,6 +27,16 @@ Future<void> wipeStore({required String dir}) =>
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>>
 abstract class ChirpStore implements RustOpaqueInterface {
+  /// Lê um convite e faz o aperto de mão. [scanned]: veio de um QR lido frente a
+  /// frente.
+  Future<ContactView> addContact({required String link, required bool scanned});
+
+  Future<List<ContactView>> contacts();
+
+  /// Um convite novo, como link. [qr] diz se vai ser mostrado como QR (frente a
+  /// frente: o contato nasce verificado) ou mandado como link.
+  Future<String> createInvite({required bool qr});
+
   Future<Profile> createProfile({required String name});
 
   /// Cria o banco protegido por uma senha, na primeira abertura sem cofre.
@@ -59,6 +69,65 @@ abstract class ChirpStore implements RustOpaqueInterface {
   Future<Profile?> profile();
 
   Future<Profile> rename({required String name});
+
+  /// O número de segurança com um contato: 60 dígitos, igual nos dois aparelhos.
+  Future<String> safetyNumber({required PlatformInt64 contactId});
+
+  Future<ContactView> setVerified({
+    required PlatformInt64 contactId,
+    required bool verified,
+  });
+
+  /// Liga o nó da rede local. Pede o perfil (a identidade); chamar de novo não faz
+  /// nada.
+  Future<void> startNetwork();
+
+  /// Desliga o nó (antes de apagar tudo, por exemplo).
+  Future<void> stopNetwork();
+
+  /// Avisa a UI (com o id) quando um contato muda sem ela pedir: alguém leu um
+  /// convite nosso, por exemplo.
+  Stream<PlatformInt64> watchContacts();
+}
+
+/// Um contato como a UI mostra.
+class ContactView {
+  final PlatformInt64 id;
+  final String displayName;
+  final int avatarSeed;
+
+  /// O número de segurança foi conferido (QR frente a frente, ou marcado à mão).
+  final bool verified;
+
+  /// O aperto de mão fechou dos dois lados.
+  final bool established;
+
+  const ContactView({
+    required this.id,
+    required this.displayName,
+    required this.avatarSeed,
+    required this.verified,
+    required this.established,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      displayName.hashCode ^
+      avatarSeed.hashCode ^
+      verified.hashCode ^
+      established.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ContactView &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          displayName == other.displayName &&
+          avatarSeed == other.avatarSeed &&
+          verified == other.verified &&
+          established == other.established;
 }
 
 /// O perfil como a UI mostra.

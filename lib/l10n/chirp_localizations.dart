@@ -366,17 +366,197 @@ abstract class ChirpLocalizations {
   /// **'Your contacts compare this number to know it is really you.'**
   String get profileKeyHelp;
 
-  /// No description provided for @homeNextPhase.
-  ///
-  /// In en, this message translates to:
-  /// **'Your profile and your key are ready. Conversations arrive in the next phase.'**
-  String get homeNextPhase;
-
   /// No description provided for @somethingWentWrong.
   ///
   /// In en, this message translates to:
   /// **'Something went wrong. Try again.'**
   String get somethingWentWrong;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile'**
+  String get profileTitle;
+
+  /// No description provided for @addContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get addContact;
+
+  /// No description provided for @contactsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get contactsEmptyTitle;
+
+  /// No description provided for @contactsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your code to someone nearby, or paste the invite they sent you. On the same network, no internet needed.'**
+  String get contactsEmptyBody;
+
+  /// No description provided for @contactPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the other device'**
+  String get contactPending;
+
+  /// No description provided for @contactVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get contactVerified;
+
+  /// No description provided for @contactUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Not verified'**
+  String get contactUnverified;
+
+  /// No description provided for @contactUnnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'No name yet'**
+  String get contactUnnamed;
+
+  /// No description provided for @contactAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is now a contact.'**
+  String contactAdded(String name);
+
+  /// No description provided for @inviteTabShow.
+  ///
+  /// In en, this message translates to:
+  /// **'My code'**
+  String get inviteTabShow;
+
+  /// No description provided for @inviteTabPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste invite'**
+  String get inviteTabPaste;
+
+  /// No description provided for @inviteQrLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code, as a QR'**
+  String get inviteQrLabel;
+
+  /// No description provided for @inviteQrHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Let the other person scan this code, or send them the link. Each code works once, for 24 hours.'**
+  String get inviteQrHelp;
+
+  /// No description provided for @inviteCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite link'**
+  String get inviteCopyLink;
+
+  /// No description provided for @inviteLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied. Send it over a channel you trust: it works once, for 24 hours.'**
+  String get inviteLinkCopied;
+
+  /// No description provided for @inviteNewCode.
+  ///
+  /// In en, this message translates to:
+  /// **'New code'**
+  String get inviteNewCode;
+
+  /// No description provided for @pasteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get pasteLabel;
+
+  /// No description provided for @pasteHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts with chirp://invite'**
+  String get pasteHelp;
+
+  /// No description provided for @pasteAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get pasteAdd;
+
+  /// No description provided for @pasteConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get pasteConnecting;
+
+  /// No description provided for @qrScanLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the code with the camera comes in a later version. For now, paste the link.'**
+  String get qrScanLater;
+
+  /// No description provided for @inviteInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a Chirp invite, or part of it is missing.'**
+  String get inviteInvalid;
+
+  /// No description provided for @inviteRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite has expired or was already used. Ask for a new one.'**
+  String get inviteRefused;
+
+  /// No description provided for @inviteOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own invite.'**
+  String get inviteOwn;
+
+  /// No description provided for @inviteUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the other device. Are you both on the same network, with Chirp open?'**
+  String get inviteUnreachable;
+
+  /// No description provided for @inviteAlreadyContact.
+  ///
+  /// In en, this message translates to:
+  /// **'This person is already a contact.'**
+  String get inviteAlreadyContact;
+
+  /// No description provided for @inviteProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'The other device answered something unexpected. Try a new invite.'**
+  String get inviteProtocol;
+
+  /// No description provided for @safetyNumberTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety number'**
+  String get safetyNumberTitle;
+
+  /// No description provided for @safetyNumberHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare these numbers with {name}, in person or on a call. If they match, nobody is in the middle of your conversation.'**
+  String safetyNumberHelp(String name);
+
+  /// No description provided for @markVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as verified'**
+  String get markVerified;
+
+  /// No description provided for @networkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The local network did not start.'**
+  String get networkUnavailable;
 }
 
 class _ChirpLocalizationsDelegate

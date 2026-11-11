@@ -150,8 +150,102 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String get profileKeyHelp => '你的联系人会核对这串数字，以确认真的是你。';
 
   @override
-  String get homeNextPhase => '你的资料和密钥已经就绪。对话将在下一阶段到来。';
+  String get somethingWentWrong => '出了点问题。请再试一次。';
 
   @override
-  String get somethingWentWrong => '出了点问题。请再试一次。';
+  String get profileTitle => '你的资料';
+
+  @override
+  String get addContact => '添加联系人';
+
+  @override
+  String get contactsEmptyTitle => '还没有联系人';
+
+  @override
+  String get contactsEmptyBody => '把你的二维码给附近的人看，或者粘贴别人发给你的邀请。在同一个网络里，不需要互联网。';
+
+  @override
+  String get contactPending => '正在等待另一台设备';
+
+  @override
+  String get contactVerified => '已验证';
+
+  @override
+  String get contactUnverified => '未验证';
+
+  @override
+  String get contactUnnamed => '还没有名字';
+
+  @override
+  String contactAdded(String name) {
+    return '$name 现在是你的联系人了。';
+  }
+
+  @override
+  String get inviteTabShow => '我的二维码';
+
+  @override
+  String get inviteTabPaste => '粘贴邀请';
+
+  @override
+  String get inviteQrLabel => '邀请二维码';
+
+  @override
+  String get inviteQrHelp => '让对方扫描这个二维码，或者把链接发给对方。每个二维码只能用一次，24 小时内有效。';
+
+  @override
+  String get inviteCopyLink => '复制邀请链接';
+
+  @override
+  String get inviteLinkCopied => '链接已复制。请通过你信任的渠道发送：它只能用一次，24 小时内有效。';
+
+  @override
+  String get inviteNewCode => '新的二维码';
+
+  @override
+  String get pasteLabel => '邀请链接';
+
+  @override
+  String get pasteHelp => '以 chirp://invite 开头';
+
+  @override
+  String get pasteAdd => '添加';
+
+  @override
+  String get pasteConnecting => '正在连接';
+
+  @override
+  String get qrScanLater => '用摄像头扫描二维码将在之后的版本中提供。现在请粘贴链接。';
+
+  @override
+  String get inviteInvalid => '这不是 Chirp 邀请，或者缺了一部分。';
+
+  @override
+  String get inviteRefused => '这个邀请已过期或已被使用。请向对方要一个新的。';
+
+  @override
+  String get inviteOwn => '这是你自己的邀请。';
+
+  @override
+  String get inviteUnreachable => '无法连接到另一台设备。你们是否在同一个网络中，并且都打开了 Chirp？';
+
+  @override
+  String get inviteAlreadyContact => '这个人已经是联系人了。';
+
+  @override
+  String get inviteProtocol => '另一台设备的回应不符合预期。请换一个新的邀请。';
+
+  @override
+  String get safetyNumberTitle => '安全码';
+
+  @override
+  String safetyNumberHelp(String name) {
+    return '请与 $name 当面或通过电话核对这些数字。如果一致，就没有人在你们的对话中间。';
+  }
+
+  @override
+  String get markVerified => '标记为已验证';
+
+  @override
+  String get networkUnavailable => '本地网络没有启动。';
 }

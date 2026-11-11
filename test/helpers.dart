@@ -1,4 +1,6 @@
 // O apoio dos testes: um núcleo e um cofre falsos, em memória, e a montagem do app.
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,6 +84,89 @@ class FakeCore implements ChirpCore {
 
 class FakeStore implements ProfileStore {
   Profile? saved;
+
+  /// A rede falsa: os contatos, os convites feitos e o que a rede responde.
+  final List<Contact> people = [];
+  final List<String> invites = [];
+  bool networkStarted = false;
+  CoreFailure? networkFailure;
+  final _changes = StreamController<int>.broadcast();
+  final Map<int, bool> _verified = {};
+
+  /// Alguém leu um convite nosso.
+  void someoneJoined(String name, {bool verified = true}) {
+    final contact = Contact(
+      id: people.length + 1,
+      displayName: name,
+      avatarSeed: people.length * 7919,
+      verified: verified,
+      established: true,
+    );
+    people.add(contact);
+    _changes.add(contact.id);
+  }
+
+  @override
+  Future<void> startNetwork() async {
+    if (networkFailure case final failure?) throw CoreException(failure);
+    networkStarted = true;
+  }
+
+  @override
+  Future<void> stopNetwork() async => networkStarted = false;
+
+  @override
+  Future<String> createInvite({required bool qr}) async {
+    final link = 'chirp://invite#${qr ? 'qr' : 'link'}${invites.length}';
+    invites.add(link);
+    return link;
+  }
+
+  /// `chirp://invite#nome` vira o contato "nome"; `#refused` e `#away` falham.
+  @override
+  Future<Contact> addContact(String link, {required bool scanned}) async {
+    final trimmed = link.trim();
+    if (!trimmed.startsWith('chirp://invite#')) {
+      throw const CoreException(CoreFailure.invalidInvite);
+    }
+    final name = trimmed.substring('chirp://invite#'.length);
+    if (name == 'refused') throw const CoreException(CoreFailure.inviteRefused);
+    if (name == 'away') throw const CoreException(CoreFailure.unreachable);
+    final contact = Contact(
+      id: people.length + 1,
+      displayName: name,
+      avatarSeed: people.length * 7919,
+      verified: scanned,
+      established: true,
+    );
+    people.add(contact);
+    return contact;
+  }
+
+  @override
+  Future<List<Contact>> contacts() async => [
+    for (final c in people)
+      Contact(
+        id: c.id,
+        displayName: c.displayName,
+        avatarSeed: c.avatarSeed,
+        verified: _verified[c.id] ?? c.verified,
+        established: c.established,
+      ),
+  ];
+
+  @override
+  Future<String> safetyNumber(int contactId) async =>
+      List.generate(60, (i) => '${(i + contactId) % 10}').join();
+
+  @override
+  Future<Contact> setVerified(int contactId, {required bool verified}) async {
+    _verified[contactId] = verified;
+    return (await contacts()).firstWhere((c) => c.id == contactId);
+  }
+
+  @override
+  Stream<int> contactChanges() => _changes.stream;
 
   @override
   Future<Profile?> profile() async => saved;

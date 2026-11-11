@@ -29,7 +29,6 @@ impl Identity {
         })
     }
 
-    #[cfg_attr(not(test), allow(dead_code))]
     pub fn from_secret(bytes: &[u8]) -> CoreResult<Self> {
         let secret: [u8; 32] = bytes.try_into().map_err(|_| CoreError::Storage)?;
         Ok(Self {
@@ -74,10 +73,11 @@ pub fn avatar_seed(public_key: &[u8]) -> u32 {
 }
 
 fn fingerprint_digest(public_key: &[u8]) -> [u8; 64] {
-    // Versão 0 do formato, a chave e o identificador estável (aqui, a própria chave);
-    // depois, `hash || chave` repetido.
+    // Como o `Fingerprint` do libsignal: versão 0, a chave, o identificador estável
+    // (aqui, a própria chave) e a chave de novo; depois, `hash || chave` repetido.
     let mut hasher = Sha512::new();
     hasher.update([0u8, 0u8]);
+    hasher.update(public_key);
     hasher.update(public_key);
     hasher.update(public_key);
     let mut hash: [u8; 64] = hasher.finalize().into();
@@ -132,7 +132,7 @@ mod tests {
         // sem querer.
         let mut key = [0u8; 33];
         key[0] = DJB_TYPE;
-        assert_eq!(fingerprint(&key), "31018 24249 17437 12865 63541 81219");
-        assert_eq!(avatar_seed(&key), 2_035_543_011);
+        assert_eq!(fingerprint(&key), "00474 20068 94096 69306 80853 32172");
+        assert_eq!(avatar_seed(&key), 2_961_606_259);
     }
 }

@@ -42,6 +42,13 @@ enum CoreFailure {
   alreadyExists,
   newerStore,
   noRandomness,
+  noProfile,
+  invalidInvite,
+  inviteRefused,
+  ownInvite,
+  unreachable,
+  protocol,
+  unknownContact,
   storage,
 }
 
@@ -74,6 +81,28 @@ class Profile {
   final int avatarSeed;
 }
 
+/// Um contato.
+@immutable
+class Contact {
+  const Contact({
+    required this.id,
+    required this.displayName,
+    required this.avatarSeed,
+    required this.verified,
+    required this.established,
+  });
+
+  final int id;
+  final String displayName;
+  final int avatarSeed;
+
+  /// O número de segurança foi conferido (QR frente a frente, ou marcado à mão).
+  final bool verified;
+
+  /// O aperto de mão fechou dos dois lados.
+  final bool established;
+}
+
 /// O que a UI pode pedir ao núcleo.
 abstract interface class ChirpCore {
   /// Nulo quando a biblioteca nativa não abriu.
@@ -104,6 +133,28 @@ abstract interface class ProfileStore {
   Future<Profile> createProfile(String name);
 
   Future<Profile> rename(String name);
+
+  /// Liga o nó da rede local (precisa do perfil). Chamar de novo não faz nada.
+  Future<void> startNetwork();
+
+  /// Desliga o nó, antes de apagar tudo.
+  Future<void> stopNetwork();
+
+  /// Um convite novo, como link. [qr]: vai ser mostrado como QR, frente a frente.
+  Future<String> createInvite({required bool qr});
+
+  /// Lê um convite e faz o aperto de mão pela rede.
+  Future<Contact> addContact(String link, {required bool scanned});
+
+  Future<List<Contact>> contacts();
+
+  /// O número de segurança: 60 dígitos, igual nos dois aparelhos.
+  Future<String> safetyNumber(int contactId);
+
+  Future<Contact> setVerified(int contactId, {required bool verified});
+
+  /// Os ids dos contatos que mudaram sem a UI pedir (0: releia todos).
+  Stream<int> contactChanges();
 }
 
 /// O núcleo de verdade, pela ponte.
@@ -201,7 +252,52 @@ class _BridgeStore implements ProfileStore {
   @override
   Future<Profile> rename(String name) =>
       _guardAsync(() async => _profile(await _store.rename(name: name))!);
+
+  @override
+  Future<void> startNetwork() => _guardAsync(_store.startNetwork);
+
+  @override
+  Future<void> stopNetwork() => _guardAsync(_store.stopNetwork);
+
+  @override
+  Future<String> createInvite({required bool qr}) =>
+      _guardAsync(() => _store.createInvite(qr: qr));
+
+  @override
+  Future<Contact> addContact(String link, {required bool scanned}) =>
+      _guardAsync(
+        () async =>
+            _contact(await _store.addContact(link: link, scanned: scanned)),
+      );
+
+  @override
+  Future<List<Contact>> contacts() => _guardAsync(
+    () async => [for (final c in await _store.contacts()) _contact(c)],
+  );
+
+  @override
+  Future<String> safetyNumber(int contactId) =>
+      _guardAsync(() => _store.safetyNumber(contactId: contactId));
+
+  @override
+  Future<Contact> setVerified(int contactId, {required bool verified}) =>
+      _guardAsync(
+        () async => _contact(
+          await _store.setVerified(contactId: contactId, verified: verified),
+        ),
+      );
+
+  @override
+  Stream<int> contactChanges() => _store.watchContacts();
 }
+
+Contact _contact(bridge.ContactView c) => Contact(
+  id: c.id,
+  displayName: c.displayName,
+  avatarSeed: c.avatarSeed,
+  verified: c.verified,
+  established: c.established,
+);
 
 Profile? _profile(bridge.Profile? p) => p == null
     ? null
@@ -220,6 +316,13 @@ CoreFailure _failure(bridge.CoreError error) => switch (error) {
   bridge.CoreError.alreadyExists => CoreFailure.alreadyExists,
   bridge.CoreError.newerStore => CoreFailure.newerStore,
   bridge.CoreError.noRandomness => CoreFailure.noRandomness,
+  bridge.CoreError.noProfile => CoreFailure.noProfile,
+  bridge.CoreError.invalidInvite => CoreFailure.invalidInvite,
+  bridge.CoreError.inviteRefused => CoreFailure.inviteRefused,
+  bridge.CoreError.ownInvite => CoreFailure.ownInvite,
+  bridge.CoreError.unreachable => CoreFailure.unreachable,
+  bridge.CoreError.protocol => CoreFailure.protocol,
+  bridge.CoreError.unknownContact => CoreFailure.unknownContact,
   bridge.CoreError.storage => CoreFailure.storage,
 };
 

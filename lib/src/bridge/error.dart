@@ -29,6 +29,27 @@ enum CoreError {
   /// O sistema não deu números aleatórios.
   noRandomness,
 
+  /// Ainda não há perfil (e, portanto, identidade) neste aparelho.
+  noProfile,
+
+  /// O convite (link ou QR) não se lê: cortado, de outra versão ou adulterado.
+  invalidInvite,
+
+  /// O outro lado recusou o convite: vencido, já usado ou desconhecido.
+  inviteRefused,
+
+  /// O convite é deste próprio aparelho.
+  ownInvite,
+
+  /// Não deu para falar com o outro aparelho pela rede.
+  unreachable,
+
+  /// O outro lado respondeu fora do protocolo, ou a criptografia não fechou.
+  protocol,
+
+  /// Não há contato com esse id.
+  unknownContact,
+
   /// Falha de disco ou do SQLite que não é nenhuma das acima.
   storage,
 }

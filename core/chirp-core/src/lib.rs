@@ -5,12 +5,17 @@
 
 pub mod api;
 
+mod contacts;
 mod error;
 mod identity;
+mod invite;
+mod node;
 mod passphrase;
 mod profile;
 mod random;
+mod session;
 mod store;
+mod wire;
 
 #[allow(unsafe_code)]
 mod frb_generated;
