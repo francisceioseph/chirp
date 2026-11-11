@@ -1,7 +1,7 @@
 name: psito_chirp
 description: "Mensageiro privado, ponto a ponto e sem servidor."
 publish_to: 'none'
-version: 0.3.0
+version: 0.3.1
 
 environment:
   sdk: ^3.13.3
