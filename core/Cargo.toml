@@ -17,8 +17,10 @@ panic = "unwind"
 [profile.dev.package."*"]
 opt-level = 3
 
-# O netdev 0.46.x (do netwatch, do iroh) usa o `libc::in6_ifreq` no iOS, que o libc só
-# declara no macOS, e o build de iOS não compila. A cópia em `vendor/netdev` declara a
-# struct ela mesma. Sai quando o netwatch aceitar um netdev corrigido.
+# O libc 0.2.191 só declara no macOS o que o iroh usa das rotas e das interfaces, e o
+# build de iOS não compila. As cópias em `vendor/` declaram elas mesmas: o netdev
+# 0.46.x, a struct `in6_ifreq`, e o netwatch 0.19.3, as constantes do `net/route.h`
+# (`src/sys.rs`). Saem quando os dois corrigirem.
 [patch.crates-io]
 netdev = { path = "vendor/netdev" }
+netwatch = { path = "vendor/netwatch" }
