@@ -49,7 +49,6 @@ class _PassphraseFieldState extends State<PassphraseField> {
         labelText: widget.label,
         errorText: widget.errorText,
         errorMaxLines: 3,
-        border: const OutlineInputBorder(),
         suffixIcon: IconButton(
           tooltip: toggle,
           icon: Icon(_visible ? Icons.visibility_off : Icons.visibility),

@@ -821,6 +821,96 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Message options'**
   String get messageOptions;
+
+  /// No description provided for @appearanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearanceTitle;
+
+  /// The group of light, dark and system buttons, for screen readers.
+  ///
+  /// In en, this message translates to:
+  /// **'Light or dark'**
+  String get appearanceMode;
+
+  /// No description provided for @modeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get modeSystem;
+
+  /// No description provided for @modeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get modeLight;
+
+  /// No description provided for @modeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get modeDark;
+
+  /// No description provided for @themeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themeLabel;
+
+  /// No description provided for @appearanceNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'The appearance could not be saved.'**
+  String get appearanceNotSaved;
+
+  /// Theme names are proper names; keep them in every language.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunny Lutino'**
+  String get themeLutino;
+
+  /// No description provided for @themeWildGrey.
+  ///
+  /// In en, this message translates to:
+  /// **'Wild Grey'**
+  String get themeWildGrey;
+
+  /// No description provided for @themeSkylight.
+  ///
+  /// In en, this message translates to:
+  /// **'Skylight'**
+  String get themeSkylight;
+
+  /// No description provided for @themeOldDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Old Days'**
+  String get themeOldDays;
+
+  /// No description provided for @themeHuman.
+  ///
+  /// In en, this message translates to:
+  /// **'Human'**
+  String get themeHuman;
+
+  /// No description provided for @themeSymbian.
+  ///
+  /// In en, this message translates to:
+  /// **'Symbian'**
+  String get themeSymbian;
+
+  /// No description provided for @themeFoundation.
+  ///
+  /// In en, this message translates to:
+  /// **'Foundation'**
+  String get themeFoundation;
+
+  /// No description provided for @themeMightyCats.
+  ///
+  /// In en, this message translates to:
+  /// **'Mighty Cats'**
+  String get themeMightyCats;
 }
 
 class _ChirpLocalizationsDelegate

@@ -9,7 +9,7 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `flush`, `lock`, `open`, `runtime`, `started`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -36,6 +36,8 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// Lê um convite e faz o aperto de mão. [scanned]: veio de um QR lido frente a
   /// frente.
   Future<ContactView> addContact({required String link, required bool scanned});
+
+  Future<AppearanceView> appearance();
 
   Future<ChatSettings> chatSettings();
 
@@ -120,6 +122,8 @@ abstract class ChirpStore implements RustOpaqueInterface {
     PlatformInt64? replyTo,
   });
 
+  Future<void> setAppearance({required AppearanceView appearance});
+
   Future<void> setChatSettings({required ChatSettings settings});
 
   Future<ContactView> setVerified({
@@ -141,6 +145,31 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// Avisa a UI do que muda sem ela pedir: alguém leu um convite nosso, chegou
   /// mensagem, o contato está digitando.
   Stream<CoreEvent> watchEvents();
+}
+
+/// A aparência: o id do tema (uma semente da UI), o claro ou escuro e o efeito vidro.
+class AppearanceView {
+  final String theme;
+  final ThemeBrightness brightness;
+  final bool glass;
+
+  const AppearanceView({
+    required this.theme,
+    required this.brightness,
+    required this.glass,
+  });
+
+  @override
+  int get hashCode => theme.hashCode ^ brightness.hashCode ^ glass.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppearanceView &&
+          runtimeType == other.runtimeType &&
+          theme == other.theme &&
+          brightness == other.brightness &&
+          glass == other.glass;
 }
 
 /// Os recibos de leitura e o "digitando": desligar vale para os dois lados.
@@ -400,3 +429,6 @@ enum StoreState {
   /// A chave vem de uma senha.
   passphrase,
 }
+
+/// Claro, escuro ou o que o sistema disser.
+enum ThemeBrightness { system, light, dark }

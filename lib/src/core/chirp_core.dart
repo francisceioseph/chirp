@@ -185,6 +185,40 @@ class ChatSettings {
   final bool typing;
 }
 
+/// Claro, escuro ou o que o sistema disser.
+enum AppearanceMode { system, light, dark }
+
+/// A aparência escolhida: o id do tema (ChirpThemes), o claro ou escuro e o vidro.
+@immutable
+class Appearance {
+  const Appearance({
+    this.theme = 'lutino',
+    this.mode = AppearanceMode.system,
+    this.glass = false,
+  });
+
+  final String theme;
+  final AppearanceMode mode;
+  final bool glass;
+
+  Appearance copyWith({String? theme, AppearanceMode? mode, bool? glass}) =>
+      Appearance(
+        theme: theme ?? this.theme,
+        mode: mode ?? this.mode,
+        glass: glass ?? this.glass,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is Appearance &&
+      other.theme == theme &&
+      other.mode == mode &&
+      other.glass == glass;
+
+  @override
+  int get hashCode => Object.hash(theme, mode, glass);
+}
+
 enum CoreEventKind {
   /// Um contato novo ou mudado; com o id 0, releia tudo.
   contact,
@@ -293,6 +327,10 @@ abstract interface class ProfileStore {
   Future<ChatSettings> chatSettings();
 
   Future<void> setChatSettings(ChatSettings settings);
+
+  Future<Appearance> appearance();
+
+  Future<void> setAppearance(Appearance appearance);
 }
 
 /// O núcleo de verdade, pela ponte.
@@ -523,6 +561,27 @@ class _BridgeStore implements ProfileStore {
       settings: bridge.ChatSettings(
         readReceipts: settings.readReceipts,
         typing: settings.typing,
+      ),
+    ),
+  );
+
+  @override
+  Future<Appearance> appearance() => _guardAsync(() async {
+    final a = await _store.appearance();
+    return Appearance(
+      theme: a.theme,
+      mode: AppearanceMode.values[a.brightness.index],
+      glass: a.glass,
+    );
+  });
+
+  @override
+  Future<void> setAppearance(Appearance appearance) => _guardAsync(
+    () => _store.setAppearance(
+      appearance: bridge.AppearanceView(
+        theme: appearance.theme,
+        brightness: bridge.ThemeBrightness.values[appearance.mode.index],
+        glass: appearance.glass,
       ),
     ),
   );

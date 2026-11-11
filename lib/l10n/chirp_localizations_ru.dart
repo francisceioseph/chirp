@@ -418,4 +418,49 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get messageOptions => 'Действия с сообщением';
+
+  @override
+  String get appearanceTitle => 'Оформление';
+
+  @override
+  String get appearanceMode => 'Светлая или тёмная';
+
+  @override
+  String get modeSystem => 'Как в системе';
+
+  @override
+  String get modeLight => 'Светлая';
+
+  @override
+  String get modeDark => 'Тёмная';
+
+  @override
+  String get themeLabel => 'Тема';
+
+  @override
+  String get appearanceNotSaved => 'Не удалось сохранить оформление.';
+
+  @override
+  String get themeLutino => 'Sunny Lutino';
+
+  @override
+  String get themeWildGrey => 'Wild Grey';
+
+  @override
+  String get themeSkylight => 'Skylight';
+
+  @override
+  String get themeOldDays => 'Old Days';
+
+  @override
+  String get themeHuman => 'Human';
+
+  @override
+  String get themeSymbian => 'Symbian';
+
+  @override
+  String get themeFoundation => 'Foundation';
+
+  @override
+  String get themeMightyCats => 'Mighty Cats';
 }

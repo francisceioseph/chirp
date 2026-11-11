@@ -118,5 +118,20 @@
   "readReceiptsHelp": "Desligada, você também não vê quando leem as suas.",
   "typingIndicator": "Aviso de digitando",
   "typingIndicatorHelp": "Desligado, você também não vê quando os outros digitam.",
-  "messageOptions": "Opções da mensagem"
+  "messageOptions": "Opções da mensagem",
+  "appearanceTitle": "Aparência",
+  "appearanceMode": "Claro ou escuro",
+  "modeSystem": "Sistema",
+  "modeLight": "Claro",
+  "modeDark": "Escuro",
+  "themeLabel": "Tema",
+  "appearanceNotSaved": "Não deu para gravar a aparência.",
+  "themeLutino": "Sunny Lutino",
+  "themeWildGrey": "Wild Grey",
+  "themeSkylight": "Skylight",
+  "themeOldDays": "Old Days",
+  "themeHuman": "Human",
+  "themeSymbian": "Symbian",
+  "themeFoundation": "Foundation",
+  "themeMightyCats": "Mighty Cats"
 }

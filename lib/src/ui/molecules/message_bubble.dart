@@ -10,6 +10,7 @@ import '../../core/chirp_core.dart';
 import '../atoms/message_status_icon.dart';
 import '../atoms/reaction_icon.dart';
 import '../time_format.dart';
+import '../theme/chirp_style.dart';
 
 /// O foco do teclado numa mensagem: Enter ou espaço abrem as opções, e um contorno
 /// mostra onde o foco está.
@@ -41,7 +42,9 @@ class _FocusableState extends State<_Focusable> {
     child: DecoratedBox(
       position: DecorationPosition.foreground,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          ChirpStyle.of(context).bubbleRadius,
+        ),
         border: _highlight
             ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
             : null,
@@ -104,12 +107,7 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(16),
-          topRight: const Radius.circular(16),
-          bottomLeft: Radius.circular(mine ? 16 : 4),
-          bottomRight: Radius.circular(mine ? 4 : 16),
-        ),
+        borderRadius: ChirpStyle.of(context).bubble(mine: mine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

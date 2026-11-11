@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
+import '../../application/appearance_controller.dart';
 import '../../application/contacts_controller.dart';
 import '../../application/startup_controller.dart';
 import '../../core/chirp_core.dart';
@@ -19,9 +20,14 @@ import 'problem_page.dart';
 import 'profile_page.dart';
 
 class StartupPage extends StatelessWidget {
-  const StartupPage({super.key, required this.controller});
+  const StartupPage({
+    super.key,
+    required this.controller,
+    required this.appearance,
+  });
 
   final StartupController controller;
+  final AppearanceController appearance;
 
   Future<void> _erase(BuildContext context) async {
     if (await confirmErase(context)) await controller.wipeAndRestart();
@@ -58,6 +64,7 @@ class StartupPage extends StatelessWidget {
           ),
           StartupReady(:final profile) => _Ready(
             controller: controller,
+            appearance: appearance,
             profile: profile,
           ),
         };
@@ -69,9 +76,14 @@ class StartupPage extends StatelessWidget {
 /// O app pronto: os contatos, com o controller deles vivo enquanto o banco estiver
 /// aberto.
 class _Ready extends StatefulWidget {
-  const _Ready({required this.controller, required this.profile});
+  const _Ready({
+    required this.controller,
+    required this.appearance,
+    required this.profile,
+  });
 
   final StartupController controller;
+  final AppearanceController appearance;
   final Profile profile;
 
   @override
@@ -106,6 +118,7 @@ class _ReadyState extends State<_Ready> {
               profile: state.profile,
               info: startup.core.info,
               store: startup.store,
+              appearance: widget.appearance,
               onRename: () => showRenameDialog(
                 context,
                 current: state.profile.displayName,

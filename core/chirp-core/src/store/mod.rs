@@ -2,7 +2,7 @@
 //! inteiro, cabeçalho e índices inclusive; a chave de 32 bytes vem do cofre do sistema
 //! ou de uma senha (`passphrase`), e nunca fica no disco.
 
-mod migrations;
+pub(crate) mod migrations;
 
 use std::path::Path;
 

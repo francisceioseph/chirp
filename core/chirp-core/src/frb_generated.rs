@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1454814003;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1396045663;
 
 // Section: executor
 
@@ -97,6 +97,55 @@ fn wire__crate__api__store__ChirpStore_add_contact_impl(
                         api_link,
                         api_scanned,
                     )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__store__ChirpStore_appearance_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_appearance",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::ChirpStore::appearance(&*api_that_guard)?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -1093,6 +1142,59 @@ fn wire__crate__api__store__ChirpStore_send_text_impl(
         },
     )
 }
+fn wire__crate__api__store__ChirpStore_set_appearance_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_set_appearance",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_appearance = <crate::api::store::AppearanceView>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::ChirpStore::set_appearance(
+                        &*api_that_guard,
+                        api_appearance,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__store__ChirpStore_set_chat_settings_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1701,6 +1803,20 @@ impl SseDecode for String {
     }
 }
 
+impl SseDecode for crate::api::store::AppearanceView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_theme = <String>::sse_decode(deserializer);
+        let mut var_brightness = <crate::api::store::ThemeBrightness>::sse_decode(deserializer);
+        let mut var_glass = <bool>::sse_decode(deserializer);
+        return crate::api::store::AppearanceView {
+            theme: var_theme,
+            brightness: var_brightness,
+            glass: var_glass,
+        };
+    }
+}
+
 impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -2007,6 +2123,19 @@ impl SseDecode for crate::api::store::StoreState {
     }
 }
 
+impl SseDecode for crate::api::store::ThemeBrightness {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::store::ThemeBrightness::System,
+            1 => crate::api::store::ThemeBrightness::Light,
+            2 => crate::api::store::ThemeBrightness::Dark,
+            _ => unreachable!("Invalid variant for ThemeBrightness: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -2045,104 +2174,111 @@ fn pde_ffi_dispatcher_primary_impl(
         1 => {
             wire__crate__api__store__ChirpStore_add_contact_impl(port, ptr, rust_vec_len, data_len)
         }
-        2 => wire__crate__api__store__ChirpStore_chat_settings_impl(
+        2 => wire__crate__api__store__ChirpStore_appearance_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__store__ChirpStore_chat_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        3 => wire__crate__api__store__ChirpStore_contacts_impl(port, ptr, rust_vec_len, data_len),
-        4 => wire__crate__api__store__ChirpStore_conversations_impl(
+        4 => wire__crate__api__store__ChirpStore_contacts_impl(port, ptr, rust_vec_len, data_len),
+        5 => wire__crate__api__store__ChirpStore_conversations_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        5 => wire__crate__api__store__ChirpStore_create_invite_impl(
+        6 => wire__crate__api__store__ChirpStore_create_invite_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__store__ChirpStore_create_profile_impl(
+        7 => wire__crate__api__store__ChirpStore_create_profile_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__store__ChirpStore_create_with_passphrase_impl(
+        8 => wire__crate__api__store__ChirpStore_create_with_passphrase_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        8 => wire__crate__api__store__ChirpStore_delete_for_everyone_impl(
+        9 => wire__crate__api__store__ChirpStore_delete_for_everyone_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        9 => wire__crate__api__store__ChirpStore_delete_for_me_impl(
+        10 => wire__crate__api__store__ChirpStore_delete_for_me_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => {
+        11 => {
             wire__crate__api__store__ChirpStore_edit_message_impl(port, ptr, rust_vec_len, data_len)
         }
-        11 => wire__crate__api__store__ChirpStore_mark_read_impl(port, ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__store__ChirpStore_messages_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__store__ChirpStore_open_with_key_impl(
+        12 => wire__crate__api__store__ChirpStore_mark_read_impl(port, ptr, rust_vec_len, data_len),
+        13 => wire__crate__api__store__ChirpStore_messages_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__store__ChirpStore_open_with_key_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__store__ChirpStore_open_with_passphrase_impl(
+        15 => wire__crate__api__store__ChirpStore_open_with_passphrase_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__store__ChirpStore_profile_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__store__ChirpStore_react_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__store__ChirpStore_rename_impl(port, ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__store__ChirpStore_safety_number_impl(
+        16 => wire__crate__api__store__ChirpStore_profile_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__store__ChirpStore_react_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__store__ChirpStore_rename_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__store__ChirpStore_safety_number_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__store__ChirpStore_search_impl(port, ptr, rust_vec_len, data_len),
-        20 => {
+        20 => wire__crate__api__store__ChirpStore_search_impl(port, ptr, rust_vec_len, data_len),
+        21 => {
             wire__crate__api__store__ChirpStore_send_nudge_impl(port, ptr, rust_vec_len, data_len)
         }
-        21 => wire__crate__api__store__ChirpStore_send_text_impl(port, ptr, rust_vec_len, data_len),
-        22 => wire__crate__api__store__ChirpStore_set_chat_settings_impl(
+        22 => wire__crate__api__store__ChirpStore_send_text_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__store__ChirpStore_set_appearance_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        23 => {
-            wire__crate__api__store__ChirpStore_set_verified_impl(port, ptr, rust_vec_len, data_len)
-        }
-        24 => wire__crate__api__store__ChirpStore_start_network_impl(
+        24 => wire__crate__api__store__ChirpStore_set_chat_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
         25 => {
+            wire__crate__api__store__ChirpStore_set_verified_impl(port, ptr, rust_vec_len, data_len)
+        }
+        26 => wire__crate__api__store__ChirpStore_start_network_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        27 => {
             wire__crate__api__store__ChirpStore_stop_network_impl(port, ptr, rust_vec_len, data_len)
         }
-        26 => wire__crate__api__store__ChirpStore_typing_impl(port, ptr, rust_vec_len, data_len),
-        27 => {
+        28 => wire__crate__api__store__ChirpStore_typing_impl(port, ptr, rust_vec_len, data_len),
+        29 => {
             wire__crate__api__store__ChirpStore_watch_events_impl(port, ptr, rust_vec_len, data_len)
         }
-        29 => wire__crate__api__info__init_core_impl(port, ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__store__wipe_store_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__info__init_core_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__store__wipe_store_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2155,12 +2291,12 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        28 => wire__crate__api__info__core_info_impl(ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__store__max_message_chars_impl(ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__store__min_passphrase_chars_impl(ptr, rust_vec_len, data_len),
-        32 => wire__crate__api__store__new_store_key_impl(ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__store__reaction_kinds_impl(ptr, rust_vec_len, data_len),
-        34 => wire__crate__api__store__store_state_impl(ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__info__core_info_impl(ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__store__max_message_chars_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__store__min_passphrase_chars_impl(ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__store__new_store_key_impl(ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__store__reaction_kinds_impl(ptr, rust_vec_len, data_len),
+        36 => wire__crate__api__store__store_state_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2182,6 +2318,28 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<ChirpStore>> for ChirpStore {
     }
 }
 
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::AppearanceView {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.theme.into_into_dart().into_dart(),
+            self.brightness.into_into_dart().into_dart(),
+            self.glass.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::AppearanceView
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::AppearanceView>
+    for crate::api::store::AppearanceView
+{
+    fn into_into_dart(self) -> crate::api::store::AppearanceView {
+        self
+    }
+}
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::store::ChatSettings {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
@@ -2449,6 +2607,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::StoreState>
         self
     }
 }
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::ThemeBrightness {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::System => 0.into_dart(),
+            Self::Light => 1.into_dart(),
+            Self::Dark => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::ThemeBrightness
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::ThemeBrightness>
+    for crate::api::store::ThemeBrightness
+{
+    fn into_into_dart(self) -> crate::api::store::ThemeBrightness {
+        self
+    }
+}
 
 impl SseEncode for flutter_rust_bridge::for_generated::anyhow::Error {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -2488,6 +2668,15 @@ impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<u8>>::sse_encode(self.into_bytes(), serializer);
+    }
+}
+
+impl SseEncode for crate::api::store::AppearanceView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.theme, serializer);
+        <crate::api::store::ThemeBrightness>::sse_encode(self.brightness, serializer);
+        <bool>::sse_encode(self.glass, serializer);
     }
 }
 
@@ -2748,6 +2937,23 @@ impl SseEncode for crate::api::store::StoreState {
                 crate::api::store::StoreState::Missing => 0,
                 crate::api::store::StoreState::KeyInVault => 1,
                 crate::api::store::StoreState::Passphrase => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::api::store::ThemeBrightness {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::store::ThemeBrightness::System => 0,
+                crate::api::store::ThemeBrightness::Light => 1,
+                crate::api::store::ThemeBrightness::Dark => 2,
                 _ => {
                     unimplemented!("");
                 }

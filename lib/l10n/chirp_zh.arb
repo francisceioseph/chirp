@@ -118,5 +118,20 @@
   "readReceiptsHelp": "关闭后，你也看不到别人何时读了你的消息。",
   "typingIndicator": "输入提示",
   "typingIndicatorHelp": "关闭后，你也看不到别人正在输入。",
-  "messageOptions": "消息选项"
+  "messageOptions": "消息选项",
+  "appearanceTitle": "外观",
+  "appearanceMode": "浅色或深色",
+  "modeSystem": "跟随系统",
+  "modeLight": "浅色",
+  "modeDark": "深色",
+  "themeLabel": "主题",
+  "appearanceNotSaved": "无法保存外观。",
+  "themeLutino": "Sunny Lutino",
+  "themeWildGrey": "Wild Grey",
+  "themeSkylight": "Skylight",
+  "themeOldDays": "Old Days",
+  "themeHuman": "Human",
+  "themeSymbian": "Symbian",
+  "themeFoundation": "Foundation",
+  "themeMightyCats": "Mighty Cats"
 }

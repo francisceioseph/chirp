@@ -39,7 +39,6 @@ class NameField extends StatelessWidget {
         helperMaxLines: 3,
         errorText: errorText,
         errorMaxLines: 3,
-        border: const OutlineInputBorder(),
       ),
     );
   }

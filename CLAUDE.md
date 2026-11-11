@@ -12,6 +12,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
     - `identity.rs` (o par Curve25519 no formato do libsignal e a impressão digital), `profile.rs`, `passphrase.rs` (Argon2id, quando não há cofre), `random.rs` (só o `getrandom`) e `error.rs` (o `CoreError`, sem texto).
     - `session/`: a sessão pelo libsignal (as lojas sobre o banco, os convites com as prekeys deles e o aperto de mão BundleRequest, Bundle, Hello e Welcome, cada passo numa transação). `invite.rs` (o QR e o link), `wire.rs` (os frames e o conteúdo em Protobuf pelo `prost`, sem `.proto`), `contacts.rs` e `node.rs` (o endpoint do iroh: só rede local, sem relay nem descoberta por servidor; uma conexão de um contato é de mensagens, a de qualquer outro é um aperto de mão).
     - `discovery.rs`: o mDNS (`_chirp._udp`) com o token de época, sem nome nem id fixo; o nó anuncia e procura, e um contato achado ganha o endereço novo.
+    - `appearance.rs`: a aparência (o id do tema, claro ou escuro, o vidro), no banco como o resto.
     - `messages.rs`: as mensagens, a caixa de saída (cifrada na mesma transação do ratchet, só sai com o `ack`) e a de entrada (idempotente), os recibos, o digitando, editar, apagar, reagir, chamar atenção e a busca (FTS5).
     - `api/store.rs`: o `ChirpStore` opaco, as funções do banco, a rede (`start_network`, `create_invite`, `add_contact`, `watch_events`), as mensagens (`conversations`, `messages`, `send_text` e o resto) e o runtime do tokio. Os arquivos ficam na pasta de suporte do app: `chirp.db` e, só com senha, `chirp.salt`.
   - O protocolo no fio está em `docs/PROTOCOLO.md`: mudou o formato, muda lá também.
@@ -22,9 +23,9 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
   - `chirp_app.dart`: o app, recebendo o `ChirpCore` e o `KeyVault` de fora, como o `PlayerView` do Player. Os testes passam falsos em memória (`FakeCore`, `FakeVault` e o `withProfile` do `test/helpers.dart`).
   - `src/core/chirp_core.dart`: a porta para o núcleo (`ChirpCore`, `ProfileStore`, `CoreFailure`) e a implementação pela ponte (`BridgeCore`). A UI nunca importa `src/bridge/`.
   - `src/platform/key_vault.dart`: o cofre do sistema (`KeyVault`, `SystemKeyVault` pelo `flutter_secure_storage`), onde fica a chave do banco.
-  - `src/application/`: os controllers, sem widget. O `StartupController` é a máquina de estados da abertura (núcleo, cofre ou senha, perfil); o `ContactsController` liga a rede, cuida das conversas, dos contatos e dos convites e repassa os eventos do núcleo; o `ConversationController` é uma conversa aberta (as mensagens, responder, editar, o digitando, as chamadas de atenção que chegam).
+  - `src/application/`: os controllers, sem widget. O `StartupController` é a máquina de estados da abertura (núcleo, cofre ou senha, perfil); o `ContactsController` liga a rede, cuida das conversas, dos contatos e dos convites e repassa os eventos do núcleo; o `ConversationController` é uma conversa aberta (as mensagens, responder, editar, o digitando, as chamadas de atenção que chegam); o `AppearanceController` é a aparência, a padrão até o banco abrir.
   - `src/bridge/`: o gerado pelo `flutter_rust_bridge`, e só ele.
-  - `src/ui/`: atomic design (`atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`) e o `theme/`.
+  - `src/ui/`: atomic design (`atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`) e o `theme/`: os temas são sementes com personalidade (`chirp_themes.dart`, um `ChirpThemeSpec` cada), e o formato das bolhas vem do `ChirpStyle` (a `ThemeExtension`).
   - `src/logging.dart`: a trava dos logs em release.
   - `l10n/`: os `.arb` e o gerado ao lado, no git.
 

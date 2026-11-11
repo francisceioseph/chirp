@@ -414,4 +414,49 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
 
   @override
   String get messageOptions => 'Opções da mensagem';
+
+  @override
+  String get appearanceTitle => 'Aparência';
+
+  @override
+  String get appearanceMode => 'Claro ou escuro';
+
+  @override
+  String get modeSystem => 'Sistema';
+
+  @override
+  String get modeLight => 'Claro';
+
+  @override
+  String get modeDark => 'Escuro';
+
+  @override
+  String get themeLabel => 'Tema';
+
+  @override
+  String get appearanceNotSaved => 'Não deu para gravar a aparência.';
+
+  @override
+  String get themeLutino => 'Sunny Lutino';
+
+  @override
+  String get themeWildGrey => 'Wild Grey';
+
+  @override
+  String get themeSkylight => 'Skylight';
+
+  @override
+  String get themeOldDays => 'Old Days';
+
+  @override
+  String get themeHuman => 'Human';
+
+  @override
+  String get themeSymbian => 'Symbian';
+
+  @override
+  String get themeFoundation => 'Foundation';
+
+  @override
+  String get themeMightyCats => 'Mighty Cats';
 }

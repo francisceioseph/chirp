@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/l10n.dart';
+import 'src/application/appearance_controller.dart';
 import 'src/application/startup_controller.dart';
 import 'src/core/chirp_core.dart';
 import 'src/platform/key_vault.dart';
@@ -27,34 +28,53 @@ class _ChirpAppState extends State<ChirpApp> {
     core: widget.core,
     vault: widget.vault,
   );
+  final _appearance = AppearanceController();
 
   @override
   void initState() {
     super.initState();
+    _startup.addListener(_followStore);
     _startup.start();
   }
 
+  /// A aparência mora no banco: segue o que a abertura abriu (ou apagou).
+  void _followStore() => _appearance.attach(_startup.store);
+
   @override
   void dispose() {
+    _startup.removeListener(_followStore);
     _startup.dispose();
+    _appearance.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      onGenerateTitle: (context) => context.l10n.appName,
-      debugShowCheckedModeBanner: false,
-      theme: chirpTheme(Brightness.light),
-      darkTheme: chirpTheme(Brightness.dark),
-      localizationsDelegates: const [
-        ChirpLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: ChirpLocalizations.supportedLocales,
-      home: StartupPage(controller: _startup),
+    return ListenableBuilder(
+      listenable: _appearance,
+      builder: (context, _) {
+        final appearance = _appearance.value;
+        final spec = chirpThemeById(appearance.theme);
+        return MaterialApp(
+          onGenerateTitle: (context) => context.l10n.appName,
+          debugShowCheckedModeBanner: false,
+          theme: chirpTheme(Brightness.light, spec: spec),
+          darkTheme: chirpTheme(Brightness.dark, spec: spec),
+          themeMode: switch (appearance.mode) {
+            AppearanceMode.system => ThemeMode.system,
+            AppearanceMode.light => ThemeMode.light,
+            AppearanceMode.dark => ThemeMode.dark,
+          },
+          localizationsDelegates: const [
+            ChirpLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: ChirpLocalizations.supportedLocales,
+          home: StartupPage(controller: _startup, appearance: _appearance),
+        );
+      },
     );
   }
 }

@@ -118,5 +118,20 @@
   "readReceiptsHelp": "Si las desactivas, tampoco verás cuándo leen las tuyas.",
   "typingIndicator": "Aviso de escribiendo",
   "typingIndicatorHelp": "Si lo desactivas, tampoco verás cuándo escriben los demás.",
-  "messageOptions": "Opciones del mensaje"
+  "messageOptions": "Opciones del mensaje",
+  "appearanceTitle": "Apariencia",
+  "appearanceMode": "Claro u oscuro",
+  "modeSystem": "Sistema",
+  "modeLight": "Claro",
+  "modeDark": "Oscuro",
+  "themeLabel": "Tema",
+  "appearanceNotSaved": "No se pudo guardar la apariencia.",
+  "themeLutino": "Sunny Lutino",
+  "themeWildGrey": "Wild Grey",
+  "themeSkylight": "Skylight",
+  "themeOldDays": "Old Days",
+  "themeHuman": "Human",
+  "themeSymbian": "Symbian",
+  "themeFoundation": "Foundation",
+  "themeMightyCats": "Mighty Cats"
 }

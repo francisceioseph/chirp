@@ -186,5 +186,26 @@
         "type": "int"
       }
     }
+  },
+  "appearanceTitle": "Appearance",
+  "appearanceMode": "Light or dark",
+  "modeSystem": "System",
+  "modeLight": "Light",
+  "modeDark": "Dark",
+  "themeLabel": "Theme",
+  "appearanceNotSaved": "The appearance could not be saved.",
+  "themeLutino": "Sunny Lutino",
+  "themeWildGrey": "Wild Grey",
+  "themeSkylight": "Skylight",
+  "themeOldDays": "Old Days",
+  "themeHuman": "Human",
+  "themeSymbian": "Symbian",
+  "themeFoundation": "Foundation",
+  "themeMightyCats": "Mighty Cats",
+  "@appearanceMode": {
+    "description": "The group of light, dark and system buttons, for screen readers."
+  },
+  "@themeLutino": {
+    "description": "Theme names are proper names; keep them in every language."
   }
 }

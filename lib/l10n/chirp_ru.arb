@@ -118,5 +118,20 @@
   "readReceiptsHelp": "Если выключить, вы тоже не увидите, когда прочитают ваши.",
   "typingIndicator": "Индикатор набора",
   "typingIndicatorHelp": "Если выключить, вы тоже не увидите, когда печатают другие.",
-  "messageOptions": "Действия с сообщением"
+  "messageOptions": "Действия с сообщением",
+  "appearanceTitle": "Оформление",
+  "appearanceMode": "Светлая или тёмная",
+  "modeSystem": "Как в системе",
+  "modeLight": "Светлая",
+  "modeDark": "Тёмная",
+  "themeLabel": "Тема",
+  "appearanceNotSaved": "Не удалось сохранить оформление.",
+  "themeLutino": "Sunny Lutino",
+  "themeWildGrey": "Wild Grey",
+  "themeSkylight": "Skylight",
+  "themeOldDays": "Old Days",
+  "themeHuman": "Human",
+  "themeSymbian": "Symbian",
+  "themeFoundation": "Foundation",
+  "themeMightyCats": "Mighty Cats"
 }

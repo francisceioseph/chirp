@@ -101,10 +101,26 @@ void main() {
         .widget<FingerprintText>(find.byType(FingerprintText))
         .fingerprint;
     expect(fingerprint, matches(RegExp(r'^\d{5}( \d{5}){5}$')));
+    // A aparência escolhida também fica no banco.
+    for (final target in [
+      find.byKey(const ValueKey('old-days')),
+      find.byIcon(Icons.dark_mode_outlined),
+    ]) {
+      await tester.scrollUntilVisible(
+        target,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+    }
 
     await _open(tester, core, vault);
     await _openProfile(tester);
     expect(find.text(_name), findsOneWidget);
+    final theme = Theme.of(tester.element(find.text(_name)));
+    expect(theme.brightness, Brightness.dark);
+    expect(theme.visualDensity, VisualDensity.compact);
     expect(
       tester.widget<FingerprintText>(find.byType(FingerprintText)).fingerprint,
       fingerprint,

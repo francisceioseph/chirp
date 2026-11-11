@@ -123,6 +123,14 @@ const MIGRATIONS: &[&str] = &[
          INSERT INTO messages_fts (messages_fts, rowid, body) VALUES ('delete', old.id, old.body);
          INSERT INTO messages_fts (rowid, body) VALUES (new.id, new.body);
      END;",
+    // 4: a aparência (fase 4).
+    "CREATE TABLE appearance (
+         id         INTEGER PRIMARY KEY CHECK (id = 1),
+         theme      TEXT NOT NULL,
+         brightness INTEGER NOT NULL,
+         glass      INTEGER NOT NULL
+     );
+     INSERT INTO appearance (id, theme, brightness, glass) VALUES (1, 'lutino', 0, 0);",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

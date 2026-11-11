@@ -100,6 +100,10 @@ class FakeStore implements ProfileStore {
   /// Quantas vezes a UI avisou que estava digitando.
   int typingCalls = 0;
   ChatSettings settings = const ChatSettings(readReceipts: true, typing: true);
+  Appearance savedAppearance = const Appearance();
+
+  /// Se gravar a aparência falha (o disco cheio).
+  bool appearanceFails = false;
 
   /// O "agora" das mensagens.
   DateTime now = DateTime(2026, 11, 11, 10, 30);
@@ -336,6 +340,15 @@ class FakeStore implements ProfileStore {
   @override
   Future<void> setChatSettings(ChatSettings settings) async =>
       this.settings = settings;
+
+  @override
+  Future<Appearance> appearance() async => savedAppearance;
+
+  @override
+  Future<void> setAppearance(Appearance appearance) async {
+    if (appearanceFails) throw const CoreException(CoreFailure.storage);
+    savedAppearance = appearance;
+  }
 
   @override
   Future<void> startNetwork() async {

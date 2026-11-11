@@ -118,5 +118,20 @@
   "readReceiptsHelp": "Wenn aus, siehst du auch nicht, wann deine gelesen werden.",
   "typingIndicator": "Tippanzeige",
   "typingIndicatorHelp": "Wenn aus, siehst du auch nicht, wann andere tippen.",
-  "messageOptions": "Nachrichtenoptionen"
+  "messageOptions": "Nachrichtenoptionen",
+  "appearanceTitle": "Darstellung",
+  "appearanceMode": "Hell oder dunkel",
+  "modeSystem": "System",
+  "modeLight": "Hell",
+  "modeDark": "Dunkel",
+  "themeLabel": "Design",
+  "appearanceNotSaved": "Die Darstellung konnte nicht gespeichert werden.",
+  "themeLutino": "Sunny Lutino",
+  "themeWildGrey": "Wild Grey",
+  "themeSkylight": "Skylight",
+  "themeOldDays": "Old Days",
+  "themeHuman": "Human",
+  "themeSymbian": "Symbian",
+  "themeFoundation": "Foundation",
+  "themeMightyCats": "Mighty Cats"
 }

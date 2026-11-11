@@ -393,4 +393,49 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get messageOptions => '消息选项';
+
+  @override
+  String get appearanceTitle => '外观';
+
+  @override
+  String get appearanceMode => '浅色或深色';
+
+  @override
+  String get modeSystem => '跟随系统';
+
+  @override
+  String get modeLight => '浅色';
+
+  @override
+  String get modeDark => '深色';
+
+  @override
+  String get themeLabel => '主题';
+
+  @override
+  String get appearanceNotSaved => '无法保存外观。';
+
+  @override
+  String get themeLutino => 'Sunny Lutino';
+
+  @override
+  String get themeWildGrey => 'Wild Grey';
+
+  @override
+  String get themeSkylight => 'Skylight';
+
+  @override
+  String get themeOldDays => 'Old Days';
+
+  @override
+  String get themeHuman => 'Human';
+
+  @override
+  String get themeSymbian => 'Symbian';
+
+  @override
+  String get themeFoundation => 'Foundation';
+
+  @override
+  String get themeMightyCats => 'Mighty Cats';
 }

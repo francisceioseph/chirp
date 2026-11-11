@@ -72,7 +72,6 @@ class _PasteInviteFormState extends State<PasteInviteForm> {
             helperText: l10n.pasteHelp,
             errorText: failure == null ? null : failureText(l10n, failure),
             errorMaxLines: 4,
-            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 16),

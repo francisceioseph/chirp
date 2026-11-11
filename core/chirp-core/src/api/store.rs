@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use flutter_rust_bridge::frb;
 use zeroize::Zeroizing;
 
+use crate::appearance;
 use crate::contacts::{Contact, ContactState};
 pub use crate::error::CoreError;
 use crate::error::CoreResult;
@@ -224,6 +225,22 @@ pub struct ConversationView {
 pub struct ChatSettings {
     pub read_receipts: bool,
     pub typing: bool,
+}
+
+/// Claro, escuro ou o que o sistema disser.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ThemeBrightness {
+    System,
+    Light,
+    Dark,
+}
+
+/// A aparência: o id do tema (uma semente da UI), o claro ou escuro e o efeito vidro.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppearanceView {
+    pub theme: String,
+    pub brightness: ThemeBrightness,
+    pub glass: bool,
 }
 
 /// Quantos tipos de reação há (a UI desenha cada um com um ícone).
@@ -553,6 +570,34 @@ impl ChirpStore {
             messages::Settings {
                 read_receipts: settings.read_receipts,
                 typing: settings.typing,
+            },
+        )
+    }
+
+    pub fn appearance(&self) -> Result<AppearanceView, CoreError> {
+        let a = appearance::get(self.lock()?.conn())?;
+        Ok(AppearanceView {
+            theme: a.theme,
+            brightness: match a.brightness {
+                appearance::Brightness::System => ThemeBrightness::System,
+                appearance::Brightness::Light => ThemeBrightness::Light,
+                appearance::Brightness::Dark => ThemeBrightness::Dark,
+            },
+            glass: a.glass,
+        })
+    }
+
+    pub fn set_appearance(&self, appearance: AppearanceView) -> Result<(), CoreError> {
+        appearance::set(
+            self.lock()?.conn(),
+            &appearance::Appearance {
+                theme: appearance.theme,
+                brightness: match appearance.brightness {
+                    ThemeBrightness::System => appearance::Brightness::System,
+                    ThemeBrightness::Light => appearance::Brightness::Light,
+                    ThemeBrightness::Dark => appearance::Brightness::Dark,
+                },
+                glass: appearance.glass,
             },
         )
     }

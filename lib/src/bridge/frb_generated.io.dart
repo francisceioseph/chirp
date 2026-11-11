@@ -55,7 +55,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  AppearanceView dco_decode_appearance_view(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
+
+  @protected
+  AppearanceView dco_decode_box_autoadd_appearance_view(dynamic raw);
 
   @protected
   ChatSettings dco_decode_box_autoadd_chat_settings(dynamic raw);
@@ -136,6 +142,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StoreState dco_decode_store_state(dynamic raw);
 
   @protected
+  ThemeBrightness dco_decode_theme_brightness(dynamic raw);
+
+  @protected
   int dco_decode_u_32(dynamic raw);
 
   @protected
@@ -177,7 +186,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  AppearanceView sse_decode_appearance_view(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  AppearanceView sse_decode_box_autoadd_appearance_view(
+    SseDeserializer deserializer,
+  );
 
   @protected
   ChatSettings sse_decode_box_autoadd_chat_settings(
@@ -264,6 +281,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   StoreState sse_decode_store_state(SseDeserializer deserializer);
 
   @protected
+  ThemeBrightness sse_decode_theme_brightness(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
@@ -312,7 +332,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_appearance_view(
+    AppearanceView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_appearance_view(
+    AppearanceView self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_box_autoadd_chat_settings(
@@ -424,6 +456,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_store_state(StoreState self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_theme_brightness(
+    ThemeBrightness self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);
