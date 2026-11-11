@@ -35,7 +35,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 - No Linux, o `libsecret-1-dev` (o cofre) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
 - `flutter_rust_bridge_codegen generate`: depois de mudar `core/chirp-core/src/api/`. Instalado com `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked` (a mesma versão do `flutter_rust_bridge` no `pubspec.yaml` e no `Cargo.toml`).
 - `cd core && cargo test && cargo clippy --all-targets -- -D warnings && cargo fmt --all --check`
-- `flutter analyze` e `flutter test -j 2` (o host tem pouca memória: não rode sem o `-j`).
+- `flutter analyze` e `flutter test -j 2` (o host tem pouca memória: não rode sem o `-j`). Mudou a UI de propósito: `flutter test test/golden_test.dart --update-goldens`, e olhe as imagens em `test/goldens/` antes de comitar.
 - `flutter test integration_test -d linux`: o app de verdade (núcleo, SQLCipher e o cofre do sistema) numa pasta temporária e com uma entrada própria no cofre, sem tocar nos dados de quem usa, e dois bancos conversando pela ponte (`messages_test.dart`). Fora do CI, porque lá não há cofre nem tela.
 
 ## Regras
@@ -44,7 +44,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 - O que é segredo, rede ou disco fica no núcleo em Rust, não no Dart. Segredos com `zeroize`; `unsafe_code` é negado fora do código gerado. A exceção é a chave do banco, que passa pelo Dart a caminho do cofre do sistema. Nada de chave ou senha gravada em claro: sem cofre, pede-se uma senha.
 - Campos de senha e de mensagem com `enableIMEPersonalizedLearning: false` e sem sugestões.
 - Logs: no Dart, `debugPrint` atrás do `logging.dart` (em release, só com o ajuste ligado); no Rust, nada de log ligado por padrão. Nunca conteúdo, nome, id, chave ou endereço, nem em desenvolvimento.
-- Widgets em atomic design (`lib/src/ui/`): o que aparece em mais de um lugar sobe de camada.
+- Widgets em atomic design (`lib/src/ui/`): o que aparece em mais de um lugar sobe de camada. Os papéis de cor, as formas e os componentes estão no `docs/DESIGN.md`.
 - As cores vêm do `Theme.of(context).colorScheme`, sem `Colors.x` nem `Color(0x...)` fora do `theme/` (o `privacy_test` confere). Botão principal `FilledButton`, secundário o tonal, terciário `TextButton`.
 - Nenhum texto que quem usa lê fica no código: vai para os `.arb`, nos sete idiomas (en, pt, es, fr, de, ru, zh). O `l10n_test` confere as chaves e os marcadores. Em português, um plural com `=1` tem também o `=0`; no russo, `one`, `few`, `many` e `other`.
 - Sem emojis em texto fixo da UI.

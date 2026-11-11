@@ -146,6 +146,32 @@ void main() {
     expect(find.text('Qual a cor?'), findsNWidgets(2));
   });
 
+  testWidgets('Esc larga a resposta e a edição', (tester) async {
+    final (store, contact) = await chat(tester);
+    store.incoming(contact.id, 'Qual a cor?');
+    await tester.pumpAndSettle();
+    await options(tester, 'Qual a cor?');
+    await tester.tap(find.text(l10n.reply));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.replyingTo('Pérola')), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.replyingTo('Pérola')), findsNothing);
+
+    await write(tester, 'calopsta');
+    await options(tester, 'calopsta');
+    await tester.tap(find.text(l10n.editMessage));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.editingMessage), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.editingMessage), findsNothing);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '',
+    );
+  });
+
   testWidgets('editar e apagar para todos as minhas', (tester) async {
     final (store, _) = await chat(tester);
     await write(tester, 'calopsta');

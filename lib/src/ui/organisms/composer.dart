@@ -2,6 +2,7 @@
 //
 // Onde se escreve: a barra de "respondendo a" ou "editando", o campo e o enviar. No
 // computador, Enter envia e Shift+Enter quebra a linha; no celular, o botão envia.
+// Esc cancela a resposta ou a edição.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -69,7 +70,18 @@ class _ComposerState extends State<Composer> {
   void _changed() => setState(() {});
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
-    if (!_enterSends || event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    // Esc larga a resposta ou a edição em andamento (sem elas, segue adiante).
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      final cancel = widget.onCancel;
+      if (cancel == null ||
+          (widget.replyTo == null && widget.editing == null)) {
+        return KeyEventResult.ignored;
+      }
+      cancel();
+      return KeyEventResult.handled;
+    }
+    if (!_enterSends) return KeyEventResult.ignored;
     if (event.logicalKey != LogicalKeyboardKey.enter &&
         event.logicalKey != LogicalKeyboardKey.numpadEnter) {
       return KeyEventResult.ignored;
