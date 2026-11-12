@@ -15,6 +15,8 @@ use crate::profile::{validate_name, StoredProfile};
 
 pub struct Store {
     conn: Connection,
+    /// Onde ficam os blobs dos arquivos, ao lado do banco.
+    files_dir: std::path::PathBuf,
 }
 
 impl Store {
@@ -32,7 +34,17 @@ impl Store {
              PRAGMA foreign_keys = ON;
              PRAGMA temp_store = MEMORY;",
         )?;
-        let mut store = Self { conn };
+        // Um banco na memória (os testes) tem a pasta dele num lugar temporário.
+        let files_dir = if path == Path::new(":memory:") {
+            let tag: String = crate::random::secret_bytes::<8>()?
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect();
+            std::env::temp_dir().join(format!("chirp-files-{tag}"))
+        } else {
+            path.parent().unwrap_or(Path::new(".")).join("files")
+        };
+        let mut store = Self { conn, files_dir };
         migrations::run(&mut store.conn)?;
         Ok(store)
     }
@@ -97,6 +109,11 @@ impl Store {
             return Err(CoreError::Storage);
         }
         self.profile()?.ok_or(CoreError::Storage)
+    }
+
+    /// A pasta dos blobs dos arquivos (criada quando o primeiro chega).
+    pub(crate) fn files_dir(&self) -> &Path {
+        &self.files_dir
     }
 
     pub(crate) fn conn(&self) -> &Connection {

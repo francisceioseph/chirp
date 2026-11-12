@@ -185,6 +185,25 @@ class ConversationController extends ChangeNotifier {
     await contacts.reload();
   }
 
+  /// Manda um arquivo. Lança CoreException (uma foto que não dá para limpar, por
+  /// exemplo).
+  Future<void> sendFile(String path) async {
+    await _store.sendFile(contactId, path);
+    await reload();
+    await contacts.reload();
+  }
+
+  Future<void> downloadFile(ChatMessage message) async {
+    await _store.downloadFile(message.id);
+    await reload();
+  }
+
+  Future<void> saveFile(ChatMessage message, String path) =>
+      _store.saveFile(message.id, path);
+
+  Future<Uint8List> fileBytes(ChatMessage message) =>
+      _store.fileBytes(message.id);
+
   Future<void> react(ChatMessage message, int kind) async {
     await _store.react(message.id, message.myReaction == kind ? 0 : kind);
     await reload();

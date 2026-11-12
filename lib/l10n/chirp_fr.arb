@@ -161,5 +161,20 @@
   "reachUnknown": "Pas encore essayé",
   "unreachableLocalOnly": "Hors de portée sur le réseau local. S’il est sur un autre réseau, activez internet dans Votre profil, Réseau. Les messages attendent ici.",
   "unreachableNoRelay": "Connexion directe impossible. Sans serveur relais, cela ne marche que si l’un de vous accepte les connexions de l’extérieur, et beaucoup de réseaux (comme les réseaux mobiles) ne le permettent pas. Les messages attendent ici.",
-  "unreachableOffline": "Le contact semble hors ligne. Les messages attendent ici et partiront quand il reviendra."
+  "unreachableOffline": "Le contact semble hors ligne. Les messages attendent ici et partiront quand il reviendra.",
+  "attachFile": "Joindre un fichier",
+  "fileDownload": "Télécharger",
+  "fileSave": "Enregistrer",
+  "fileRetry": "Réessayer",
+  "fileSaved": "Enregistré.",
+  "fileWaiting": "En attente du contact",
+  "fileFailed": "Il est arrivé différent de ce qui a été envoyé et a été supprimé.",
+  "fileInvalid": "Ce fichier ne peut pas être envoyé : il dépasse 1 Go, il est illisible, ou c’est une photo dont les métadonnées n’ont pas pu être retirées.",
+  "fileView": "Ouvrir la photo {name}",
+  "filePreview": "Fichier : {name}",
+  "fileProgress": "{percent} %",
+  "sizeBytes": "{size} o",
+  "sizeKb": "{size} Ko",
+  "sizeMb": "{size} Mo",
+  "sizeGb": "{size} Go"
 }

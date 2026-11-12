@@ -161,5 +161,20 @@
   "reachUnknown": "Noch nicht versucht",
   "unreachableLocalOnly": "Im lokalen Netzwerk nicht erreichbar. Ist die Person in einem anderen Netz, schalte das Internet unter Dein Profil, Netzwerk ein. Die Nachrichten warten hier.",
   "unreachableNoRelay": "Keine direkte Verbindung möglich. Ohne Relay-Server geht das nur, wenn einer von euch Verbindungen von außen annimmt, und viele Netze (etwa Mobilfunk) lassen das nicht zu. Die Nachrichten warten hier.",
-  "unreachableOffline": "Der Kontakt scheint offline zu sein. Die Nachrichten warten hier und gehen raus, sobald er auftaucht."
+  "unreachableOffline": "Der Kontakt scheint offline zu sein. Die Nachrichten warten hier und gehen raus, sobald er auftaucht.",
+  "attachFile": "Datei anhängen",
+  "fileDownload": "Herunterladen",
+  "fileSave": "Speichern",
+  "fileRetry": "Erneut versuchen",
+  "fileSaved": "Gespeichert.",
+  "fileWaiting": "Wartet auf den Kontakt",
+  "fileFailed": "Sie kam anders an als gesendet und wurde verworfen.",
+  "fileInvalid": "Diese Datei kann nicht gesendet werden: Sie ist größer als 1 GB, nicht lesbar oder ein Foto, dessen Metadaten nicht entfernt werden konnten.",
+  "fileView": "Foto {name} öffnen",
+  "filePreview": "Datei: {name}",
+  "fileProgress": "{percent} %",
+  "sizeBytes": "{size} B",
+  "sizeKb": "{size} KB",
+  "sizeMb": "{size} MB",
+  "sizeGb": "{size} GB"
 }

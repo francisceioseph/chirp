@@ -34,6 +34,7 @@ use tokio::sync::{broadcast, mpsc};
 use crate::contacts::{self, Contact, ContactState};
 use crate::discovery;
 use crate::error::{CoreError, CoreResult};
+use crate::files;
 use crate::invite::Invite;
 use crate::messages::{self, Effect};
 use crate::network;
@@ -114,6 +115,10 @@ pub struct Node {
     settings: network::Settings,
     /// Por onde cada contato foi alcançado da última vez.
     reach: Mutex<HashMap<i64, Reach>>,
+    /// Acorda os downloads (um arquivo novo, um pedido de quem usa).
+    fetch: mpsc::UnboundedSender<()>,
+    /// Onde ficam os blobs.
+    files_dir: std::path::PathBuf,
 }
 
 /// Um endereço da rede local: IPv4 privado (RFC 1918) ou IPv6 local único (fc00::/7).
@@ -158,12 +163,19 @@ impl Node {
         store: SharedStore,
         events: broadcast::Sender<NodeEvent>,
     ) -> CoreResult<Arc<Node>> {
-        let (keys, port, settings) = with_store(&store, |s| {
+        let (keys, port, settings, files_dir) = with_store(&store, |s| {
             let keys = session::local_keys(s.conn())?;
             let port: u16 =
                 s.conn()
                     .query_row("SELECT port FROM local_keys WHERE id = 1", [], |r| r.get(0))?;
-            Ok((keys, port, network::get(s.conn())?))
+            // Os blobs de arquivos apagados (ou de um envio que caiu) saem.
+            files::sweep(s.conn(), s.files_dir())?;
+            Ok((
+                keys,
+                port,
+                network::get(s.conn())?,
+                s.files_dir().to_path_buf(),
+            ))
         })
         .await?;
         let lookup = MemoryLookup::new();
@@ -216,6 +228,7 @@ impl Node {
             }
         }
         let (wake, woken) = mpsc::unbounded_channel();
+        let (fetch, fetching) = mpsc::unbounded_channel();
         let node = Arc::new(Node {
             endpoint,
             lookup,
@@ -229,12 +242,15 @@ impl Node {
             announced: Mutex::new(None),
             settings,
             reach: Mutex::new(HashMap::new()),
+            fetch,
+            files_dir,
         });
         tokio::spawn(node.clone().accept_loop());
         tokio::spawn(node.clone().delivery_loop(woken));
         tokio::spawn(node.clone().announce());
         tokio::spawn(node.clone().discovery_loop());
         tokio::spawn(node.clone().addrs_loop());
+        tokio::spawn(node.clone().download_loop(fetching));
         Ok(node)
     }
 
@@ -845,13 +861,17 @@ impl Node {
                 .await
                 .map_err(|_| CoreError::Unreachable)?
                 .map_err(|_| CoreError::Unreachable)?;
-        for _ in 0..MAX_MESSAGES {
+        for count in 0..MAX_MESSAGES {
             let frame = match tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(&mut recv)).await
             {
                 Ok(Ok(frame)) => frame,
                 // O outro lado terminou (ou sumiu).
                 _ => break,
             };
+            // Um pedido de arquivo vem sozinho, no começo da conexão.
+            if let (0, Body::FileRequest(request)) = (count, &frame) {
+                return self.serve_file(conn, send, remote, request.clone()).await;
+            }
             let (prekey, bytes) = match frame {
                 Body::Message(bytes) => (false, bytes),
                 Body::PreKeyMessage(bytes) => (true, bytes),
@@ -864,7 +884,11 @@ impl Node {
             let reply = match result {
                 Ok(effect) => {
                     match effect {
-                        Effect::Messages(id) => self.emit(NodeEvent::MessagesChanged(id)),
+                        Effect::Messages(id) => {
+                            self.emit(NodeEvent::MessagesChanged(id));
+                            // Pode ser um arquivo novo para baixar.
+                            self.fetch();
+                        }
                         Effect::Typing(id) => self.emit(NodeEvent::Typing(id)),
                         Effect::Contact(id) => self.emit(NodeEvent::ContactChanged(id)),
                         Effect::Nothing => {}
@@ -877,6 +901,150 @@ impl Node {
         }
         let _ = send.finish();
         let _ = tokio::time::timeout(Duration::from_secs(2), conn.closed()).await;
+        Ok(())
+    }
+
+    /// Manda as fatias de um arquivo que oferecemos a esse contato, a partir de onde
+    /// ele parou. De outro contato, ou um que não existe: recusado, sem dizer por quê.
+    async fn serve_file(
+        &self,
+        conn: &Connection,
+        mut send: SendStream,
+        remote: [u8; 32],
+        request: wire::FileRequest,
+    ) -> CoreResult<()> {
+        let row = with_store(&self.store, move |s| {
+            let Some(contact) = contacts::by_endpoint(s.conn(), &remote)? else {
+                return Ok(None);
+            };
+            files::offered_to(s.conn(), &request.file_id, contact.id)
+        })
+        .await?;
+        let Some(row) = row else {
+            wire::write_frame(&mut send, &wire::frame(Body::Refused(wire::Refused {}))).await?;
+            let _ = send.finish();
+            // Fechar já descartaria a recusa no caminho: espera o outro lado ler.
+            let _ = tokio::time::timeout(Duration::from_secs(5), conn.closed()).await;
+            return Ok(());
+        };
+        let blob = files::blob_path(&self.files_dir, &row.file_id);
+        for index in request.from..row.chunks {
+            let (blob, size) = (blob.clone(), row.size);
+            let data = tokio::task::spawn_blocking(move || files::read_chunk(&blob, size, index))
+                .await
+                .map_err(|_| CoreError::Storage)??;
+            let chunk = Body::FileChunk(wire::FileChunk { index, data });
+            wire::write_frame(&mut send, &wire::frame(chunk)).await?;
+        }
+        let _ = send.finish();
+        let _ = tokio::time::timeout(Duration::from_secs(5), conn.closed()).await;
+        Ok(())
+    }
+
+    /// Acorda os downloads.
+    pub fn fetch(&self) {
+        let _ = self.fetch.send(());
+    }
+
+    /// Baixa os arquivos pedidos, um de cada vez: quando acordado e a cada
+    /// `RETRY_INTERVAL` (o contato pode ter aparecido).
+    async fn download_loop(self: Arc<Self>, mut fetching: mpsc::UnboundedReceiver<()>) {
+        let mut tick = tokio::time::interval(RETRY_INTERVAL);
+        loop {
+            tokio::select! {
+                woke = fetching.recv() => if woke.is_none() { return },
+                _ = tick.tick() => {}
+            }
+            // Vários avisos juntos viram uma rodada só.
+            while fetching.try_recv().is_ok() {}
+            if self.endpoint.is_closed() {
+                return;
+            }
+            let Ok(wanted) = with_store(&self.store, |s| files::wanted(s.conn())).await else {
+                continue;
+            };
+            for (contact_id, row) in wanted {
+                let _ = self.download(contact_id, row).await;
+            }
+        }
+    }
+
+    async fn download(&self, contact_id: i64, row: files::FileRow) -> CoreResult<()> {
+        let contact =
+            with_store(&self.store, move |s| contacts::by_id(s.conn(), contact_id)).await?;
+        if contact.state != ContactState::Established {
+            return Ok(());
+        }
+        let conn = self.connect(&contact).await?;
+        let result = self.download_on(&conn, contact_id, &row).await;
+        conn.close(0u32.into(), b"");
+        result
+    }
+
+    async fn download_on(
+        &self,
+        conn: &Connection,
+        contact_id: i64,
+        row: &files::FileRow,
+    ) -> CoreResult<()> {
+        let (mut send, mut recv) = conn.open_bi().await.map_err(|_| CoreError::Unreachable)?;
+        let request = Body::FileRequest(wire::FileRequest {
+            file_id: row.file_id.clone(),
+            from: row.received,
+        });
+        wire::write_frame(&mut send, &wire::frame(request)).await?;
+        let _ = send.finish();
+        let blob = files::blob_path(&self.files_dir, &row.file_id);
+        std::fs::create_dir_all(&self.files_dir)?;
+        let message = row.message;
+        for index in row.received..row.chunks {
+            let frame = tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(&mut recv))
+                .await
+                .map_err(|_| CoreError::Unreachable)??;
+            let chunk = match frame {
+                Body::FileChunk(chunk) => chunk,
+                Body::Refused(_) => return Err(CoreError::UnknownMessage),
+                _ => return Err(CoreError::Protocol),
+            };
+            let last = index + 1 == row.chunks;
+            // Cada fatia é conferida ao chegar: uma errada não é gravada.
+            if chunk.index != index
+                || chunk.data.len() != files::sealed_len(row.size, index)
+                || files::open_chunk(&row.key, &row.file_id, index, last, &chunk.data).is_err()
+            {
+                return Err(CoreError::Protocol);
+            }
+            let path = blob.clone();
+            tokio::task::spawn_blocking(move || files::write_chunk(&path, index, &chunk.data))
+                .await
+                .map_err(|_| CoreError::Storage)??;
+            let received = index + 1;
+            with_store(&self.store, move |s| {
+                files::set_received(s.conn(), message, received)
+            })
+            .await?;
+            if received % 16 == 0 || last {
+                self.emit(NodeEvent::MessagesChanged(contact_id));
+            }
+        }
+        // Inteiro: confere o hash do arquivo todo.
+        let (path, checked) = (blob.clone(), row.clone());
+        let ok = tokio::task::spawn_blocking(move || files::verify(&path, &checked))
+            .await
+            .unwrap_or(false);
+        with_store(&self.store, move |s| {
+            if ok {
+                files::set_state(s.conn(), message, files::State::Done)
+            } else {
+                files::set_received(s.conn(), message, 0)?;
+                files::set_state(s.conn(), message, files::State::Failed)
+            }
+        })
+        .await?;
+        if !ok {
+            let _ = std::fs::remove_file(&blob);
+        }
+        self.emit(NodeEvent::MessagesChanged(contact_id));
         Ok(())
     }
 
@@ -1072,6 +1240,68 @@ mod tests {
                 ]
         })
         .await;
+        alice.close().await;
+        bob.close().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_file_goes_downloads_resumes_and_is_refused_to_others() {
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
+
+        // Um arquivo de três fatias e um pouco.
+        let tmp = tempfile::tempdir().unwrap();
+        let src = tmp.path().join("notas.txt");
+        let plain: Vec<u8> = (0..3 * files::CHUNK + 123)
+            .map(|i| (i % 251) as u8)
+            .collect();
+        std::fs::write(&src, &plain).unwrap();
+        let dir = alice_store.lock().unwrap().files_dir().to_path_buf();
+        let prepared = files::prepare(&dir, &src).unwrap();
+        crate::messages::send_file(&mut alice_store.lock().unwrap(), bob_at_alice, prepared)
+            .unwrap();
+        alice.flush(bob_at_alice);
+
+        let done = |store: &SharedStore| {
+            let s = store.lock().unwrap();
+            crate::messages::list(s.conn(), alice_at_bob, None, 10)
+                .unwrap()
+                .first()
+                .and_then(|m| files::by_message(s.conn(), m.id).unwrap())
+                .filter(|f| f.state == files::State::Done)
+        };
+        until("Bob has the whole file", || done(&bob_store).is_some()).await;
+        let row = done(&bob_store).unwrap();
+        assert_eq!(row.name, "notas.txt");
+        let blob = files::blob_path(bob_store.lock().unwrap().files_dir(), &row.file_id);
+        let mut out = Vec::new();
+        files::export(&blob, &row, &mut out).unwrap();
+        assert_eq!(out, plain);
+
+        // Cortado depois da primeira fatia: volta a baixar só o resto.
+        {
+            let s = bob_store.lock().unwrap();
+            files::set_received(s.conn(), row.message, 1).unwrap();
+            files::set_state(s.conn(), row.message, files::State::Downloading).unwrap();
+        }
+        let first = files::read_chunk(&blob, row.size, 0).unwrap();
+        let file = std::fs::OpenOptions::new().write(true).open(&blob).unwrap();
+        file.set_len(first.len() as u64).unwrap();
+        drop(file);
+        bob.fetch();
+        until("Bob resumes", || done(&bob_store).is_some()).await;
+        assert!(files::verify(&blob, &row));
+
+        // Um arquivo que Alice não ofereceu a Bob: recusado.
+        let mut forged = row.clone();
+        forged.file_id = vec![9; 16];
+        forged.received = 0;
+        assert_eq!(
+            bob.download(alice_at_bob, forged).await,
+            Err(CoreError::UnknownMessage)
+        );
         alice.close().await;
         bob.close().await;
     }

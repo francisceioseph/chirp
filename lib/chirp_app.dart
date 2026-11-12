@@ -9,6 +9,7 @@ import 'l10n/l10n.dart';
 import 'src/application/appearance_controller.dart';
 import 'src/application/startup_controller.dart';
 import 'src/core/chirp_core.dart';
+import 'src/platform/file_picker.dart';
 import 'src/platform/key_vault.dart';
 import 'src/ui/pages/startup_page.dart';
 import 'src/ui/theme/chirp_theme.dart';
@@ -19,6 +20,7 @@ class ChirpApp extends StatefulWidget {
     required this.core,
     required this.vault,
     this.systemAccent,
+    this.filePicker = const SystemFilePicker(),
   });
 
   final ChirpCore core;
@@ -27,6 +29,9 @@ class ChirpApp extends StatefulWidget {
   /// Lê a cor de destaque do sistema, para o tema "Cor do sistema" (sem isso, ou
   /// sem cor, ele não aparece).
   final Future<Color?> Function()? systemAccent;
+
+  /// O seletor de arquivos (os testes passam um falso).
+  final FilePicker filePicker;
 
   @override
   State<ChirpApp> createState() => _ChirpAppState();
@@ -93,6 +98,8 @@ class _ChirpAppState extends State<ChirpApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: ChirpLocalizations.supportedLocales,
+          builder: (context, child) =>
+              FilePickerScope(picker: widget.filePicker, child: child!),
           home: StartupPage(controller: _startup, appearance: _appearance),
         );
       },

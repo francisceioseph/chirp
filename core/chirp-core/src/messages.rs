@@ -47,6 +47,8 @@ pub enum Kind {
     Text = 0,
     /// Chamou atenção.
     Nudge = 1,
+    /// Um arquivo (o corpo é o nome; o resto está em `files`).
+    File = 2,
 }
 
 /// Para as minhas: na fila, entregue, lida. Para as do contato: não lida, lida.
@@ -125,7 +127,11 @@ fn from_row(row: &Row) -> rusqlite::Result<Message> {
         contact_id: row.get(1)?,
         message_id: row.get(2)?,
         outgoing: row.get(3)?,
-        kind: if kind == 1 { Kind::Nudge } else { Kind::Text },
+        kind: match kind {
+            1 => Kind::Nudge,
+            2 => Kind::File,
+            _ => Kind::Text,
+        },
         body: row.get(5)?,
         reply_to: row.get(6)?,
         sent_at: row.get(7)?,
@@ -460,7 +466,8 @@ pub fn send_nudge(store: &mut Store, contact_id: i64) -> CoreResult<Message> {
 /// Uma mensagem minha, de texto e não apagada, ainda no prazo.
 fn own_in_window(conn: &Connection, id: i64, window: i64) -> CoreResult<(Message, Contact)> {
     let message = by_id(conn, id)?;
-    if !message.outgoing || message.kind != Kind::Text || message.deleted {
+    // Apagar vale para texto e arquivo; editar, só texto (o `edit` confere).
+    if !message.outgoing || message.kind == Kind::Nudge || message.deleted {
         return Err(CoreError::UnknownMessage);
     }
     if now_ms() - message.received_at > window {
@@ -475,6 +482,9 @@ pub fn edit(store: &mut Store, id: i64, text: &str) -> CoreResult<Message> {
     let me = session::me(store)?;
     let tx = store.conn_mut().transaction()?;
     let (message, contact) = own_in_window(&tx, id, EDIT_WINDOW_MS)?;
+    if message.kind != Kind::Text {
+        return Err(CoreError::UnknownMessage);
+    }
     if message.body == text {
         return Ok(message);
     }
@@ -506,6 +516,8 @@ fn wipe(conn: &Connection, id: i64) -> CoreResult<()> {
         [id],
     )?;
     conn.execute("DELETE FROM reactions WHERE message = ?1", [id])?;
+    // O arquivo some junto; o blob sai na próxima varredura (`files::sweep`).
+    conn.execute("DELETE FROM files WHERE message = ?1", [id])?;
     Ok(())
 }
 
@@ -734,6 +746,69 @@ pub fn send_addrs(store: &mut Store, addrs: &[String]) -> CoreResult<Vec<i64>> {
     crate::network::set_announced(&tx, addrs)?;
     tx.commit()?;
     Ok(sent)
+}
+
+/// Oferece ao contato um arquivo já preparado (`files::prepare`): a mensagem e a
+/// oferta saem juntas, e as fatias, quando o contato pedir.
+pub fn send_file(
+    store: &mut Store,
+    contact_id: i64,
+    prepared: crate::files::Prepared,
+) -> CoreResult<Message> {
+    let me = session::me(store)?;
+    let tx = store.conn_mut().transaction()?;
+    let contact = established(&tx, contact_id)?;
+    let lamport = next_lamport(&tx, contact_id)?;
+    let sent_at = now_ms();
+    let message_id = enqueue(
+        &tx,
+        &me,
+        &contact,
+        ContentBody::File(wire::FileOffer {
+            file_id: prepared.file_id.clone(),
+            name: prepared.name.clone(),
+            size: prepared.size,
+            mime: prepared.mime.clone(),
+            hash: prepared.hash.clone(),
+            key: prepared.key.to_vec(),
+            thumbnail: prepared.thumbnail.clone().unwrap_or_default(),
+        }),
+        lamport,
+        sent_at,
+        false,
+    )?;
+    let id = insert(
+        &tx,
+        contact_id,
+        &message_id,
+        true,
+        Kind::File,
+        &prepared.name,
+        None,
+        sent_at,
+        lamport,
+        Status::Pending,
+    )?
+    .ok_or(CoreError::Storage)?;
+    crate::files::insert(
+        &tx,
+        &crate::files::FileRow {
+            message: id,
+            file_id: prepared.file_id,
+            name: prepared.name,
+            size: prepared.size,
+            mime: prepared.mime,
+            hash: prepared.hash,
+            key: prepared.key,
+            thumbnail: prepared.thumbnail,
+            chunks: prepared.chunks,
+            received: prepared.chunks,
+            state: crate::files::State::Done,
+        },
+    )?;
+    let message = by_id(&tx, id)?;
+    tx.commit()?;
+    Ok(message)
 }
 
 // ---------------------------------------------------------------- a caixa de saída
@@ -989,6 +1064,68 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
             } else {
                 Effect::Nothing
             }
+        }
+        ContentBody::File(offer) => {
+            let valid = offer.file_id.len() == 16
+                && offer.key.len() == 32
+                && offer.hash.len() == 32
+                && offer.size <= crate::files::MAX_FILE
+                && offer.thumbnail.len() <= crate::files::MAX_THUMBNAIL;
+            if !valid {
+                return Ok(Effect::Nothing);
+            }
+            let name = crate::files::clean_name(&offer.name);
+            let Some(row) = insert(
+                conn,
+                id,
+                &content.message_id,
+                false,
+                Kind::File,
+                &name,
+                None,
+                sent_at,
+                lamport,
+                Status::Pending,
+            )?
+            else {
+                return Ok(Effect::Nothing);
+            };
+            // O mesmo arquivo oferecido de novo (com outro id de mensagem) é ignorado.
+            let known: bool = conn.query_row(
+                "SELECT EXISTS (SELECT 1 FROM files WHERE file_id = ?1)",
+                [&offer.file_id],
+                |r| r.get(0),
+            )?;
+            if known {
+                conn.execute("DELETE FROM messages WHERE id = ?1", [row])?;
+                return Ok(Effect::Nothing);
+            }
+            let mime = if offer.mime.len() <= 100 && !offer.mime.chars().any(char::is_control) {
+                offer.mime
+            } else {
+                "application/octet-stream".to_owned()
+            };
+            crate::files::insert(
+                conn,
+                &crate::files::FileRow {
+                    message: row,
+                    file_id: offer.file_id,
+                    name,
+                    size: offer.size,
+                    mime,
+                    hash: offer.hash,
+                    key: zeroize::Zeroizing::new(offer.key),
+                    thumbnail: (!offer.thumbnail.is_empty()).then_some(offer.thumbnail),
+                    chunks: crate::files::chunks_for(offer.size),
+                    received: 0,
+                    state: if offer.size <= crate::files::AUTO_DOWNLOAD {
+                        crate::files::State::Downloading
+                    } else {
+                        crate::files::State::Waiting
+                    },
+                },
+            )?;
+            messages
         }
         // O aperto de mão já passou.
         ContentBody::Hello(_) | ContentBody::Welcome(_) => Effect::Nothing,

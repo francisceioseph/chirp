@@ -20,6 +20,7 @@ import '../molecules/conversation_tile.dart';
 import '../molecules/message_bubble.dart';
 import '../organisms/composer.dart';
 import '../organisms/message_actions.dart';
+import '../../platform/file_picker.dart';
 import '../reach_text.dart';
 import 'contact_page.dart';
 
@@ -144,6 +145,65 @@ class _ConversationPageState extends State<ConversationPage>
     }
   }
 
+  Future<void> _attach() async {
+    final path = await FilePickerScope.of(context).pickFile();
+    if (path == null) return;
+    await _run(() => _conversation.sendFile(path));
+  }
+
+  Future<void> _save(ChatMessage message) async {
+    final picker = FilePickerScope.of(context);
+    final path = await picker.saveLocation(message.file!.name);
+    if (path == null || !mounted) return;
+    final saved = context.l10n.fileSaved;
+    await _run(() async {
+      await _conversation.saveFile(message, path);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(saved)));
+      }
+    });
+  }
+
+  Future<void> _view(ChatMessage message) async {
+    final bytes = _conversation.fileBytes(message);
+    await showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            IconButton(
+              tooltip: context.l10n.close,
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+            ),
+            Flexible(
+              child: FutureBuilder(
+                future: bytes,
+                builder: (context, snapshot) => switch (snapshot.data) {
+                  final data? => InteractiveViewer(
+                    child: Image.memory(
+                      data,
+                      semanticLabel: message.file!.name,
+                    ),
+                  ),
+                  null => const Padding(
+                    padding: EdgeInsets.all(48),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _cancelComposer() {
     if (_conversation.editing != null) _text.clear();
     _conversation.cancelComposer();
@@ -209,6 +269,12 @@ class _ConversationPageState extends State<ConversationPage>
                     contactName: name,
                     quoted: _conversation.byId(message.replyTo),
                     onOptions: () => _options(message),
+                    onDownload: () =>
+                        _run(() => _conversation.downloadFile(message)),
+                    onSave: FilePickerScope.of(context).canSave
+                        ? () => _save(message)
+                        : null,
+                    onView: () => _view(message),
                   );
                 },
               );
@@ -282,7 +348,10 @@ class _ConversationPageState extends State<ConversationPage>
                 Expanded(child: body),
                 // Só com algo meu esperando: um contato desligado sem nada na
                 // fila não precisa de aviso.
-                if (contact.reach == ContactReach.unreachable &&
+                // Numa janela muito baixa, o aviso não cabe com o campo: o porquê
+                // continua nos detalhes do contato.
+                if (MediaQuery.sizeOf(context).height >= 220 &&
+                    contact.reach == ContactReach.unreachable &&
                     messages.any(
                       (m) => m.outgoing && m.status == MessageStatus.pending,
                     ))
@@ -302,6 +371,7 @@ class _ConversationPageState extends State<ConversationPage>
                   editing: _conversation.editing,
                   onCancel: _cancelComposer,
                   onChanged: (_) => _conversation.typed(),
+                  onAttach: _attach,
                   onSend: _send,
                 ),
               ],

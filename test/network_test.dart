@@ -177,7 +177,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Canela'));
       await tester.pumpAndSettle();
-      expect(find.text(l10n.unreachableOffline), findsOneWidget);
+      // Em 240×160 o aviso sai da conversa (fica nos detalhes do contato).
+      expect(
+        find.text(l10n.unreachableOffline),
+        findsNWidgets(h < 220 ? 0 : 1),
+      );
       expect(tester.takeException(), isNull);
       await expectLater(tester, meetsGuideline(textContrastGuideline));
       handle.dispose();

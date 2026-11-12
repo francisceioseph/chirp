@@ -364,6 +364,71 @@ fn new_addresses_reach_the_contact() {
     );
 }
 
+/// Uma oferta de arquivo feita à mão (sem passar pelo `files::prepare`).
+fn offer(alice: &mut Device, file_id: u8, key_len: usize, size: u64) {
+    let me = session::me(&alice.store).unwrap();
+    let tx = alice.store.conn_mut().transaction().unwrap();
+    let contact = contacts::by_id(&tx, alice.other).unwrap();
+    enqueue(
+        &tx,
+        &me,
+        &contact,
+        ContentBody::File(wire::FileOffer {
+            file_id: vec![file_id; 16],
+            name: "../../segredo.txt".into(),
+            size,
+            mime: "text/plain".into(),
+            hash: vec![1; 32],
+            key: vec![2; key_len],
+            thumbnail: vec![],
+        }),
+        1,
+        now_ms(),
+        false,
+    )
+    .unwrap();
+    tx.commit().unwrap();
+}
+
+#[test]
+fn file_offers_are_checked_on_arrival() {
+    let (mut alice, mut bob) = pair();
+    // Chave curta, e grande demais: nada entra.
+    offer(&mut alice, 1, 31, 10);
+    offer(&mut alice, 2, 32, crate::files::MAX_FILE + 1);
+    assert_eq!(
+        post(&mut alice, &mut bob),
+        vec![Effect::Nothing, Effect::Nothing]
+    );
+    assert!(bob.list().is_empty());
+
+    // Uma boa: entra com o nome limpo, e pequena, já para baixar.
+    offer(&mut alice, 3, 32, 10);
+    assert_eq!(
+        post(&mut alice, &mut bob),
+        vec![Effect::Messages(bob.other)]
+    );
+    let message = bob.list().pop().unwrap();
+    assert_eq!(
+        (message.kind, message.body.as_str()),
+        (Kind::File, "segredo.txt")
+    );
+    let row = crate::files::by_message(bob.store.conn(), message.id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(row.state, crate::files::State::Downloading);
+    // A mesma oferta de novo não vira outra mensagem; uma grande espera quem usa.
+    offer(&mut alice, 3, 32, 10);
+    offer(&mut alice, 4, 32, crate::files::AUTO_DOWNLOAD + 1);
+    post(&mut alice, &mut bob);
+    let list = bob.list();
+    assert_eq!(list.len(), 2);
+    let big = crate::files::by_message(bob.store.conn(), list[1].id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(big.state, crate::files::State::Waiting);
+}
+
 #[test]
 fn bad_texts_are_refused_before_going_out() {
     let (mut alice, _bob) = pair();

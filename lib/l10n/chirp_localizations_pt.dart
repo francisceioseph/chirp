@@ -551,4 +551,65 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
   @override
   String get unreachableOffline =>
       'O contato parece desligado. As mensagens esperam aqui e saem quando ele aparecer.';
+
+  @override
+  String get attachFile => 'Anexar arquivo';
+
+  @override
+  String get fileDownload => 'Baixar';
+
+  @override
+  String get fileSave => 'Salvar';
+
+  @override
+  String get fileRetry => 'Tentar de novo';
+
+  @override
+  String get fileSaved => 'Salvo.';
+
+  @override
+  String get fileWaiting => 'Esperando o contato';
+
+  @override
+  String get fileFailed =>
+      'Chegou diferente do que foi mandado e foi descartado.';
+
+  @override
+  String get fileInvalid =>
+      'Esse arquivo não pode ser mandado: passa de 1 GB, não dá para ler, ou é uma foto da qual não deu para tirar os metadados.';
+
+  @override
+  String fileView(String name) {
+    return 'Abrir a foto $name';
+  }
+
+  @override
+  String filePreview(String name) {
+    return 'Arquivo: $name';
+  }
+
+  @override
+  String fileProgress(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String sizeBytes(String size) {
+    return '$size B';
+  }
+
+  @override
+  String sizeKb(String size) {
+    return '$size KB';
+  }
+
+  @override
+  String sizeMb(String size) {
+    return '$size MB';
+  }
+
+  @override
+  String sizeGb(String size) {
+    return '$size GB';
+  }
 }

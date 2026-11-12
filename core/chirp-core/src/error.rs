@@ -62,6 +62,10 @@ pub enum CoreError {
     /// O endereço do servidor de retransmissão não serve (ou são mais de três).
     #[error("the relay address is not valid")]
     InvalidRelay,
+    /// O arquivo não serve: grande demais, ilegível, ou uma foto que não deu para
+    /// limpar (e não sai com os metadados).
+    #[error("the file is not valid")]
+    InvalidFile,
     /// Falha de disco ou do SQLite que não é nenhuma das acima.
     #[error("storage failure")]
     Storage,

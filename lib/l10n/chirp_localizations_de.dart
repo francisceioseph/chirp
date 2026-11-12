@@ -554,4 +554,65 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
   @override
   String get unreachableOffline =>
       'Der Kontakt scheint offline zu sein. Die Nachrichten warten hier und gehen raus, sobald er auftaucht.';
+
+  @override
+  String get attachFile => 'Datei anhängen';
+
+  @override
+  String get fileDownload => 'Herunterladen';
+
+  @override
+  String get fileSave => 'Speichern';
+
+  @override
+  String get fileRetry => 'Erneut versuchen';
+
+  @override
+  String get fileSaved => 'Gespeichert.';
+
+  @override
+  String get fileWaiting => 'Wartet auf den Kontakt';
+
+  @override
+  String get fileFailed =>
+      'Sie kam anders an als gesendet und wurde verworfen.';
+
+  @override
+  String get fileInvalid =>
+      'Diese Datei kann nicht gesendet werden: Sie ist größer als 1 GB, nicht lesbar oder ein Foto, dessen Metadaten nicht entfernt werden konnten.';
+
+  @override
+  String fileView(String name) {
+    return 'Foto $name öffnen';
+  }
+
+  @override
+  String filePreview(String name) {
+    return 'Datei: $name';
+  }
+
+  @override
+  String fileProgress(int percent) {
+    return '$percent %';
+  }
+
+  @override
+  String sizeBytes(String size) {
+    return '$size B';
+  }
+
+  @override
+  String sizeKb(String size) {
+    return '$size KB';
+  }
+
+  @override
+  String sizeMb(String size) {
+    return '$size MB';
+  }
+
+  @override
+  String sizeGb(String size) {
+    return '$size GB';
+  }
 }

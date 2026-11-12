@@ -64,6 +64,10 @@ fn main() {
             }
             match m.kind {
                 MessageKind::Nudge => println!("chamou atenção"),
+                MessageKind::File => {
+                    let file = m.file.as_ref().map(|f| (f.name.as_str(), f.size));
+                    println!("arquivo: {file:?}");
+                }
                 MessageKind::Text => {
                     println!("recebida: {}", m.text);
                     if m.text.trim() == "tchau" {

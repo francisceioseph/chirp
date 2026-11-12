@@ -56,6 +56,10 @@ enum CoreFailure {
 
   /// O endereço do retransmissor não serve (ou são mais de três).
   invalidRelay,
+
+  /// O arquivo não serve (grande demais, ilegível, ou uma foto que não deu para
+  /// limpar).
+  invalidFile,
   storage,
 }
 
@@ -178,6 +182,53 @@ enum MessageKind {
 
   /// Chamou atenção.
   nudge,
+
+  /// Um arquivo ([ChatMessage.file] diz qual).
+  file,
+}
+
+/// Em que pé está um arquivo.
+enum FileState {
+  /// Grande demais para baixar sozinho: espera quem usa pedir.
+  waiting,
+
+  /// Baixando, ou esperando o contato aparecer.
+  downloading,
+
+  /// Inteiro e conferido.
+  done,
+
+  /// O que chegou não bateu com o que foi oferecido.
+  failed,
+}
+
+/// O arquivo de uma mensagem.
+@immutable
+class ChatFile {
+  const ChatFile({
+    required this.name,
+    required this.size,
+    required this.mime,
+    this.thumbnail,
+    this.received = 0,
+    this.chunks = 1,
+    this.state = FileState.done,
+  });
+
+  final String name;
+  final int size;
+  final String mime;
+
+  /// A miniatura em JPEG, feita por quem mandou.
+  final Uint8List? thumbnail;
+  final int received;
+  final int chunks;
+  final FileState state;
+
+  bool get isImage => mime.startsWith('image/');
+
+  /// Quanto já chegou, de 0 a 1.
+  double get progress => chunks == 0 ? 1 : received / chunks;
 }
 
 /// Para as minhas: na fila, entregue, lida. Para as do contato, `pending` é não lida.
@@ -205,6 +256,7 @@ class ChatMessage {
     this.theirReaction = 0,
     this.canEdit = false,
     this.canDeleteForEveryone = false,
+    this.file,
   });
 
   final int id;
@@ -228,6 +280,9 @@ class ChatMessage {
   final int theirReaction;
   final bool canEdit;
   final bool canDeleteForEveryone;
+
+  /// O arquivo, se a mensagem é um.
+  final ChatFile? file;
 
   bool get unread => !outgoing && status == MessageStatus.pending;
 }
@@ -371,6 +426,19 @@ abstract interface class ProfileStore {
 
   /// Chama a atenção. Uma vez a cada 10 segundos (`CoreFailure.tooSoon`).
   Future<ChatMessage> sendNudge(int contactId);
+
+  /// Manda o arquivo em [path]. Uma foto sai sem os metadados (o EXIF); uma que
+  /// não dá para limpar não sai (`CoreFailure.invalidFile`).
+  Future<ChatMessage> sendFile(int contactId, String path);
+
+  /// Baixa (ou volta a baixar) o arquivo de uma mensagem do contato.
+  Future<void> downloadFile(int messageId);
+
+  /// Salva uma cópia em claro do arquivo em [path].
+  Future<void> saveFile(int messageId, String path);
+
+  /// O arquivo em claro, para mostrar uma foto (até 32 MiB).
+  Future<Uint8List> fileBytes(int messageId);
 
   Future<ChatMessage> editMessage(int id, String text);
 
@@ -587,6 +655,24 @@ class _BridgeStore implements ProfileStore {
       );
 
   @override
+  Future<ChatMessage> sendFile(int contactId, String path) => _guardAsync(
+    () async =>
+        _message(await _store.sendFile(contactId: contactId, path: path)),
+  );
+
+  @override
+  Future<void> downloadFile(int messageId) =>
+      _guardAsync(() => _store.downloadFile(messageId: messageId));
+
+  @override
+  Future<void> saveFile(int messageId, String path) =>
+      _guardAsync(() => _store.saveFile(messageId: messageId, path: path));
+
+  @override
+  Future<Uint8List> fileBytes(int messageId) =>
+      _guardAsync(() => _store.fileBytes(messageId: messageId));
+
+  @override
   Future<ChatMessage> sendNudge(int contactId) => _guardAsync(
     () async => _message(await _store.sendNudge(contactId: contactId)),
   );
@@ -697,6 +783,7 @@ ChatMessage _message(bridge.MessageView m) => ChatMessage(
   kind: switch (m.kind) {
     bridge.MessageKind.text => MessageKind.text,
     bridge.MessageKind.nudge => MessageKind.nudge,
+    bridge.MessageKind.file => MessageKind.file,
   },
   text: m.text,
   replyTo: m.replyTo,
@@ -713,6 +800,18 @@ ChatMessage _message(bridge.MessageView m) => ChatMessage(
   theirReaction: m.theirReaction,
   canEdit: m.canEdit,
   canDeleteForEveryone: m.canDeleteForEveryone,
+  file: switch (m.file) {
+    null => null,
+    final f => ChatFile(
+      name: f.name,
+      size: f.size.toInt(),
+      mime: f.mime,
+      thumbnail: f.thumbnail.isEmpty ? null : f.thumbnail,
+      received: f.received,
+      chunks: f.chunks,
+      state: FileState.values[f.state.index],
+    ),
+  },
 );
 
 Contact _contact(bridge.ContactView c) => Contact(
@@ -753,6 +852,7 @@ CoreFailure _failure(bridge.CoreError error) => switch (error) {
   bridge.CoreError.tooSoon => CoreFailure.tooSoon,
   bridge.CoreError.tooLate => CoreFailure.tooLate,
   bridge.CoreError.invalidRelay => CoreFailure.invalidRelay,
+  bridge.CoreError.invalidFile => CoreFailure.invalidFile,
   bridge.CoreError.storage => CoreFailure.storage,
 };
 

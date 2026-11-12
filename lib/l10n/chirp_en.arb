@@ -235,5 +235,69 @@
   "reachUnknown": "Not tried yet",
   "unreachableLocalOnly": "Out of reach on the local network. If they are on another network, turn on the internet in Your profile, Network. Messages wait here.",
   "unreachableNoRelay": "Could not connect directly. Without a relay server this only works if one of you accepts outside connections, and many networks (like mobile ones) do not. Messages wait here.",
-  "unreachableOffline": "The contact seems to be offline. Messages wait here and go out when they show up."
+  "unreachableOffline": "The contact seems to be offline. Messages wait here and go out when they show up.",
+  "attachFile": "Attach a file",
+  "fileDownload": "Download",
+  "fileSave": "Save",
+  "fileRetry": "Try again",
+  "fileSaved": "Saved.",
+  "fileWaiting": "Waiting for the contact",
+  "fileFailed": "It arrived different from what was sent, and was discarded.",
+  "fileInvalid": "This file cannot be sent: it is over 1 GB, cannot be read, or is a photo whose metadata could not be removed.",
+  "fileView": "Open the photo {name}",
+  "@fileView": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filePreview": "File: {name}",
+  "@filePreview": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "fileProgress": "{percent}%",
+  "@fileProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "sizeBytes": "{size} B",
+  "@sizeBytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeKb": "{size} KB",
+  "@sizeKb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeMb": "{size} MB",
+  "@sizeMb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeGb": "{size} GB",
+  "@sizeGb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  }
 }

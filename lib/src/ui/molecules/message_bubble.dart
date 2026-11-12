@@ -10,6 +10,7 @@ import '../../core/chirp_core.dart';
 import '../atoms/message_status_icon.dart';
 import '../atoms/reaction_icon.dart';
 import '../time_format.dart';
+import 'file_card.dart';
 import '../theme/chirp_style.dart';
 
 /// O foco do teclado numa mensagem: Enter ou espaço abrem as opções, e um contorno
@@ -62,6 +63,9 @@ class MessageBubble extends StatelessWidget {
     this.quoted,
     this.onOptions,
     this.now,
+    this.onDownload,
+    this.onSave,
+    this.onView,
   });
 
   final ChatMessage message;
@@ -72,6 +76,11 @@ class MessageBubble extends StatelessWidget {
   /// A mensagem citada, se esta é uma resposta e a citada existe aqui.
   final ChatMessage? quoted;
   final VoidCallback? onOptions;
+
+  /// O que fazer com o arquivo, se a mensagem é um.
+  final VoidCallback? onDownload;
+  final VoidCallback? onSave;
+  final VoidCallback? onView;
 
   /// O "agora", para os testes.
   final DateTime? now;
@@ -90,6 +99,7 @@ class MessageBubble extends StatelessWidget {
     final muted = foreground.withValues(alpha: 0.72);
     final time = messageTime(context, message.sentAt, now: now);
     final text = message.deleted ? l10n.messageDeleted : message.text;
+    final file = message.deleted ? null : message.file;
     final sender = mine ? l10n.you : contactName;
     final semantics = [
       sender,
@@ -119,13 +129,23 @@ class MessageBubble extends StatelessWidget {
               name: quoted == null || quoted!.outgoing ? l10n.you : contactName,
               color: foreground,
             ),
-          Text(
-            text,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: message.deleted ? muted : foreground,
-              fontStyle: message.deleted ? FontStyle.italic : null,
+          if (file != null)
+            FileCard(
+              file: file,
+              mine: mine,
+              color: foreground,
+              onDownload: onDownload,
+              onSave: onSave,
+              onView: onView,
+            )
+          else
+            Text(
+              text,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: message.deleted ? muted : foreground,
+                fontStyle: message.deleted ? FontStyle.italic : null,
+              ),
             ),
-          ),
           const SizedBox(height: 2),
           Wrap(
             alignment: WrapAlignment.end,
@@ -163,7 +183,8 @@ class MessageBubble extends StatelessWidget {
       label: semantics,
       onLongPressHint: l10n.messageOptions,
       onLongPress: onOptions,
-      excludeSemantics: true,
+      // Num arquivo, os botões (baixar, salvar, abrir) ficam para o leitor de tela.
+      excludeSemantics: file == null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Align(

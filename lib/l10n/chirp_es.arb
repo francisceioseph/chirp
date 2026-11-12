@@ -161,5 +161,20 @@
   "reachUnknown": "Aún no se intentó",
   "unreachableLocalOnly": "Fuera de alcance en la red local. Si está en otra red, activa internet en Tu perfil, Red. Los mensajes esperan aquí.",
   "unreachableNoRelay": "No se pudo conectar directamente. Sin un servidor de retransmisión, solo funciona si uno de los dos acepta conexiones de fuera, y muchas redes (como las móviles) no lo permiten. Los mensajes esperan aquí.",
-  "unreachableOffline": "El contacto parece desconectado. Los mensajes esperan aquí y salen cuando aparezca."
+  "unreachableOffline": "El contacto parece desconectado. Los mensajes esperan aquí y salen cuando aparezca.",
+  "attachFile": "Adjuntar archivo",
+  "fileDownload": "Descargar",
+  "fileSave": "Guardar",
+  "fileRetry": "Intentar de nuevo",
+  "fileSaved": "Guardado.",
+  "fileWaiting": "Esperando al contacto",
+  "fileFailed": "Llegó distinto de lo que se envió y se descartó.",
+  "fileInvalid": "Este archivo no se puede enviar: supera 1 GB, no se puede leer o es una foto de la que no se pudieron quitar los metadatos.",
+  "fileView": "Abrir la foto {name}",
+  "filePreview": "Archivo: {name}",
+  "fileProgress": "{percent} %",
+  "sizeBytes": "{size} B",
+  "sizeKb": "{size} KB",
+  "sizeMb": "{size} MB",
+  "sizeGb": "{size} GB"
 }

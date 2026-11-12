@@ -19,7 +19,7 @@ pub const MAX_FRAME: usize = 64 * 1024;
 pub struct Frame {
     #[prost(uint32, tag = "1")]
     pub version: u32,
-    #[prost(oneof = "Body", tags = "2, 3, 4, 5, 6, 7")]
+    #[prost(oneof = "Body", tags = "2, 3, 4, 5, 6, 7, 8, 9")]
     pub body: Option<Body>,
 }
 
@@ -44,6 +44,29 @@ pub enum Body {
     /// caixa de saída. É o "entregue".
     #[prost(message, tag = "7")]
     Ack(Ack),
+    /// Manda as fatias do arquivo a partir de `from` (fase 6). Só numa conexão de um
+    /// contato, e só de um arquivo oferecido a ele.
+    #[prost(message, tag = "8")]
+    FileRequest(FileRequest),
+    /// Uma fatia, cifrada como está guardada.
+    #[prost(message, tag = "9")]
+    FileChunk(FileChunk),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct FileRequest {
+    #[prost(bytes = "vec", tag = "1")]
+    pub file_id: Vec<u8>,
+    #[prost(uint32, tag = "2")]
+    pub from: u32,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct FileChunk {
+    #[prost(uint32, tag = "1")]
+    pub index: u32,
+    #[prost(bytes = "vec", tag = "2")]
+    pub data: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -85,7 +108,7 @@ pub struct Ack {}
 pub struct Content {
     #[prost(bytes = "vec", tag = "1")]
     pub message_id: Vec<u8>,
-    #[prost(oneof = "ContentBody", tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12")]
+    #[prost(oneof = "ContentBody", tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16")]
     pub body: Option<ContentBody>,
     /// O relógio de quem manda, em milissegundos: só para mostrar.
     #[prost(uint64, tag = "13")]
@@ -130,6 +153,31 @@ pub enum ContentBody {
     /// Os endereços mudaram (fase 5): só o `addrs` do `Peer` vale.
     #[prost(message, tag = "12")]
     Addrs(Peer),
+    /// Um arquivo (fase 6): o que é e a chave; as fatias vêm depois, pedidas. (A 13,
+    /// a 14 e a 15 são campos do `Content`.)
+    #[prost(message, tag = "16")]
+    File(FileOffer),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct FileOffer {
+    #[prost(bytes = "vec", tag = "1")]
+    pub file_id: Vec<u8>,
+    #[prost(string, tag = "2")]
+    pub name: String,
+    #[prost(uint64, tag = "3")]
+    pub size: u64,
+    #[prost(string, tag = "4")]
+    pub mime: String,
+    /// O BLAKE3 do arquivo em claro.
+    #[prost(bytes = "vec", tag = "5")]
+    pub hash: Vec<u8>,
+    /// A chave das fatias (AES-256-GCM).
+    #[prost(bytes = "vec", tag = "6")]
+    pub key: Vec<u8>,
+    /// Uma miniatura em JPEG, feita por quem manda, ou vazio.
+    #[prost(bytes = "vec", tag = "7")]
+    pub thumbnail: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, Message)]

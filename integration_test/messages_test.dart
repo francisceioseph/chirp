@@ -115,6 +115,20 @@ void main() {
     );
     expect((await a.chatSettings()).readReceipts, isFalse);
 
+    // Um arquivo de duas fatias e pouco: Bob manda, Alice baixa sozinha e salva.
+    final original = List<int>.generate(130000, (i) => i % 251);
+    final source = File('${tmp.path}/notas.bin')..writeAsBytesSync(original);
+    final offered = await b.sendFile(aliceAtBob.id, source.path);
+    expect(offered.kind, MessageKind.file);
+    expect(offered.file!.name, 'notas.bin');
+    final arrived = await _until(
+      () => a.messages(bobAtAlice.id),
+      (list) => list.last.file?.state == FileState.done,
+    );
+    final copy = '${tmp.path}/copia.bin';
+    await a.saveFile(arrived.last.id, copy);
+    expect(File(copy).readAsBytesSync(), original);
+
     await a.stopNetwork();
     await b.stopNetwork();
   });

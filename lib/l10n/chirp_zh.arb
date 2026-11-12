@@ -161,5 +161,20 @@
   "reachUnknown": "尚未尝试",
   "unreachableLocalOnly": "在本地网络中无法连接。如果对方在其他网络，请在“你的资料”的“网络”中打开互联网。消息会在这里等待。",
   "unreachableNoRelay": "无法直接连接。没有中继服务器时，只有一方能接受外部连接才行，而很多网络（比如移动网络）不允许。消息会在这里等待。",
-  "unreachableOffline": "联系人似乎不在线。消息会在这里等待，对方上线后发出。"
+  "unreachableOffline": "联系人似乎不在线。消息会在这里等待，对方上线后发出。",
+  "attachFile": "附加文件",
+  "fileDownload": "下载",
+  "fileSave": "保存",
+  "fileRetry": "重试",
+  "fileSaved": "已保存。",
+  "fileWaiting": "正在等待联系人",
+  "fileFailed": "收到的内容与发送的不一致，已丢弃。",
+  "fileInvalid": "这个文件无法发送：超过 1 GB、无法读取，或是无法去除元数据的照片。",
+  "fileView": "打开照片 {name}",
+  "filePreview": "文件：{name}",
+  "fileProgress": "{percent}%",
+  "sizeBytes": "{size} B",
+  "sizeKb": "{size} KB",
+  "sizeMb": "{size} MB",
+  "sizeGb": "{size} GB"
 }

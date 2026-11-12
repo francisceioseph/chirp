@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `flush`, `lock`, `open`, `running`, `runtime`, `started`, `view`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `running`, `runtime`, `started`, `stop_node`, `view`, `with_file`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -65,10 +65,16 @@ abstract class ChirpStore implements RustOpaqueInterface {
 
   Future<void> deleteForMe({required PlatformInt64 id});
 
+  /// Baixa (ou volta a baixar) o arquivo de uma mensagem do contato.
+  Future<void> downloadFile({required PlatformInt64 messageId});
+
   Future<MessageView> editMessage({
     required PlatformInt64 id,
     required String text,
   });
+
+  /// O arquivo em claro, na memória, para mostrar uma foto (até 32 MiB).
+  Future<Uint8List> fileBytes({required PlatformInt64 messageId});
 
   /// Li a conversa: marca e manda o recibo, se ligado.
   Future<void> markRead({required PlatformInt64 contactId});
@@ -114,8 +120,22 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// O número de segurança com um contato: 60 dígitos, igual nos dois aparelhos.
   Future<String> safetyNumber({required PlatformInt64 contactId});
 
+  /// Salva uma cópia em claro do arquivo em [path] (o "Salvar em..."). Escreve ao
+  /// lado e troca no fim, para não deixar um arquivo pela metade.
+  Future<void> saveFile({
+    required PlatformInt64 messageId,
+    required String path,
+  });
+
   /// A busca no histórico de todas as conversas.
   Future<List<MessageView>> search({required String query});
+
+  /// Manda o arquivo em [path] ao contato. Uma foto sai sem os metadados (o EXIF),
+  /// e uma que não dá para limpar não sai.
+  Future<MessageView> sendFile({
+    required PlatformInt64 contactId,
+    required String path,
+  });
 
   /// Chama a atenção do contato. Uma vez a cada 10 segundos (`TooSoon`).
   Future<MessageView> sendNudge({required PlatformInt64 contactId});
@@ -145,7 +165,7 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// nada.
   Future<void> startNetwork();
 
-  /// Desliga o nó (antes de apagar tudo, por exemplo).
+  /// Desliga o nó (antes de apagar tudo, por exemplo) e fecha o fluxo de eventos.
   Future<void> stopNetwork();
 
   /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
@@ -320,11 +340,77 @@ enum EventKind {
   typing,
 }
 
+/// Em que pé está um arquivo.
+enum FileState {
+  /// Grande demais para baixar sozinho: espera quem usa pedir.
+  waiting,
+
+  /// Baixando, ou esperando o contato aparecer.
+  downloading,
+
+  /// Inteiro e conferido: dá para abrir e salvar.
+  done,
+
+  /// O que chegou não bateu com o hash da oferta.
+  failed,
+}
+
+/// O arquivo de uma mensagem.
+class FileView {
+  final String name;
+  final BigInt size;
+  final String mime;
+
+  /// A miniatura em JPEG (vazia se não houver).
+  final Uint8List thumbnail;
+
+  /// Quantas fatias já estão aqui, de quantas.
+  final int received;
+  final int chunks;
+  final FileState state;
+
+  const FileView({
+    required this.name,
+    required this.size,
+    required this.mime,
+    required this.thumbnail,
+    required this.received,
+    required this.chunks,
+    required this.state,
+  });
+
+  @override
+  int get hashCode =>
+      name.hashCode ^
+      size.hashCode ^
+      mime.hashCode ^
+      thumbnail.hashCode ^
+      received.hashCode ^
+      chunks.hashCode ^
+      state.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FileView &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          size == other.size &&
+          mime == other.mime &&
+          thumbnail == other.thumbnail &&
+          received == other.received &&
+          chunks == other.chunks &&
+          state == other.state;
+}
+
 enum MessageKind {
   text,
 
   /// Chamou atenção.
   nudge,
+
+  /// Um arquivo (o `file` da mensagem diz qual).
+  file,
 }
 
 /// Para as minhas: na fila, entregue, lida. Para as do contato: `Pending` é não lida.
@@ -358,6 +444,9 @@ class MessageView {
   final bool canEdit;
   final bool canDeleteForEveryone;
 
+  /// O arquivo, se a mensagem é um.
+  final FileView? file;
+
   const MessageView({
     required this.id,
     required this.contactId,
@@ -374,6 +463,7 @@ class MessageView {
     required this.theirReaction,
     required this.canEdit,
     required this.canDeleteForEveryone,
+    this.file,
   });
 
   @override
@@ -392,7 +482,8 @@ class MessageView {
       myReaction.hashCode ^
       theirReaction.hashCode ^
       canEdit.hashCode ^
-      canDeleteForEveryone.hashCode;
+      canDeleteForEveryone.hashCode ^
+      file.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -413,7 +504,8 @@ class MessageView {
           myReaction == other.myReaction &&
           theirReaction == other.theirReaction &&
           canEdit == other.canEdit &&
-          canDeleteForEveryone == other.canDeleteForEveryone;
+          canDeleteForEveryone == other.canDeleteForEveryone &&
+          file == other.file;
 }
 
 /// A internet e os servidores de retransmissão (os dois desligados no começo).

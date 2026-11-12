@@ -555,4 +555,65 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   @override
   String get unreachableOffline =>
       'Похоже, контакт не в сети. Сообщения ждут здесь и уйдут, когда он появится.';
+
+  @override
+  String get attachFile => 'Прикрепить файл';
+
+  @override
+  String get fileDownload => 'Скачать';
+
+  @override
+  String get fileSave => 'Сохранить';
+
+  @override
+  String get fileRetry => 'Попробовать снова';
+
+  @override
+  String get fileSaved => 'Сохранено.';
+
+  @override
+  String get fileWaiting => 'Ожидание контакта';
+
+  @override
+  String get fileFailed =>
+      'Файл пришёл не таким, каким был отправлен, и удалён.';
+
+  @override
+  String get fileInvalid =>
+      'Этот файл нельзя отправить: он больше 1 ГБ, не читается или это фото, из которого не удалось убрать метаданные.';
+
+  @override
+  String fileView(String name) {
+    return 'Открыть фото $name';
+  }
+
+  @override
+  String filePreview(String name) {
+    return 'Файл: $name';
+  }
+
+  @override
+  String fileProgress(int percent) {
+    return '$percent %';
+  }
+
+  @override
+  String sizeBytes(String size) {
+    return '$size Б';
+  }
+
+  @override
+  String sizeKb(String size) {
+    return '$size КБ';
+  }
+
+  @override
+  String sizeMb(String size) {
+    return '$size МБ';
+  }
+
+  @override
+  String sizeGb(String size) {
+    return '$size ГБ';
+  }
 }

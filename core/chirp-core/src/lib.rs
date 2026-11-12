@@ -9,6 +9,7 @@ mod appearance;
 mod contacts;
 mod discovery;
 mod error;
+mod files;
 mod identity;
 mod invite;
 mod messages;

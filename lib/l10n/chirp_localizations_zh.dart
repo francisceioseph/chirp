@@ -526,4 +526,63 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get unreachableOffline => '联系人似乎不在线。消息会在这里等待，对方上线后发出。';
+
+  @override
+  String get attachFile => '附加文件';
+
+  @override
+  String get fileDownload => '下载';
+
+  @override
+  String get fileSave => '保存';
+
+  @override
+  String get fileRetry => '重试';
+
+  @override
+  String get fileSaved => '已保存。';
+
+  @override
+  String get fileWaiting => '正在等待联系人';
+
+  @override
+  String get fileFailed => '收到的内容与发送的不一致，已丢弃。';
+
+  @override
+  String get fileInvalid => '这个文件无法发送：超过 1 GB、无法读取，或是无法去除元数据的照片。';
+
+  @override
+  String fileView(String name) {
+    return '打开照片 $name';
+  }
+
+  @override
+  String filePreview(String name) {
+    return '文件：$name';
+  }
+
+  @override
+  String fileProgress(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String sizeBytes(String size) {
+    return '$size B';
+  }
+
+  @override
+  String sizeKb(String size) {
+    return '$size KB';
+  }
+
+  @override
+  String sizeMb(String size) {
+    return '$size MB';
+  }
+
+  @override
+  String sizeGb(String size) {
+    return '$size GB';
+  }
 }

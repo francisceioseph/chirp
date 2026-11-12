@@ -65,6 +65,10 @@ enum CoreError {
   /// O endereço do servidor de retransmissão não serve (ou são mais de três).
   invalidRelay,
 
+  /// O arquivo não serve: grande demais, ilegível, ou uma foto que não deu para
+  /// limpar (e não sai com os metadados).
+  invalidFile,
+
   /// Falha de disco ou do SQLite que não é nenhuma das acima.
   storage,
 }

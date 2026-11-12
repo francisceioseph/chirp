@@ -1079,6 +1079,96 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'The contact seems to be offline. Messages wait here and go out when they show up.'**
   String get unreachableOffline;
+
+  /// No description provided for @attachFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a file'**
+  String get attachFile;
+
+  /// No description provided for @fileDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get fileDownload;
+
+  /// No description provided for @fileSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get fileSave;
+
+  /// No description provided for @fileRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get fileRetry;
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved.'**
+  String get fileSaved;
+
+  /// No description provided for @fileWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the contact'**
+  String get fileWaiting;
+
+  /// No description provided for @fileFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'It arrived different from what was sent, and was discarded.'**
+  String get fileFailed;
+
+  /// No description provided for @fileInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This file cannot be sent: it is over 1 GB, cannot be read, or is a photo whose metadata could not be removed.'**
+  String get fileInvalid;
+
+  /// No description provided for @fileView.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the photo {name}'**
+  String fileView(String name);
+
+  /// No description provided for @filePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'File: {name}'**
+  String filePreview(String name);
+
+  /// No description provided for @fileProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String fileProgress(int percent);
+
+  /// No description provided for @sizeBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} B'**
+  String sizeBytes(String size);
+
+  /// No description provided for @sizeKb.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} KB'**
+  String sizeKb(String size);
+
+  /// No description provided for @sizeMb.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} MB'**
+  String sizeMb(String size);
+
+  /// No description provided for @sizeGb.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} GB'**
+  String sizeGb(String size);
 }
 
 class _ChirpLocalizationsDelegate

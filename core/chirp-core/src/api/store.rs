@@ -98,6 +98,12 @@ pub fn wipe_store(dir: String) -> Result<(), CoreError> {
             Err(e) => return Err(e.into()),
         }
     }
+    // Os arquivos cifrados também: sem o banco, ninguém mais abre, mas não ficam.
+    match std::fs::remove_dir_all(dir.join("files")) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(e.into()),
+    }
     Ok(())
 }
 
@@ -197,6 +203,54 @@ pub enum MessageKind {
     Text,
     /// Chamou atenção.
     Nudge,
+    /// Um arquivo (o `file` da mensagem diz qual).
+    File,
+}
+
+/// Em que pé está um arquivo.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileState {
+    /// Grande demais para baixar sozinho: espera quem usa pedir.
+    Waiting,
+    /// Baixando, ou esperando o contato aparecer.
+    Downloading,
+    /// Inteiro e conferido: dá para abrir e salvar.
+    Done,
+    /// O que chegou não bateu com o hash da oferta.
+    Failed,
+}
+
+/// O arquivo de uma mensagem.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FileView {
+    pub name: String,
+    pub size: u64,
+    pub mime: String,
+    /// A miniatura em JPEG (vazia se não houver).
+    pub thumbnail: Vec<u8>,
+    /// Quantas fatias já estão aqui, de quantas.
+    pub received: u32,
+    pub chunks: u32,
+    pub state: FileState,
+}
+
+impl From<crate::files::FileRow> for FileView {
+    fn from(row: crate::files::FileRow) -> Self {
+        Self {
+            name: row.name,
+            size: row.size,
+            mime: row.mime,
+            thumbnail: row.thumbnail.unwrap_or_default(),
+            received: row.received,
+            chunks: row.chunks,
+            state: match row.state {
+                crate::files::State::Waiting => FileState::Waiting,
+                crate::files::State::Downloading => FileState::Downloading,
+                crate::files::State::Done => FileState::Done,
+                crate::files::State::Failed => FileState::Failed,
+            },
+        }
+    }
 }
 
 /// Para as minhas: na fila, entregue, lida. Para as do contato: `Pending` é não lida.
@@ -230,12 +284,28 @@ pub struct MessageView {
     /// Ainda dá para editar ou apagar para todos.
     pub can_edit: bool,
     pub can_delete_for_everyone: bool,
+    /// O arquivo, se a mensagem é um.
+    pub file: Option<FileView>,
+}
+
+/// A mensagem com o arquivo dela, se for um.
+fn with_file(conn: &rusqlite::Connection, m: Message) -> MessageView {
+    let file = if m.kind == Kind::File {
+        crate::files::by_message(conn, m.id)
+            .ok()
+            .flatten()
+            .map(FileView::from)
+    } else {
+        None
+    };
+    MessageView { file, ..m.into() }
 }
 
 impl From<Message> for MessageView {
     fn from(m: Message) -> Self {
         let age = messages::now_ms() - m.received_at;
         let own_text = m.outgoing && m.kind == Kind::Text && !m.deleted;
+        let own = m.outgoing && m.kind != Kind::Nudge && !m.deleted;
         Self {
             id: m.id,
             contact_id: m.contact_id,
@@ -243,6 +313,7 @@ impl From<Message> for MessageView {
             kind: match m.kind {
                 Kind::Text => MessageKind::Text,
                 Kind::Nudge => MessageKind::Nudge,
+                Kind::File => MessageKind::File,
             },
             text: m.body,
             reply_to: m.reply_to,
@@ -258,7 +329,8 @@ impl From<Message> for MessageView {
             my_reaction: m.my_reaction,
             their_reaction: m.their_reaction,
             can_edit: own_text && age <= messages::EDIT_WINDOW_MS,
-            can_delete_for_everyone: own_text && age <= messages::DELETE_WINDOW_MS,
+            can_delete_for_everyone: own && age <= messages::DELETE_WINDOW_MS,
+            file: None,
         }
     }
 }
@@ -601,12 +673,11 @@ impl ChirpStore {
         before: Option<i64>,
         limit: u32,
     ) -> Result<Vec<MessageView>, CoreError> {
-        Ok(
-            messages::list(self.lock()?.conn(), contact_id, before, limit)?
-                .into_iter()
-                .map(MessageView::from)
-                .collect(),
-        )
+        let store = self.lock()?;
+        Ok(messages::list(store.conn(), contact_id, before, limit)?
+            .into_iter()
+            .map(|m| with_file(store.conn(), m))
+            .collect())
     }
 
     pub fn send_text(
@@ -634,13 +705,19 @@ impl ChirpStore {
     }
 
     pub fn delete_for_everyone(&self, id: i64) -> Result<MessageView, CoreError> {
-        let message = messages::delete_for_everyone(&mut *self.lock()?, id)?;
+        let mut store = self.lock()?;
+        let message = messages::delete_for_everyone(&mut store, id)?;
+        // O blob de um arquivo apagado sai já.
+        crate::files::sweep(store.conn(), store.files_dir())?;
+        drop(store);
         self.flush(message.contact_id);
         Ok(message.into())
     }
 
     pub fn delete_for_me(&self, id: i64) -> Result<(), CoreError> {
-        messages::delete_for_me(&mut *self.lock()?, id)
+        let mut store = self.lock()?;
+        messages::delete_for_me(&mut store, id)?;
+        crate::files::sweep(store.conn(), store.files_dir())
     }
 
     /// Reage a uma mensagem ([kind] 0 tira a reação).
@@ -675,10 +752,95 @@ impl ChirpStore {
 
     /// A busca no histórico de todas as conversas.
     pub fn search(&self, query: String) -> Result<Vec<MessageView>, CoreError> {
-        Ok(messages::search(self.lock()?.conn(), &query, 100)?
+        let store = self.lock()?;
+        Ok(messages::search(store.conn(), &query, 100)?
             .into_iter()
-            .map(MessageView::from)
+            .map(|m| with_file(store.conn(), m))
             .collect())
+    }
+
+    /// Manda o arquivo em [path] ao contato. Uma foto sai sem os metadados (o EXIF),
+    /// e uma que não dá para limpar não sai.
+    pub fn send_file(&self, contact_id: i64, path: String) -> Result<MessageView, CoreError> {
+        let dir = self.lock()?.files_dir().to_path_buf();
+        // Cifrar leva tempo num arquivo grande: o banco fica livre enquanto isso.
+        let prepared = crate::files::prepare(&dir, std::path::Path::new(&path))?;
+        let blob = crate::files::blob_path(&dir, &prepared.file_id);
+        let mut store = self.lock()?;
+        let message = match messages::send_file(&mut store, contact_id, prepared) {
+            Ok(message) => message,
+            Err(error) => {
+                let _ = std::fs::remove_file(&blob);
+                return Err(error);
+            }
+        };
+        let view = with_file(store.conn(), message);
+        drop(store);
+        self.flush(contact_id);
+        Ok(view)
+    }
+
+    /// Baixa (ou volta a baixar) o arquivo de uma mensagem do contato.
+    pub fn download_file(&self, message_id: i64) -> Result<(), CoreError> {
+        {
+            let store = self.lock()?;
+            let row = crate::files::by_message(store.conn(), message_id)?
+                .ok_or(CoreError::UnknownMessage)?;
+            if row.state == crate::files::State::Done {
+                return Ok(());
+            }
+            if row.state == crate::files::State::Failed {
+                crate::files::set_received(store.conn(), message_id, 0)?;
+            }
+            crate::files::set_state(store.conn(), message_id, crate::files::State::Downloading)?;
+        }
+        if let Some(node) = self.running() {
+            node.fetch();
+        }
+        Ok(())
+    }
+
+    /// Salva uma cópia em claro do arquivo em [path] (o "Salvar em..."). Escreve ao
+    /// lado e troca no fim, para não deixar um arquivo pela metade.
+    pub fn save_file(&self, message_id: i64, path: String) -> Result<(), CoreError> {
+        let (row, blob) = self.done_file(message_id)?;
+        let dst = std::path::PathBuf::from(path);
+        let part = dst.with_extension("chirp-part");
+        let result = (|| {
+            let mut out = std::io::BufWriter::new(std::fs::File::create(&part)?);
+            crate::files::export(&blob, &row, &mut out)?;
+            std::io::Write::flush(&mut out)?;
+            drop(out);
+            std::fs::rename(&part, &dst)?;
+            Ok(())
+        })();
+        if result.is_err() {
+            let _ = std::fs::remove_file(&part);
+        }
+        result
+    }
+
+    /// O arquivo em claro, na memória, para mostrar uma foto (até 32 MiB).
+    pub fn file_bytes(&self, message_id: i64) -> Result<Vec<u8>, CoreError> {
+        let (row, blob) = self.done_file(message_id)?;
+        if row.size > crate::files::AUTO_DOWNLOAD {
+            return Err(CoreError::InvalidFile);
+        }
+        let mut out = Vec::with_capacity(row.size as usize);
+        crate::files::export(&blob, &row, &mut out)?;
+        Ok(out)
+    }
+
+    fn done_file(
+        &self,
+        message_id: i64,
+    ) -> CoreResult<(crate::files::FileRow, std::path::PathBuf)> {
+        let store = self.lock()?;
+        let row = crate::files::by_message(store.conn(), message_id)?
+            .filter(|r| r.state == crate::files::State::Done)
+            .ok_or(CoreError::UnknownMessage)?;
+        let blob = crate::files::blob_path(store.files_dir(), &row.file_id);
+        Ok((row, blob))
     }
 
     pub fn chat_settings(&self) -> Result<ChatSettings, CoreError> {

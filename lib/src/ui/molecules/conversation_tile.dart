@@ -51,6 +51,9 @@ class ConversationTile extends StatelessWidget {
     } else if (last != null) {
       final text = switch (last) {
         ChatMessage(kind: MessageKind.nudge) => l10n.nudgePreview,
+        ChatMessage(kind: MessageKind.file, deleted: false) => l10n.filePreview(
+          last.text,
+        ),
         ChatMessage(deleted: true) => l10n.messageDeleted,
         _ => last.text.replaceAll('\n', ' '),
       };

@@ -53,6 +53,8 @@ Frame { version = 1; oneof body {
   bytes message = 5;                  // SignalMessage do libsignal
   Refused refused = 6;                // {} — sem motivo
   Ack ack = 7;                        // {} — gravei a mensagem anterior
+  FileRequest file_request = 8;       // { bytes file_id = 1; uint32 from = 2; } (fase 6)
+  FileChunk file_chunk = 9;           // { uint32 index = 1; bytes data = 2; }   (fase 6)
 }}
 
 Bundle {
@@ -70,7 +72,8 @@ Content { bytes message_id = 1 (16 aleatórios);
           oneof body { Hello hello = 2; Welcome welcome = 3; Text text = 4;
                        Receipt receipt = 5; Edit edit = 6; Delete delete = 7;
                        Reaction reaction = 8; Typing typing = 9; Nudge nudge = 10;
-                       PeerProfile profile = 11; Peer addrs = 12; };
+                       PeerProfile profile = 11; Peer addrs = 12;
+                       FileOffer file = 16; };
           uint64 sent_at = 13 (ms, relógio de quem manda, só para mostrar);
           uint64 lamport = 14 (a ordem na conversa);
           bytes padding = 15; }
@@ -88,6 +91,8 @@ Delete   { bytes target = 1; }
 Reaction { bytes target = 1; uint32 kind = 2 (1 a 6; 0 tira); }
 Typing   {}
 Nudge    {}
+FileOffer { bytes file_id = 1 (16); string name = 2; uint64 size = 3; string mime = 4;
+            bytes hash = 5 (BLAKE3, 32); bytes key = 6 (32); bytes thumbnail = 7 (JPEG ou vazio); }
 ```
 
 O conteúdo é preenchido até o próximo degrau (256 B, 1 KiB, 4 KiB, 16 KiB, 60 KiB), para o tamanho cifrado não dizer o que é.
@@ -153,6 +158,16 @@ Um contato que conecta mostra também de onde fala: o endereço vai para a frent
 - Sem retransmissor, só conecta se um dos dois aceitar conexões de fora (um IPv6 público sem bloqueio, uma porta aberta). Um NAT simétrico, comum em redes móveis, não deixa: a conversa mostra por quê.
 - O nó guarda, em memória, por onde alcançou cada contato da última vez (rede local, internet direta, retransmissor, ou não alcançou), pelo caminho que a conexão do iroh escolheu.
 
+## Os arquivos (fase 6)
+
+- Quem manda gera um `file_id` (16 bytes) e uma chave (32 bytes) aleatórios por arquivo e corta o conteúdo em fatias de 60 KiB (a última pode ser menor; um arquivo vazio tem uma fatia vazia).
+- Cada fatia é cifrada com AES-256-GCM: nonce = `0u32 || índice (u64, big-endian)`, AAD = `file_id || índice (u64, big-endian) || última (1 byte)`. A chave é só deste arquivo, então o nonce por contador não se repete; o AAD impede trocar a ordem, misturar arquivos ou cortar o fim.
+- O blob guardado é a sequência das fatias cifradas, igual nos dois aparelhos. O hash (BLAKE3) é do arquivo em claro, conferido quando a última fatia chega; se não bate, o blob é apagado e o arquivo fica como falho.
+- A oferta (`FileOffer`) vai pela sessão. Quem recebe confere: `file_id` de 16, chave de 32, hash de 32, até 1 GiB, miniatura até 24 KiB; o nome perde o caminho e os caracteres de controle. Uma oferta com um `file_id` já conhecido é ignorada.
+- Até 32 MiB, baixa sozinho; acima, espera quem usa pedir.
+- As fatias vão numa conexão de contato (o ALPN `chirp/1`): o primeiro frame é um `FileRequest` com o `from` (a primeira fatia que falta), e a resposta é um `FileChunk` por fatia, na ordem. Quem serve só responde por um arquivo que ofereceu **àquele** contato; qualquer outro pedido é um `Refused`, sem motivo. Quem baixa confere cada fatia (o índice, o tamanho e a etiqueta do AES-GCM) antes de gravar, e retoma de onde parou numa próxima conexão.
+- Fotos (JPEG e PNG) são decodificadas e codificadas de novo antes de sair: o EXIF (com a localização) não passa, e a rotação dele é aplicada antes. Uma foto que não se decodifica não sai. A miniatura é um JPEG de até 320 px, feito no aparelho de quem manda.
+
 ## A descoberta na rede local (mDNS)
 
 O serviço é `_chirp._udp.local.`, e o anúncio **não leva id fixo nem nome**. O nome da instância e o do host são um token de época:
@@ -185,6 +200,9 @@ Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._
   - dados do `Peer` fora do formato.
 - `node::tests`: o mesmo sobre QUIC de verdade, entre nós no mesmo processo. O convite não serve a um terceiro, e ninguém respondendo não deixa nada no banco.
 - `messages::tests`: o texto, o entregue e o lido; sem recibos; o reenvio depois de um `ack` perdido; 30 mensagens na fila com os dois escrevendo ao mesmo tempo, na mesma ordem nos dois aparelhos; responder, editar, reagir e apagar para todos (que tira da busca); os prazos, conferidos por quem recebe; o limite do chamar atenção nos dois sentidos; o digitando; o perfil novo; textos inválidos; um estranho que não injeta mensagem; a busca sem acento nem sintaxe do FTS; as páginas do histórico; nenhum texto em claro no arquivo do banco.
+- `files::tests`: cifrar e decifrar em cada borda das fatias (vazio, 1 byte, uma fatia, uma a mais); copiar fatia por fatia dá o mesmo arquivo; uma fatia trocada de lugar, marcada como última, de outro arquivo ou de outra chave não abre; um blob adulterado ou com o hash errado falha; nomes de fora limpos; uma foto com EXIF (com "GPS") sai sem ele, com a miniatura.
+- `messages::tests`: ofertas com chave curta ou grandes demais não entram; uma boa entra com o nome limpo, a repetida não vira outra mensagem, e uma grande espera.
+- `node::tests` (fase 6): um arquivo vai de um nó ao outro sobre QUIC e baixa sozinho; cortado depois da primeira fatia, retoma só o resto; e um pedido de um arquivo não oferecido àquele contato é recusado.
 - `network::tests`: os ajustes, os retransmissores recusados (sem `https`, com usuário, consulta, fragmento, controle, compridos, mais de três) e os endereços de contato conferidos.
 - `node::tests` (fase 5): com um retransmissor de verdade (o do `iroh::test_utils`), dois nós que não sabem nenhum IP um do outro viram contatos pelo convite só com o retransmissor, e uma mensagem só pelo retransmissor chega e volta o "entregue". Com a internet desligada, um contato só com IP público e retransmissor nem é tentado, e fica "fora de alcance"; e o nó não anuncia nada público.
 - `node::tests`: mensagens nos dois sentidos com os recibos, sobre QUIC de verdade, e a fila de quem estava desligado, entregue na ordem quando ele volta. E um contato que "mudou de endereço" (porta nova, e os dois com o endereço errado um do outro), achado só pelo mDNS: com o mDNS desligado, o mesmo teste falha.

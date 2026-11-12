@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1770699398;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1286407863;
 
 // Section: executor
 
@@ -542,6 +542,59 @@ fn wire__crate__api__store__ChirpStore_delete_for_me_impl(
         },
     )
 }
+fn wire__crate__api__store__ChirpStore_download_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_download_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_message_id = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::ChirpStore::download_file(
+                        &*api_that_guard,
+                        api_message_id,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__store__ChirpStore_edit_message_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -590,6 +643,59 @@ fn wire__crate__api__store__ChirpStore_edit_message_impl(
                         &*api_that_guard,
                         api_id,
                         api_text,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__store__ChirpStore_file_bytes_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_file_bytes",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_message_id = <i64>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::ChirpStore::file_bytes(
+                        &*api_that_guard,
+                        api_message_id,
                     )?;
                     std::result::Result::Ok(output_ok)
                 })())
@@ -1081,6 +1187,61 @@ fn wire__crate__api__store__ChirpStore_safety_number_impl(
         },
     )
 }
+fn wire__crate__api__store__ChirpStore_save_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_save_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_message_id = <i64>::sse_decode(&mut deserializer);
+            let api_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::ChirpStore::save_file(
+                        &*api_that_guard,
+                        api_message_id,
+                        api_path,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__store__ChirpStore_search_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1126,6 +1287,61 @@ fn wire__crate__api__store__ChirpStore_search_impl(
                     let api_that_guard = api_that_guard.unwrap();
                     let output_ok =
                         crate::api::store::ChirpStore::search(&*api_that_guard, api_query)?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__store__ChirpStore_send_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_send_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_contact_id = <i64>::sse_decode(&mut deserializer);
+            let api_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::ChirpStore::send_file(
+                        &*api_that_guard,
+                        api_contact_id,
+                        api_path,
+                    )?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -2062,7 +2278,8 @@ impl SseDecode for crate::error::CoreError {
             16 => crate::error::CoreError::TooSoon,
             17 => crate::error::CoreError::TooLate,
             18 => crate::error::CoreError::InvalidRelay,
-            19 => crate::error::CoreError::Storage,
+            19 => crate::error::CoreError::InvalidFile,
+            20 => crate::error::CoreError::Storage,
             _ => unreachable!("Invalid variant for CoreError: {}", inner),
         };
     }
@@ -2101,6 +2318,42 @@ impl SseDecode for crate::api::store::EventKind {
             1 => crate::api::store::EventKind::Messages,
             2 => crate::api::store::EventKind::Typing,
             _ => unreachable!("Invalid variant for EventKind: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::store::FileState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::store::FileState::Waiting,
+            1 => crate::api::store::FileState::Downloading,
+            2 => crate::api::store::FileState::Done,
+            3 => crate::api::store::FileState::Failed,
+            _ => unreachable!("Invalid variant for FileState: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::api::store::FileView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_name = <String>::sse_decode(deserializer);
+        let mut var_size = <u64>::sse_decode(deserializer);
+        let mut var_mime = <String>::sse_decode(deserializer);
+        let mut var_thumbnail = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_received = <u32>::sse_decode(deserializer);
+        let mut var_chunks = <u32>::sse_decode(deserializer);
+        let mut var_state = <crate::api::store::FileState>::sse_decode(deserializer);
+        return crate::api::store::FileView {
+            name: var_name,
+            size: var_size,
+            mime: var_mime,
+            thumbnail: var_thumbnail,
+            received: var_received,
+            chunks: var_chunks,
+            state: var_state,
         };
     }
 }
@@ -2188,6 +2441,7 @@ impl SseDecode for crate::api::store::MessageKind {
         return match inner {
             0 => crate::api::store::MessageKind::Text,
             1 => crate::api::store::MessageKind::Nudge,
+            2 => crate::api::store::MessageKind::File,
             _ => unreachable!("Invalid variant for MessageKind: {}", inner),
         };
     }
@@ -2224,6 +2478,7 @@ impl SseDecode for crate::api::store::MessageView {
         let mut var_theirReaction = <u32>::sse_decode(deserializer);
         let mut var_canEdit = <bool>::sse_decode(deserializer);
         let mut var_canDeleteForEveryone = <bool>::sse_decode(deserializer);
+        let mut var_file = <Option<crate::api::store::FileView>>::sse_decode(deserializer);
         return crate::api::store::MessageView {
             id: var_id,
             contact_id: var_contactId,
@@ -2240,6 +2495,7 @@ impl SseDecode for crate::api::store::MessageView {
             their_reaction: var_theirReaction,
             can_edit: var_canEdit,
             can_delete_for_everyone: var_canDeleteForEveryone,
+            file: var_file,
         };
     }
 }
@@ -2269,6 +2525,17 @@ impl SseDecode for crate::api::store::NetworkStatus {
             relays: var_relays,
             relay_connected: var_relayConnected,
         };
+    }
+}
+
+impl SseDecode for Option<crate::api::store::FileView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::store::FileView>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
     }
 }
 
@@ -2354,6 +2621,13 @@ impl SseDecode for u32 {
     }
 }
 
+impl SseDecode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u64::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for u8 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -2429,85 +2703,96 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        11 => {
+        11 => wire__crate__api__store__ChirpStore_download_file_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        12 => {
             wire__crate__api__store__ChirpStore_edit_message_impl(port, ptr, rust_vec_len, data_len)
         }
-        12 => wire__crate__api__store__ChirpStore_mark_read_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__store__ChirpStore_messages_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__store__ChirpStore_network_settings_impl(
+        13 => {
+            wire__crate__api__store__ChirpStore_file_bytes_impl(port, ptr, rust_vec_len, data_len)
+        }
+        14 => wire__crate__api__store__ChirpStore_mark_read_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__store__ChirpStore_messages_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__store__ChirpStore_network_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__store__ChirpStore_network_status_impl(
+        17 => wire__crate__api__store__ChirpStore_network_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        16 => wire__crate__api__store__ChirpStore_open_with_key_impl(
+        18 => wire__crate__api__store__ChirpStore_open_with_key_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__store__ChirpStore_open_with_passphrase_impl(
+        19 => wire__crate__api__store__ChirpStore_open_with_passphrase_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__store__ChirpStore_profile_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__store__ChirpStore_react_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__store__ChirpStore_rename_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__api__store__ChirpStore_safety_number_impl(
+        20 => wire__crate__api__store__ChirpStore_profile_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__store__ChirpStore_react_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__store__ChirpStore_rename_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__store__ChirpStore_safety_number_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__store__ChirpStore_search_impl(port, ptr, rust_vec_len, data_len),
-        23 => {
+        24 => wire__crate__api__store__ChirpStore_save_file_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__store__ChirpStore_search_impl(port, ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__store__ChirpStore_send_file_impl(port, ptr, rust_vec_len, data_len),
+        27 => {
             wire__crate__api__store__ChirpStore_send_nudge_impl(port, ptr, rust_vec_len, data_len)
         }
-        24 => wire__crate__api__store__ChirpStore_send_text_impl(port, ptr, rust_vec_len, data_len),
-        25 => wire__crate__api__store__ChirpStore_set_appearance_impl(
+        28 => wire__crate__api__store__ChirpStore_send_text_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__store__ChirpStore_set_appearance_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        26 => wire__crate__api__store__ChirpStore_set_chat_settings_impl(
+        30 => wire__crate__api__store__ChirpStore_set_chat_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        27 => wire__crate__api__store__ChirpStore_set_network_settings_impl(
+        31 => wire__crate__api__store__ChirpStore_set_network_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        28 => {
+        32 => {
             wire__crate__api__store__ChirpStore_set_verified_impl(port, ptr, rust_vec_len, data_len)
         }
-        29 => wire__crate__api__store__ChirpStore_start_network_impl(
+        33 => wire__crate__api__store__ChirpStore_start_network_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        30 => {
+        34 => {
             wire__crate__api__store__ChirpStore_stop_network_impl(port, ptr, rust_vec_len, data_len)
         }
-        31 => wire__crate__api__store__ChirpStore_typing_impl(port, ptr, rust_vec_len, data_len),
-        32 => {
+        35 => wire__crate__api__store__ChirpStore_typing_impl(port, ptr, rust_vec_len, data_len),
+        36 => {
             wire__crate__api__store__ChirpStore_watch_events_impl(port, ptr, rust_vec_len, data_len)
         }
-        34 => wire__crate__api__info__init_core_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__api__store__wipe_store_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__api__info__init_core_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__store__wipe_store_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2520,12 +2805,12 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        33 => wire__crate__api__info__core_info_impl(ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__store__max_message_chars_impl(ptr, rust_vec_len, data_len),
-        36 => wire__crate__api__store__min_passphrase_chars_impl(ptr, rust_vec_len, data_len),
-        37 => wire__crate__api__store__new_store_key_impl(ptr, rust_vec_len, data_len),
-        38 => wire__crate__api__store__reaction_kinds_impl(ptr, rust_vec_len, data_len),
-        39 => wire__crate__api__store__store_state_impl(ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__info__core_info_impl(ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__store__max_message_chars_impl(ptr, rust_vec_len, data_len),
+        40 => wire__crate__api__store__min_passphrase_chars_impl(ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__store__new_store_key_impl(ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__store__reaction_kinds_impl(ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__store__store_state_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2684,7 +2969,8 @@ impl flutter_rust_bridge::IntoDart for crate::error::CoreError {
             Self::TooSoon => 16.into_dart(),
             Self::TooLate => 17.into_dart(),
             Self::InvalidRelay => 18.into_dart(),
-            Self::Storage => 19.into_dart(),
+            Self::InvalidFile => 19.into_dart(),
+            Self::Storage => 20.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2749,11 +3035,55 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::EventKind>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::FileState {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Waiting => 0.into_dart(),
+            Self::Downloading => 1.into_dart(),
+            Self::Done => 2.into_dart(),
+            Self::Failed => 3.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::store::FileState {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::FileState>
+    for crate::api::store::FileState
+{
+    fn into_into_dart(self) -> crate::api::store::FileState {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::FileView {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.name.into_into_dart().into_dart(),
+            self.size.into_into_dart().into_dart(),
+            self.mime.into_into_dart().into_dart(),
+            self.thumbnail.into_into_dart().into_dart(),
+            self.received.into_into_dart().into_dart(),
+            self.chunks.into_into_dart().into_dart(),
+            self.state.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::store::FileView {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::FileView>
+    for crate::api::store::FileView
+{
+    fn into_into_dart(self) -> crate::api::store::FileView {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::store::MessageKind {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
             Self::Text => 0.into_dart(),
             Self::Nudge => 1.into_dart(),
+            Self::File => 2.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2810,6 +3140,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::MessageView {
             self.their_reaction.into_into_dart().into_dart(),
             self.can_edit.into_into_dart().into_dart(),
             self.can_delete_for_everyone.into_into_dart().into_dart(),
+            self.file.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -3058,7 +3389,8 @@ impl SseEncode for crate::error::CoreError {
                 crate::error::CoreError::TooSoon => 16,
                 crate::error::CoreError::TooLate => 17,
                 crate::error::CoreError::InvalidRelay => 18,
-                crate::error::CoreError::Storage => 19,
+                crate::error::CoreError::InvalidFile => 19,
+                crate::error::CoreError::Storage => 20,
                 _ => {
                     unimplemented!("");
                 }
@@ -3098,6 +3430,37 @@ impl SseEncode for crate::api::store::EventKind {
             },
             serializer,
         );
+    }
+}
+
+impl SseEncode for crate::api::store::FileState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::store::FileState::Waiting => 0,
+                crate::api::store::FileState::Downloading => 1,
+                crate::api::store::FileState::Done => 2,
+                crate::api::store::FileState::Failed => 3,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
+impl SseEncode for crate::api::store::FileView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.name, serializer);
+        <u64>::sse_encode(self.size, serializer);
+        <String>::sse_encode(self.mime, serializer);
+        <Vec<u8>>::sse_encode(self.thumbnail, serializer);
+        <u32>::sse_encode(self.received, serializer);
+        <u32>::sse_encode(self.chunks, serializer);
+        <crate::api::store::FileState>::sse_encode(self.state, serializer);
     }
 }
 
@@ -3172,6 +3535,7 @@ impl SseEncode for crate::api::store::MessageKind {
             match self {
                 crate::api::store::MessageKind::Text => 0,
                 crate::api::store::MessageKind::Nudge => 1,
+                crate::api::store::MessageKind::File => 2,
                 _ => {
                     unimplemented!("");
                 }
@@ -3216,6 +3580,7 @@ impl SseEncode for crate::api::store::MessageView {
         <u32>::sse_encode(self.their_reaction, serializer);
         <bool>::sse_encode(self.can_edit, serializer);
         <bool>::sse_encode(self.can_delete_for_everyone, serializer);
+        <Option<crate::api::store::FileView>>::sse_encode(self.file, serializer);
     }
 }
 
@@ -3234,6 +3599,16 @@ impl SseEncode for crate::api::store::NetworkStatus {
         <bool>::sse_encode(self.internet, serializer);
         <u32>::sse_encode(self.relays, serializer);
         <bool>::sse_encode(self.relay_connected, serializer);
+    }
+}
+
+impl SseEncode for Option<crate::api::store::FileView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::store::FileView>::sse_encode(value, serializer);
+        }
     }
 }
 
@@ -3315,6 +3690,13 @@ impl SseEncode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
+    }
+}
+
+impl SseEncode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u64::<NativeEndian>(self).unwrap();
     }
 }
 

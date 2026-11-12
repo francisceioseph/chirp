@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/chirp_app.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';
+import 'package:psito_chirp/src/platform/file_picker.dart';
 import 'package:psito_chirp/src/platform/key_vault.dart';
 
 const testFingerprint = '12345 67890 13579 24680 11223 34455';
@@ -144,6 +145,7 @@ class FakeStore implements ProfileStore {
     String text = '',
     MessageKind kind = MessageKind.text,
     int? replyTo,
+    ChatFile? file,
   }) => _put(
     ChatMessage(
       id: _nextMessage++,
@@ -156,7 +158,8 @@ class FakeStore implements ProfileStore {
       receivedAt: now,
       status: MessageStatus.pending,
       canEdit: outgoing && kind == MessageKind.text,
-      canDeleteForEveryone: outgoing && kind == MessageKind.text,
+      canDeleteForEveryone: outgoing && kind != MessageKind.nudge,
+      file: file,
     ),
   );
 
@@ -173,6 +176,7 @@ class FakeStore implements ProfileStore {
     bool? deleted,
     int? myReaction,
     int? theirReaction,
+    ChatFile? file,
   }) => ChatMessage(
     id: m.id,
     contactId: m.contactId,
@@ -191,6 +195,7 @@ class FakeStore implements ProfileStore {
     canDeleteForEveryone: (deleted ?? m.deleted)
         ? false
         : m.canDeleteForEveryone,
+    file: (deleted ?? m.deleted) ? null : (file ?? m.file),
   );
 
   /// Chega uma mensagem do contato.
@@ -199,6 +204,65 @@ class FakeStore implements ProfileStore {
     _events.add(CoreEvent(CoreEventKind.messages, contactId));
     return m;
   }
+
+  /// O conteúdo de cada arquivo (pelo id da mensagem), e onde cada um foi salvo.
+  final Map<int, Uint8List> fileContents = {};
+  final Map<int, String> savedFiles = {};
+
+  /// Chega um arquivo do contato: [state] diz se já baixou.
+  ChatMessage theySendFile(
+    int contactId,
+    String name, {
+    int size = 2048,
+    FileState state = FileState.downloading,
+    Uint8List? thumbnail,
+    Uint8List? content,
+  }) {
+    final m = _new(
+      contactId,
+      outgoing: false,
+      kind: MessageKind.file,
+      text: name,
+      file: ChatFile(
+        name: name,
+        size: size,
+        mime: _mime(name),
+        thumbnail: thumbnail,
+        chunks: 4,
+        received: state == FileState.done ? 4 : 0,
+        state: state,
+      ),
+    );
+    if (content != null) fileContents[m.id] = content;
+    _events.add(CoreEvent(CoreEventKind.messages, contactId));
+    return m;
+  }
+
+  /// O download anda: [received] de 4 fatias (4 é inteiro).
+  void fileProgress(int id, int received) {
+    final m = _byId(id);
+    _put(
+      _copy(
+        m,
+        file: ChatFile(
+          name: m.file!.name,
+          size: m.file!.size,
+          mime: m.file!.mime,
+          thumbnail: m.file!.thumbnail,
+          chunks: 4,
+          received: received,
+          state: received >= 4 ? FileState.done : FileState.downloading,
+        ),
+      ),
+    );
+    _events.add(CoreEvent(CoreEventKind.messages, m.contactId));
+  }
+
+  static String _mime(String name) => switch (name.split('.').last) {
+    'jpg' || 'jpeg' => 'image/jpeg',
+    'png' => 'image/png',
+    _ => 'application/octet-stream',
+  };
 
   /// O contato chama atenção.
   void theyNudge(int contactId) {
@@ -291,6 +355,59 @@ class FakeStore implements ProfileStore {
     _lastNudge = now;
     return _new(contactId, outgoing: true, kind: MessageKind.nudge);
   }
+
+  @override
+  Future<ChatMessage> sendFile(int contactId, String path) async {
+    _established(contactId);
+    final name = path.split(RegExp(r'[/\\]')).last;
+    if (name.endsWith('.bad')) {
+      throw const CoreException(CoreFailure.invalidFile);
+    }
+    return _new(
+      contactId,
+      outgoing: true,
+      kind: MessageKind.file,
+      text: name,
+      file: ChatFile(name: name, size: 1500, mime: _mime(name)),
+    );
+  }
+
+  /// Quantas vezes pediram para baixar.
+  int downloads = 0;
+
+  @override
+  Future<void> downloadFile(int messageId) async {
+    downloads++;
+    final m = _byId(messageId);
+    final f = m.file!;
+    _put(
+      _copy(
+        m,
+        file: ChatFile(
+          name: f.name,
+          size: f.size,
+          mime: f.mime,
+          thumbnail: f.thumbnail,
+          chunks: f.chunks,
+          state: FileState.downloading,
+        ),
+      ),
+    );
+    _events.add(CoreEvent(CoreEventKind.messages, m.contactId));
+  }
+
+  @override
+  Future<void> saveFile(int messageId, String path) async {
+    if (_byId(messageId).file?.state != FileState.done) {
+      throw const CoreException(CoreFailure.unknownMessage);
+    }
+    savedFiles[messageId] = path;
+  }
+
+  @override
+  Future<Uint8List> fileBytes(int messageId) async =>
+      fileContents[messageId] ??
+      (throw const CoreException(CoreFailure.unknownMessage));
 
   @override
   Future<ChatMessage> editMessage(int id, String text) async {
@@ -550,13 +667,38 @@ Future<void> pumpChirp(
   FakeCore? core,
   FakeVault? vault,
   Color? accent,
+  FilePicker? filePicker,
 }) async {
   await tester.pumpWidget(
     ChirpApp(
       core: core ?? FakeCore(),
       vault: vault ?? FakeVault(),
       systemAccent: accent == null ? null : () async => accent,
+      filePicker: filePicker ?? FakeFilePicker(),
     ),
   );
   await tester.pumpAndSettle();
+}
+
+/// O seletor de arquivos, sem janela: devolve o que o teste mandar.
+class FakeFilePicker implements FilePicker {
+  FakeFilePicker({this.pick, this.save, this.canSave = true});
+
+  String? pick;
+  String? save;
+
+  @override
+  final bool canSave;
+
+  /// Os nomes que o app sugeriu ao salvar.
+  final List<String> suggested = [];
+
+  @override
+  Future<String?> pickFile() async => pick;
+
+  @override
+  Future<String?> saveLocation(String name) async {
+    suggested.add(name);
+    return save;
+  }
 }

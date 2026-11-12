@@ -31,6 +31,7 @@ class Composer extends StatefulWidget {
     this.editing,
     this.onCancel,
     this.onChanged,
+    this.onAttach,
     this.enabled = true,
   });
 
@@ -44,6 +45,9 @@ class Composer extends StatefulWidget {
   final ChatMessage? editing;
   final VoidCallback? onCancel;
   final ValueChanged<String>? onChanged;
+
+  /// Anexar um arquivo (sem isso, o botão não aparece).
+  final VoidCallback? onAttach;
   final bool enabled;
 
   @override
@@ -157,6 +161,13 @@ class _ComposerState extends State<Composer> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  // Editando, só o texto muda: sem anexo.
+                  if (widget.onAttach != null && editing == null)
+                    IconButton(
+                      tooltip: l10n.attachFile,
+                      onPressed: widget.enabled ? widget.onAttach : null,
+                      icon: const Icon(Icons.attach_file),
+                    ),
                   Expanded(
                     child: TextField(
                       controller: widget.text,

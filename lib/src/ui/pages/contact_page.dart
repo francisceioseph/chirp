@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';
+import '../../core/chirp_core.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../molecules/fingerprint_text.dart';
@@ -110,6 +111,8 @@ class _ContactPageState extends State<ContactPage> {
                 title: Text(l10n.reachTitle),
                 subtitle: Text(reachText(l10n, contact.reach)),
               ),
+            if (contact.reach == ContactReach.unreachable)
+              PanelBody(unreachableText(l10n, widget.controller.network)),
           ],
         );
       },

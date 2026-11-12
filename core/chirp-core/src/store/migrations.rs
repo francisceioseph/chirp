@@ -139,6 +139,20 @@ const MIGRATIONS: &[&str] = &[
          announced TEXT NOT NULL
      );
      INSERT INTO network (id, internet, relays, announced) VALUES (1, 0, '', '');",
+    // 6: os arquivos (fase 6). O blob cifrado fica em `files/`, ao lado do banco.
+    "CREATE TABLE files (
+         message   INTEGER PRIMARY KEY REFERENCES messages (id) ON DELETE CASCADE,
+         file_id   BLOB NOT NULL UNIQUE,
+         name      TEXT NOT NULL,
+         size      INTEGER NOT NULL,
+         mime      TEXT NOT NULL,
+         hash      BLOB NOT NULL,
+         key       BLOB NOT NULL,
+         thumbnail BLOB,
+         chunks    INTEGER NOT NULL,
+         received  INTEGER NOT NULL,
+         state     INTEGER NOT NULL
+     );",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {
