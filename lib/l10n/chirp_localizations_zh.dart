@@ -621,4 +621,27 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get notificationChannel => '消息';
+
+  @override
+  String get backgroundTitle => '后台';
+
+  @override
+  String get keepRunning => '关闭窗口后继续接收';
+
+  @override
+  String get keepRunningHelp => 'Psito Chirp 会留在系统托盘中。要完全退出，请使用其菜单中的“退出”。';
+
+  @override
+  String get startAtLogin => '登录时打开';
+
+  @override
+  String get startAtLoginHelp => '启动时隐藏在托盘中。';
+
+  @override
+  String trayOpen(String name) {
+    return '打开 $name';
+  }
+
+  @override
+  String get trayQuit => '退出';
 }

@@ -188,5 +188,12 @@
   "notifyFullHelp": "Текст может появиться и на экране блокировки, если система это позволяет.",
   "notificationNewMessage": "Новое сообщение",
   "notificationOpen": "Открыть",
-  "notificationChannel": "Сообщения"
+  "notificationChannel": "Сообщения",
+  "backgroundTitle": "В фоне",
+  "keepRunning": "Получать сообщения при закрытом окне",
+  "keepRunningHelp": "Psito Chirp остаётся в системном трее. Чтобы выйти совсем, выберите «Выйти» в его меню.",
+  "startAtLogin": "Открывать при входе в систему",
+  "startAtLoginHelp": "Запускается скрытым, в трее.",
+  "trayOpen": "Открыть {name}",
+  "trayQuit": "Выйти"
 }

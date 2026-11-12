@@ -1241,6 +1241,48 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Messages'**
   String get notificationChannel;
+
+  /// No description provided for @backgroundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'In the background'**
+  String get backgroundTitle;
+
+  /// No description provided for @keepRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep receiving with the window closed'**
+  String get keepRunning;
+
+  /// No description provided for @keepRunningHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Psito Chirp stays in the system tray. To quit for good, use Quit in its menu.'**
+  String get keepRunningHelp;
+
+  /// No description provided for @startAtLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Open when you sign in'**
+  String get startAtLogin;
+
+  /// No description provided for @startAtLoginHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'It starts hidden, in the tray.'**
+  String get startAtLoginHelp;
+
+  /// No description provided for @trayOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {name}'**
+  String trayOpen(String name);
+
+  /// No description provided for @trayQuit.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit'**
+  String get trayQuit;
 }
 
 class _ChirpLocalizationsDelegate

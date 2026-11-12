@@ -188,5 +188,12 @@
   "notifyFullHelp": "如果系统允许，文字也可能显示在锁屏上。",
   "notificationNewMessage": "新消息",
   "notificationOpen": "打开",
-  "notificationChannel": "消息"
+  "notificationChannel": "消息",
+  "backgroundTitle": "后台",
+  "keepRunning": "关闭窗口后继续接收",
+  "keepRunningHelp": "Psito Chirp 会留在系统托盘中。要完全退出，请使用其菜单中的“退出”。",
+  "startAtLogin": "登录时打开",
+  "startAtLoginHelp": "启动时隐藏在托盘中。",
+  "trayOpen": "打开 {name}",
+  "trayQuit": "退出"
 }

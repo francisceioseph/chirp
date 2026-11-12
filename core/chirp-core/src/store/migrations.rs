@@ -159,6 +159,8 @@ const MIGRATIONS: &[&str] = &[
          mode INTEGER NOT NULL
      );
      INSERT INTO notifications (id, mode) VALUES (1, 2);",
+    // 8: continuar recebendo com a janela fechada (fase 6), ligado por padrão.
+    "ALTER TABLE notifications ADD COLUMN keep_running INTEGER NOT NULL DEFAULT 1;",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

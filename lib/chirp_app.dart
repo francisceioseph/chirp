@@ -9,6 +9,7 @@ import 'l10n/l10n.dart';
 import 'src/application/appearance_controller.dart';
 import 'src/application/startup_controller.dart';
 import 'src/core/chirp_core.dart';
+import 'src/platform/desktop.dart';
 import 'src/platform/file_picker.dart';
 import 'src/platform/key_vault.dart';
 import 'src/platform/notifier.dart';
@@ -23,6 +24,8 @@ class ChirpApp extends StatefulWidget {
     this.systemAccent,
     this.filePicker = const SystemFilePicker(),
     this.notifier,
+    this.desktop = const NoDesktop(),
+    this.startHidden = false,
   });
 
   final ChirpCore core;
@@ -37,6 +40,13 @@ class ChirpApp extends StatefulWidget {
 
   /// As notificações do sistema; sem ele (os testes de integração), nenhuma.
   final Notifier? notifier;
+
+  /// A bandeja, fechar sem sair e abrir com o computador (no celular, nada).
+  final Desktop desktop;
+
+  /// Aberto com o computador: a janela começa escondida, e só aparece se a abertura
+  /// precisar de quem usa (a senha, o perfil novo, um problema).
+  final bool startHidden;
 
   @override
   State<ChirpApp> createState() => _ChirpAppState();
@@ -53,6 +63,16 @@ class _ChirpAppState extends State<ChirpApp> {
   void initState() {
     super.initState();
     _startup.addListener(_followStore);
+    if (widget.startHidden && widget.desktop.supported) {
+      _startup.addListener(_showIfNeeded);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_startup.state is! StartupLoading &&
+            _startup.state is! StartupReady) {
+          return;
+        }
+        widget.desktop.hide();
+      });
+    }
     _startup.start();
     widget.systemAccent?.call().then(_appearance.setAccent);
   }
@@ -60,9 +80,18 @@ class _ChirpAppState extends State<ChirpApp> {
   /// A aparência mora no banco: segue o que a abertura abriu (ou apagou).
   void _followStore() => _appearance.attach(_startup.store);
 
+  /// Escondida, a janela volta se a abertura parar esperando por quem usa.
+  void _showIfNeeded() {
+    final state = _startup.state;
+    if (state is StartupLoading || state is StartupReady) return;
+    _startup.removeListener(_showIfNeeded);
+    widget.desktop.bringToFront();
+  }
+
   @override
   void dispose() {
     _startup.removeListener(_followStore);
+    _startup.removeListener(_showIfNeeded);
     _startup.dispose();
     _appearance.dispose();
     super.dispose();
@@ -105,7 +134,10 @@ class _ChirpAppState extends State<ChirpApp> {
           supportedLocales: ChirpLocalizations.supportedLocales,
           builder: (context, child) => FilePickerScope(
             picker: widget.filePicker,
-            child: NotifierScope(notifier: widget.notifier, child: child!),
+            child: NotifierScope(
+              notifier: widget.notifier,
+              child: DesktopScope(desktop: widget.desktop, child: child!),
+            ),
           ),
           home: StartupPage(controller: _startup, appearance: _appearance),
         );

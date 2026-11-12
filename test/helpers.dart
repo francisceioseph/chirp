@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/chirp_app.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';
+import 'package:psito_chirp/src/platform/desktop.dart';
 import 'package:psito_chirp/src/platform/file_picker.dart';
 import 'package:psito_chirp/src/platform/key_vault.dart';
 import 'package:psito_chirp/src/platform/notifier.dart';
@@ -104,6 +105,7 @@ class FakeStore implements ProfileStore {
   ChatSettings settings = const ChatSettings(readReceipts: true, typing: true);
   Appearance savedAppearance = const Appearance();
   NotificationMode notifications = NotificationMode.sender;
+  bool running = true;
   NetworkSettings network = const NetworkSettings();
 
   /// Quantas vezes a rede foi religada por mudar os ajustes.
@@ -478,6 +480,12 @@ class FakeStore implements ProfileStore {
       notifications = mode;
 
   @override
+  Future<bool> keepRunning() async => running;
+
+  @override
+  Future<void> setKeepRunning(bool on) async => running = on;
+
+  @override
   Future<NetworkSettings> networkSettings() async => network;
 
   @override
@@ -678,6 +686,8 @@ Future<void> pumpChirp(
   Color? accent,
   FilePicker? filePicker,
   Notifier? notifier,
+  Desktop? desktop,
+  bool startHidden = false,
 }) async {
   await tester.pumpWidget(
     ChirpApp(
@@ -686,9 +696,57 @@ Future<void> pumpChirp(
       systemAccent: accent == null ? null : () async => accent,
       filePicker: filePicker ?? FakeFilePicker(),
       notifier: notifier ?? FakeNotifier(),
+      desktop: desktop ?? const NoDesktop(),
+      startHidden: startHidden,
     ),
   );
   await tester.pumpAndSettle();
+}
+
+/// O desktop, sem janela nem bandeja: guarda o que pediram.
+class FakeDesktop implements Desktop {
+  FakeDesktop({this.canStartAtLogin = true});
+
+  /// O último `setup`: com a bandeja, e os textos dela.
+  ({bool keepRunning, String tooltip, String open, String quit})? tray;
+
+  bool visible = true;
+  int broughtToFront = 0;
+
+  @override
+  final bool canStartAtLogin;
+
+  @override
+  bool startsAtLogin = false;
+
+  @override
+  bool get supported => true;
+
+  @override
+  Future<void> setup({
+    required bool keepRunning,
+    required String tooltip,
+    required String open,
+    required String quit,
+  }) async {
+    tray = (keepRunning: keepRunning, tooltip: tooltip, open: open, quit: quit);
+    if (!keepRunning) visible = true;
+  }
+
+  @override
+  Future<void> bringToFront() async {
+    broughtToFront++;
+    visible = true;
+  }
+
+  @override
+  Future<void> hide() async => visible = false;
+
+  @override
+  bool setStartAtLogin(bool on) {
+    startsAtLogin = on;
+    return true;
+  }
 }
 
 /// As notificações, sem sistema: guarda as que estão na tela.

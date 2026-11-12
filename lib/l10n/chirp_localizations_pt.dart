@@ -650,4 +650,28 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
 
   @override
   String get notificationChannel => 'Mensagens';
+
+  @override
+  String get backgroundTitle => 'Segundo plano';
+
+  @override
+  String get keepRunning => 'Continuar recebendo com a janela fechada';
+
+  @override
+  String get keepRunningHelp =>
+      'O Psito Chirp fica na bandeja do sistema. Para sair de vez, use Sair no menu dele.';
+
+  @override
+  String get startAtLogin => 'Abrir ao entrar no computador';
+
+  @override
+  String get startAtLoginHelp => 'Ele começa escondido, na bandeja.';
+
+  @override
+  String trayOpen(String name) {
+    return 'Abrir o $name';
+  }
+
+  @override
+  String get trayQuit => 'Sair';
 }

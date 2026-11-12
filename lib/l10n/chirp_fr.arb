@@ -188,5 +188,12 @@
   "notifyFullHelp": "Le texte peut aussi apparaître sur l'écran verrouillé, si le système le permet.",
   "notificationNewMessage": "Nouveau message",
   "notificationOpen": "Ouvrir",
-  "notificationChannel": "Messages"
+  "notificationChannel": "Messages",
+  "backgroundTitle": "En arrière-plan",
+  "keepRunning": "Continuer à recevoir avec la fenêtre fermée",
+  "keepRunningHelp": "Psito Chirp reste dans la zone de notification. Pour quitter vraiment, utilisez Quitter dans son menu.",
+  "startAtLogin": "Ouvrir à la connexion",
+  "startAtLoginHelp": "Il démarre caché, dans la zone de notification.",
+  "trayOpen": "Ouvrir {name}",
+  "trayQuit": "Quitter"
 }

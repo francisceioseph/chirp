@@ -893,6 +893,15 @@ impl ChirpStore {
         )
     }
 
+    /// Continuar recebendo com a janela fechada (no desktop, na bandeja).
+    pub fn keep_running(&self) -> Result<bool, CoreError> {
+        notifications::keep_running(self.lock()?.conn())
+    }
+
+    pub fn set_keep_running(&self, on: bool) -> Result<(), CoreError> {
+        notifications::set_keep_running(self.lock()?.conn(), on)
+    }
+
     pub fn appearance(&self) -> Result<AppearanceView, CoreError> {
         let a = appearance::get(self.lock()?.conn())?;
         Ok(AppearanceView {

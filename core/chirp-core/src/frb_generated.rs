@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 438802245;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 747246730;
 
 // Section: executor
 
@@ -697,6 +697,55 @@ fn wire__crate__api__store__ChirpStore_file_bytes_impl(
                         &*api_that_guard,
                         api_message_id,
                     )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__store__ChirpStore_keep_running_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_keep_running",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::ChirpStore::keep_running(&*api_that_guard)?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -1608,6 +1657,57 @@ fn wire__crate__api__store__ChirpStore_set_chat_settings_impl(
                         &*api_that_guard,
                         api_settings,
                     )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__store__ChirpStore_set_keep_running_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "ChirpStore_set_keep_running",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ChirpStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_on = <bool>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::CoreError>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok =
+                        crate::api::store::ChirpStore::set_keep_running(&*api_that_guard, api_on)?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -2832,96 +2932,105 @@ fn pde_ffi_dispatcher_primary_impl(
         13 => {
             wire__crate__api__store__ChirpStore_file_bytes_impl(port, ptr, rust_vec_len, data_len)
         }
-        14 => wire__crate__api__store__ChirpStore_mark_read_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__store__ChirpStore_messages_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__store__ChirpStore_network_settings_impl(
+        14 => {
+            wire__crate__api__store__ChirpStore_keep_running_impl(port, ptr, rust_vec_len, data_len)
+        }
+        15 => wire__crate__api__store__ChirpStore_mark_read_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__store__ChirpStore_messages_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__store__ChirpStore_network_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__store__ChirpStore_network_status_impl(
+        18 => wire__crate__api__store__ChirpStore_network_status_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__store__ChirpStore_notification_mode_impl(
+        19 => wire__crate__api__store__ChirpStore_notification_mode_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__store__ChirpStore_open_with_key_impl(
+        20 => wire__crate__api__store__ChirpStore_open_with_key_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        20 => wire__crate__api__store__ChirpStore_open_with_passphrase_impl(
+        21 => wire__crate__api__store__ChirpStore_open_with_passphrase_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        21 => wire__crate__api__store__ChirpStore_profile_impl(port, ptr, rust_vec_len, data_len),
-        22 => wire__crate__api__store__ChirpStore_react_impl(port, ptr, rust_vec_len, data_len),
-        23 => wire__crate__api__store__ChirpStore_rename_impl(port, ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__store__ChirpStore_safety_number_impl(
+        22 => wire__crate__api__store__ChirpStore_profile_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__store__ChirpStore_react_impl(port, ptr, rust_vec_len, data_len),
+        24 => wire__crate__api__store__ChirpStore_rename_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__api__store__ChirpStore_safety_number_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        25 => wire__crate__api__store__ChirpStore_save_file_impl(port, ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__store__ChirpStore_search_impl(port, ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__store__ChirpStore_send_file_impl(port, ptr, rust_vec_len, data_len),
-        28 => {
+        26 => wire__crate__api__store__ChirpStore_save_file_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__api__store__ChirpStore_search_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__store__ChirpStore_send_file_impl(port, ptr, rust_vec_len, data_len),
+        29 => {
             wire__crate__api__store__ChirpStore_send_nudge_impl(port, ptr, rust_vec_len, data_len)
         }
-        29 => wire__crate__api__store__ChirpStore_send_text_impl(port, ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__store__ChirpStore_set_appearance_impl(
+        30 => wire__crate__api__store__ChirpStore_send_text_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__store__ChirpStore_set_appearance_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__store__ChirpStore_set_chat_settings_impl(
+        32 => wire__crate__api__store__ChirpStore_set_chat_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        32 => wire__crate__api__store__ChirpStore_set_network_settings_impl(
+        33 => wire__crate__api__store__ChirpStore_set_keep_running_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        33 => wire__crate__api__store__ChirpStore_set_notification_mode_impl(
+        34 => wire__crate__api__store__ChirpStore_set_network_settings_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        34 => {
-            wire__crate__api__store__ChirpStore_set_verified_impl(port, ptr, rust_vec_len, data_len)
-        }
-        35 => wire__crate__api__store__ChirpStore_start_network_impl(
+        35 => wire__crate__api__store__ChirpStore_set_notification_mode_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
         36 => {
+            wire__crate__api__store__ChirpStore_set_verified_impl(port, ptr, rust_vec_len, data_len)
+        }
+        37 => wire__crate__api__store__ChirpStore_start_network_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        38 => {
             wire__crate__api__store__ChirpStore_stop_network_impl(port, ptr, rust_vec_len, data_len)
         }
-        37 => wire__crate__api__store__ChirpStore_typing_impl(port, ptr, rust_vec_len, data_len),
-        38 => {
+        39 => wire__crate__api__store__ChirpStore_typing_impl(port, ptr, rust_vec_len, data_len),
+        40 => {
             wire__crate__api__store__ChirpStore_watch_events_impl(port, ptr, rust_vec_len, data_len)
         }
-        40 => wire__crate__api__info__init_core_impl(port, ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__store__wipe_store_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__info__init_core_impl(port, ptr, rust_vec_len, data_len),
+        48 => wire__crate__api__store__wipe_store_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2934,12 +3043,12 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        39 => wire__crate__api__info__core_info_impl(ptr, rust_vec_len, data_len),
-        41 => wire__crate__api__store__max_message_chars_impl(ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__store__min_passphrase_chars_impl(ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__store__new_store_key_impl(ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__store__reaction_kinds_impl(ptr, rust_vec_len, data_len),
-        45 => wire__crate__api__store__store_state_impl(ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__info__core_info_impl(ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__store__max_message_chars_impl(ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__store__min_passphrase_chars_impl(ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__store__new_store_key_impl(ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__store__reaction_kinds_impl(ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__store__store_state_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }

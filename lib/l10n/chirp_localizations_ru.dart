@@ -655,4 +655,28 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get notificationChannel => 'Сообщения';
+
+  @override
+  String get backgroundTitle => 'В фоне';
+
+  @override
+  String get keepRunning => 'Получать сообщения при закрытом окне';
+
+  @override
+  String get keepRunningHelp =>
+      'Psito Chirp остаётся в системном трее. Чтобы выйти совсем, выберите «Выйти» в его меню.';
+
+  @override
+  String get startAtLogin => 'Открывать при входе в систему';
+
+  @override
+  String get startAtLoginHelp => 'Запускается скрытым, в трее.';
+
+  @override
+  String trayOpen(String name) {
+    return 'Открыть $name';
+  }
+
+  @override
+  String get trayQuit => 'Выйти';
 }

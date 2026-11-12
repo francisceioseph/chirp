@@ -311,5 +311,19 @@
   "notifyFullHelp": "The text can also show on the lock screen, if the system allows.",
   "notificationNewMessage": "New message",
   "notificationOpen": "Open",
-  "notificationChannel": "Messages"
+  "notificationChannel": "Messages",
+  "backgroundTitle": "In the background",
+  "keepRunning": "Keep receiving with the window closed",
+  "keepRunningHelp": "Psito Chirp stays in the system tray. To quit for good, use Quit in its menu.",
+  "startAtLogin": "Open when you sign in",
+  "startAtLoginHelp": "It starts hidden, in the tray.",
+  "trayOpen": "Open {name}",
+  "trayQuit": "Quit",
+  "@trayOpen": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

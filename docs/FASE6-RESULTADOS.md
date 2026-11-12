@@ -62,7 +62,35 @@ O que a fase 6 do `docs/PLANO.md` (seção 13, com a 6.7 e a 9) pediu, o que foi
 
 - No Linux, o plugin não tem o "o app abriu por uma notificação", e o erro derrubava a preparação inteira: nenhuma notificação aparecia. O teste de integração passava mesmo assim, porque o erro era engolido. Agora o `init` diz se deu certo, e o teste confere.
 
-### Falta (das notificações e do segundo plano)
+### Falta (das notificações)
 
-- No desktop, o clique abre a conversa, mas não traz a janela para a frente.
-- A bandeja no desktop, iniciar com o sistema e o serviço em primeiro plano no Android, para receber com a janela fechada.
+- O que ficou para o segundo plano, na parte 3.
+
+## Parte 3: segundo plano no desktop
+
+### Feito
+
+- **Núcleo** (migração 8): o "continuar recebendo com a janela fechada", ligado por padrão, ao lado do modo das notificações.
+- **App** (`platform/desktop.dart`, pelo `nativeapi`, a base do `tray_manager` e do `window_manager`, usada direto):
+  - o ícone na bandeja, com "Abrir o Psito Chirp" e "Sair". No Linux, é o StatusNotifierItem pelo D-Bus, sem o AppIndicator: nada a mais para instalar, e nada de GPL;
+  - fechar a janela só esconde, e o nó continua recebendo; o "Sair" da bandeja sai de vez. Desligado, fechar sai, como antes;
+  - abrir ao entrar no computador (o `.desktop` em `~/.config/autostart` no Linux, a chave `Run` no Windows, o `SMAppService` no macOS), já escondido, na bandeja. Se a abertura precisar de quem usa (a senha, o perfil novo, um problema), a janela aparece; sem a bandeja, também;
+  - o clique na notificação traz a janela para a frente;
+  - o cartão "Segundo plano" no perfil, só no desktop;
+  - 7 textos novos nos sete idiomas.
+
+### Conferido
+
+- Rust: 104 testes, `clippy` e `fmt`.
+- Dart: 228 testes. O `desktop_test`: a bandeja ao abrir com os textos do idioma, desligar e religar, abrir ao entrar (e sem o sistema deixar), o cartão só no desktop, começar escondido (e aparecer se a abertura precisar, ou sem a bandeja), a notificação que traz a janela, e o cartão em 240×160 e 320×568.
+- `integration_test/desktop_test.dart`: no Linux de verdade, o ícone aparece no StatusNotifierWatcher da sessão, e a janela esconde e volta.
+
+### Revisão
+
+- O `tray_manager` e o `window_manager` novos são uma camada de compatibilidade (obsoleta) sobre o `nativeapi`; o app fala com o `nativeapi` direto. O `launch_at_startup` brigava com o `flutter_secure_storage` pela versão do `win32`, e o `nativeapi` já tem o abrir com o computador.
+- Com a janela escondida não há quadros: um `pump` no teste esperava para sempre. O teste espera pelo relógio.
+
+### Falta
+
+- Android: receber com o app fechado pede um serviço em primeiro plano, mas quando o sistema fecha a tela, o isolate do Dart vai junto, e as notificações são feitas nele. Ou o núcleo em Rust passa a notificar sozinho, ou o serviço sobe um isolate próprio com o banco. Fica para uma parte própria, com o desenho antes.
+- O teste de abrir com o computador no sistema de verdade (grava na conta de quem testa).

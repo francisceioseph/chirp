@@ -19,12 +19,14 @@ import 'package:flutter/services.dart';
 import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';
 import '../../core/chirp_core.dart';
+import '../../platform/desktop.dart';
 import '../../platform/notifier.dart';
 import '../atoms/chirp_app_bar.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../failure_text.dart';
 import '../molecules/conversation_tile.dart';
+import '../organisms/background_card.dart';
 import '../notification_text.dart';
 import '../templates/centered_panel.dart';
 import '../templates/shell_template.dart';
@@ -85,9 +87,16 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
+  Desktop? _desktop;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final desktop = DesktopScope.of(context);
+    if (desktop != _desktop) {
+      _desktop = desktop;
+      if (desktop.supported) setUpDesktop(context, _controller.store, desktop);
+    }
     final notifier = NotifierScope.of(context);
     if (notifier == _notifier) return;
     _taps?.cancel();
@@ -149,6 +158,7 @@ class _ContactsPageState extends State<ContactsPage> {
 
   void _openFromNotification(int contactId) {
     if (!mounted || _controller.byId(contactId) == null) return;
+    _desktop?.bringToFront();
     Navigator.of(context).popUntil((route) => route.isFirst);
     _openConversation(contactId);
   }

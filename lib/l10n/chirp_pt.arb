@@ -188,5 +188,12 @@
   "notifyFullHelp": "O texto pode aparecer também na tela bloqueada, se o sistema deixar.",
   "notificationNewMessage": "Nova mensagem",
   "notificationOpen": "Abrir",
-  "notificationChannel": "Mensagens"
+  "notificationChannel": "Mensagens",
+  "backgroundTitle": "Segundo plano",
+  "keepRunning": "Continuar recebendo com a janela fechada",
+  "keepRunningHelp": "O Psito Chirp fica na bandeja do sistema. Para sair de vez, use Sair no menu dele.",
+  "startAtLogin": "Abrir ao entrar no computador",
+  "startAtLoginHelp": "Ele começa escondido, na bandeja.",
+  "trayOpen": "Abrir o {name}",
+  "trayQuit": "Sair"
 }

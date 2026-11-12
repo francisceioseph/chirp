@@ -648,4 +648,28 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
 
   @override
   String get notificationChannel => 'Messages';
+
+  @override
+  String get backgroundTitle => 'In the background';
+
+  @override
+  String get keepRunning => 'Keep receiving with the window closed';
+
+  @override
+  String get keepRunningHelp =>
+      'Psito Chirp stays in the system tray. To quit for good, use Quit in its menu.';
+
+  @override
+  String get startAtLogin => 'Open when you sign in';
+
+  @override
+  String get startAtLoginHelp => 'It starts hidden, in the tray.';
+
+  @override
+  String trayOpen(String name) {
+    return 'Open $name';
+  }
+
+  @override
+  String get trayQuit => 'Quit';
 }

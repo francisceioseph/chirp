@@ -188,5 +188,12 @@
   "notifyFullHelp": "El texto también puede aparecer en la pantalla de bloqueo, si el sistema lo permite.",
   "notificationNewMessage": "Nuevo mensaje",
   "notificationOpen": "Abrir",
-  "notificationChannel": "Mensajes"
+  "notificationChannel": "Mensajes",
+  "backgroundTitle": "En segundo plano",
+  "keepRunning": "Seguir recibiendo con la ventana cerrada",
+  "keepRunningHelp": "Psito Chirp se queda en la bandeja del sistema. Para salir del todo, usa Salir en su menú.",
+  "startAtLogin": "Abrir al iniciar sesión",
+  "startAtLoginHelp": "Empieza oculto, en la bandeja.",
+  "trayOpen": "Abrir {name}",
+  "trayQuit": "Salir"
 }

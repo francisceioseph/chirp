@@ -1,6 +1,8 @@
 //! O que as notificações mostram: nada, só "Nova mensagem", o nome de quem mandou,
 //! ou o nome e o texto. O padrão é o nome sem o texto: o que a pessoa escreveu só
 //! sai do app para a tela do sistema (e para a tela bloqueada) se quem usa pedir.
+//!
+//! Junto, o continuar recebendo com a janela fechada (a bandeja, no desktop).
 
 use rusqlite::Connection;
 
@@ -56,6 +58,23 @@ pub fn set(conn: &Connection, mode: Mode) -> CoreResult<()> {
     Ok(())
 }
 
+/// Continuar recebendo com a janela fechada (no desktop, na bandeja).
+pub fn keep_running(conn: &Connection) -> CoreResult<bool> {
+    Ok(conn.query_row(
+        "SELECT keep_running FROM notifications WHERE id = 1",
+        [],
+        |r| r.get(0),
+    )?)
+}
+
+pub fn set_keep_running(conn: &Connection, on: bool) -> CoreResult<()> {
+    conn.execute(
+        "UPDATE notifications SET keep_running = ?1 WHERE id = 1",
+        [on],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -78,6 +97,14 @@ mod tests {
             set(&conn, mode).unwrap();
             assert_eq!(get(&conn).unwrap(), mode);
         }
+    }
+
+    #[test]
+    fn keeps_running_by_default_until_told_not_to() {
+        let conn = conn();
+        assert!(keep_running(&conn).unwrap());
+        set_keep_running(&conn, false).unwrap();
+        assert!(!keep_running(&conn).unwrap());
     }
 
     #[test]

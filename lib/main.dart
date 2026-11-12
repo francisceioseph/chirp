@@ -7,11 +7,12 @@ import 'package:flutter/material.dart';
 import 'chirp_app.dart';
 import 'src/core/chirp_core.dart';
 import 'src/logging.dart';
+import 'src/platform/desktop.dart';
 import 'src/platform/key_vault.dart';
 import 'src/platform/notifier.dart';
 import 'src/platform/system_accent.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   silenceLogsInRelease();
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
@@ -20,6 +21,8 @@ Future<void> main() async {
       vault: SystemKeyVault(),
       systemAccent: readSystemAccent,
       notifier: SystemNotifier(),
+      desktop: SystemDesktop.create(),
+      startHidden: args.contains(startHiddenArg),
     ),
   );
 }

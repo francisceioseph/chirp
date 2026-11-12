@@ -76,6 +76,9 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// O arquivo em claro, na memória, para mostrar uma foto (até 32 MiB).
   Future<Uint8List> fileBytes({required PlatformInt64 messageId});
 
+  /// Continuar recebendo com a janela fechada (no desktop, na bandeja).
+  Future<bool> keepRunning();
+
   /// Li a conversa: marca e manda o recibo, se ligado.
   Future<void> markRead({required PlatformInt64 contactId});
 
@@ -151,6 +154,8 @@ abstract class ChirpStore implements RustOpaqueInterface {
   Future<void> setAppearance({required AppearanceView appearance});
 
   Future<void> setChatSettings({required ChatSettings settings});
+
+  Future<void> setKeepRunning({required bool on_});
 
   /// Grava a internet e os retransmissores (conferidos) e, se o nó está ligado,
   /// religa com eles. Devolve o que ficou gravado.

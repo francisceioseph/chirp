@@ -188,5 +188,12 @@
   "notifyFullHelp": "Der Text kann auch auf dem Sperrbildschirm erscheinen, wenn das System es erlaubt.",
   "notificationNewMessage": "Neue Nachricht",
   "notificationOpen": "Öffnen",
-  "notificationChannel": "Nachrichten"
+  "notificationChannel": "Nachrichten",
+  "backgroundTitle": "Im Hintergrund",
+  "keepRunning": "Bei geschlossenem Fenster weiter empfangen",
+  "keepRunningHelp": "Psito Chirp bleibt im Infobereich. Zum endgültigen Beenden nutze Beenden in seinem Menü.",
+  "startAtLogin": "Beim Anmelden öffnen",
+  "startAtLoginHelp": "Es startet versteckt im Infobereich.",
+  "trayOpen": "{name} öffnen",
+  "trayQuit": "Beenden"
 }

@@ -481,6 +481,11 @@ abstract interface class ProfileStore {
   Future<NotificationMode> notificationMode();
 
   Future<void> setNotificationMode(NotificationMode mode);
+
+  /// Continuar recebendo com a janela fechada (no desktop, na bandeja).
+  Future<bool> keepRunning();
+
+  Future<void> setKeepRunning(bool on);
 }
 
 /// O núcleo de verdade, pela ponte.
@@ -774,6 +779,13 @@ class _BridgeStore implements ProfileStore {
       mode: bridge.NotificationMode.values[mode.index],
     ),
   );
+
+  @override
+  Future<bool> keepRunning() => _guardAsync(_store.keepRunning);
+
+  @override
+  Future<void> setKeepRunning(bool on) =>
+      _guardAsync(() => _store.setKeepRunning(on_: on));
 
   @override
   Future<Appearance> appearance() => _guardAsync(() async {

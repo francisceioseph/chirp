@@ -19,18 +19,21 @@ dependencies:
   flutter_rust_bridge: 2.13.0
   flutter_secure_storage: ^11.2.0
   intl: any
+  nativeapi: ^0.5.10
+  nativeapi_flutter: ^0.5.10
   path_provider: ^2.1.6
   qr_flutter: ^4.1.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   integration_test:
     sdk: flutter
+  dbus: ^0.8.0
 
 flutter:
   generate: true
   uses-material-design: true
   assets:
     - assets/images/chirp_icon.svg
+    - assets/images/tray.png
