@@ -1553,6 +1553,102 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'The link works only once and expires in 24 hours. Don\'t leave it anywhere public.'**
   String get pasteTip;
+
+  /// No description provided for @statusInMailbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting in their mailbox'**
+  String get statusInMailbox;
+
+  /// No description provided for @mailboxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailbox'**
+  String get mailboxTitle;
+
+  /// No description provided for @mailboxHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A mailbox is a small server of your own, or of someone you trust, that keeps what your contacts send while this device is off, until you open Chirp. Messages arrive there already encrypted: it sees who leaves something and when, never what. Files still need you both online.'**
+  String get mailboxHelp;
+
+  /// No description provided for @mailboxCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailbox code'**
+  String get mailboxCode;
+
+  /// No description provided for @mailboxCodeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Run chirp-mailbox pair on the server and paste the code it shows. It works once, for 24 hours.'**
+  String get mailboxCodeHelp;
+
+  /// No description provided for @mailboxPair.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get mailboxPair;
+
+  /// No description provided for @mailboxPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailbox linked'**
+  String get mailboxPaired;
+
+  /// No description provided for @mailboxStatusWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked yet.'**
+  String get mailboxStatusWaiting;
+
+  /// No description provided for @mailboxStatusChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Last checked {time}.'**
+  String mailboxStatusChecked(String time);
+
+  /// No description provided for @mailboxStatusUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'The mailbox did not answer. Messages for you may wait with your contacts.'**
+  String get mailboxStatusUnreachable;
+
+  /// No description provided for @mailboxUnpair.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get mailboxUnpair;
+
+  /// No description provided for @mailboxUnpairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink the mailbox?'**
+  String get mailboxUnpairTitle;
+
+  /// No description provided for @mailboxUnpairBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Whatever is waiting in it is lost, and your contacts stop leaving messages there. You can link it again with a new code.'**
+  String get mailboxUnpairBody;
+
+  /// No description provided for @mailboxInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That code does not work. Paste the whole chirp://mailbox# link.'**
+  String get mailboxInvalid;
+
+  /// No description provided for @mailboxRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The mailbox refused the code. It works only once and expires in 24 hours: make a new one.'**
+  String get mailboxRefused;
+
+  /// No description provided for @mailboxUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the mailbox. With the internet off, only a mailbox on the local network works.'**
+  String get mailboxUnreachable;
 }
 
 class _ChirpLocalizationsDelegate

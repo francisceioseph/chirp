@@ -240,5 +240,21 @@
   "pasteStep1": "Pide el enlace a la otra persona, por donde ya hablan.",
   "pasteStep2": "Pégalo aquí. Chirp la busca en la red local, o en internet si está activado.",
   "pasteStep3": "Entra como no verificado: comprueben el código de seguridad cuando se vean.",
-  "pasteTip": "El enlace solo sirve una vez y caduca en 24 horas. No lo dejes en un lugar público."
+  "pasteTip": "El enlace solo sirve una vez y caduca en 24 horas. No lo dejes en un lugar público.",
+  "statusInMailbox": "Esperando en su buzón",
+  "mailboxTitle": "Buzón",
+  "mailboxHelp": "El buzón es un pequeño servidor tuyo, o de alguien de confianza, que guarda lo que tus contactos envían mientras este dispositivo está apagado, hasta que abras Chirp. Los mensajes llegan ya cifrados: ve quién deja algo y cuándo, nunca qué. Los archivos aún necesitan a los dos en línea.",
+  "mailboxCode": "Código del buzón",
+  "mailboxCodeHelp": "Ejecuta chirp-mailbox pair en el servidor y pega el código que muestra. Sirve una vez, durante 24 horas.",
+  "mailboxPair": "Vincular",
+  "mailboxPaired": "Buzón vinculado",
+  "mailboxStatusWaiting": "Aún no se ha revisado.",
+  "mailboxStatusChecked": "Revisado por última vez {time}.",
+  "mailboxStatusUnreachable": "El buzón no respondió. Los mensajes para ti pueden esperar con tus contactos.",
+  "mailboxUnpair": "Desvincular",
+  "mailboxUnpairTitle": "¿Desvincular el buzón?",
+  "mailboxUnpairBody": "Lo que esté esperando en él se pierde, y tus contactos dejan de enviar allí. Puedes vincularlo de nuevo con otro código.",
+  "mailboxInvalid": "Ese código no sirve. Pega el enlace chirp://mailbox# completo.",
+  "mailboxRefused": "El buzón rechazó el código. Sirve una sola vez y caduca en 24 horas: genera otro.",
+  "mailboxUnreachable": "No se pudo contactar con el buzón. Con internet apagado, solo funciona un buzón en la red local."
 }

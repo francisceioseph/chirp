@@ -73,7 +73,7 @@ Content { bytes message_id = 1 (16 aleatórios);
                        Receipt receipt = 5; Edit edit = 6; Delete delete = 7;
                        Reaction reaction = 8; Typing typing = 9; Nudge nudge = 10;
                        PeerProfile profile = 11; Peer addrs = 12;
-                       FileOffer file = 16; };
+                       FileOffer file = 16; MailboxInfo mailbox = 17; };
           uint64 sent_at = 13 (ms, relógio de quem manda, só para mostrar);
           uint64 lamport = 14 (a ordem na conversa);
           bytes padding = 15; }
@@ -85,7 +85,8 @@ Peer     { bytes endpoint_id = 1; repeated string addrs = 2; bytes discovery_key
          // quem recebe (`network::clean_addrs`); o resto é descartado.
          // No `addrs = 12` (os endereços mudaram), só o addrs vale.
 Text     { string text = 1; bytes reply_to = 2 (o message_id citado, ou vazio); }
-Receipt  { repeated bytes read = 1 (até 256 message_ids lidos); }
+Receipt  { repeated bytes read = 1 (até 256 message_ids lidos);
+           repeated bytes delivered = 2 (até 256 que chegaram pela caixa postal, fase 7); }
 Edit     { bytes target = 1; string text = 2; }
 Delete   { bytes target = 1; }
 Reaction { bytes target = 1; uint32 kind = 2 (1 a 6; 0 tira); }
@@ -93,6 +94,10 @@ Typing   {}
 Nudge    {}
 FileOffer { bytes file_id = 1 (16); string name = 2; uint64 size = 3; string mime = 4;
             bytes hash = 5 (BLAKE3, 32); bytes key = 6 (32); bytes thumbnail = 7 (JPEG ou vazio); }
+MailboxInfo { bytes endpoint_id = 1 (32, o nó da caixa); repeated string addrs = 2;
+              bytes drop = 3 (32, a ficha deste contato); }
+            // Tudo vazio: a caixa foi desligada. Fora disso, um campo de tamanho errado
+            // faz o conteúdo ser ignorado. Os addrs passam pelo `network::clean_addrs`.
 ```
 
 O conteúdo é preenchido até o próximo degrau (256 B, 1 KiB, 4 KiB, 16 KiB, 60 KiB), para o tamanho cifrado não dizer o que é.
@@ -168,6 +173,48 @@ Um contato que conecta mostra também de onde fala: o endereço vai para a frent
 - As fatias vão numa conexão de contato (o ALPN `chirp/1`): o primeiro frame é um `FileRequest` com o `from` (a primeira fatia que falta), e a resposta é um `FileChunk` por fatia, na ordem. Quem serve só responde por um arquivo que ofereceu **àquele** contato; qualquer outro pedido é um `Refused`, sem motivo. Quem baixa confere cada fatia (o índice, o tamanho e a etiqueta do AES-GCM) antes de gravar, e retoma de onde parou numa próxima conexão.
 - Fotos (JPEG e PNG) são decodificadas e codificadas de novo antes de sair: o EXIF (com a localização) não passa, e a rotação dele é aplicada antes. Uma foto que não se decodifica não sai. A miniatura é um JPEG de até 320 px, feito no aparelho de quem manda.
 
+## A caixa postal (fase 7, ALPN `chirp-mailbox/1`)
+
+Um servidor de quem usa (o binário `chirp-mailbox`, `core/chirp-mailbox/`), que guarda o que os contatos não conseguiram entregar direto. Não tem chave de nada: guarda o mesmo `Frame` que iria pela conexão, já cifrado pela sessão do Signal.
+
+**Ligar** (dono e caixa): `chirp-mailbox pair` cria um código de uso único, que vale 24 horas, e mostra o link:
+
+```
+chirp://mailbox#<base64url sem preenchimento de>
+versão (1, = 1) || nó da caixa (32) || código (32) ||
+n (1, até 8) || n × [ 4 || IPv4 (4) || porta (2)  |  6 || IPv6 (16) || porta (2) ] ||
+[ m (1, de 1 a 200) || retransmissor (m, URL em UTF-8) ]
+```
+
+O app conecta ao nó do link e manda `Pair { token }`. A caixa guarda só o SHA-256 do código e apaga ao usar; o dono passa a ser o nó da conexão (o TLS do QUIC autentica). Qualquer byte fora do lugar no link recusa tudo.
+
+**Frames** (`tamanho (u32, big-endian) || Frame`, até 64 KiB + 1 KiB, versão 1, um stream bidirecional por conexão):
+
+```
+Frame { version = 1; oneof body {
+  Pair pair = 2;          // { bytes token = 1 }                 qualquer um
+  Done done = 3;          // {}                                  a resposta de sucesso
+  Refused refused = 4;    // {}                                  sem motivo
+  SetDrops set_drops = 5; // { repeated bytes hashes = 1 }       só o dono; troca todas
+  Deposit deposit = 6;    // { bytes drop = 1; bytes envelope = 2 }   quem tem uma ficha
+  Fetch fetch = 7;        // { uint64 after = 1 }                só o dono: os Item, e um Done
+  Item item = 8;          // { uint64 seq = 1; bytes drop = 2 (o SHA-256); bytes envelope = 3;
+                          //   uint64 stored_at = 4 }
+  Remove remove = 9;      // { uint64 up_to = 1 }                só o dono: apaga até o seq
+  Unpair unpair = 10;     // {}                                  só o dono: esquece tudo
+}}
+```
+
+**As fichas**: cada contato estabelecido ganha uma ficha de 32 bytes aleatórios (`contacts.drop_token`), mandada pela sessão num `MailboxInfo`, com o nó e os endereços da caixa. A caixa recebe só o SHA-256 delas (`SetDrops`, quando o conjunto muda) e devolve o SHA-256 em cada `Item`: o dono sabe de que contato veio, e decifra com a sessão **daquele** contato. O que não decifra é descartado, então a caixa não consegue se passar por ninguém.
+
+**Mandar**: quando a conexão a um contato falha (`Unreachable`) e ele tem caixa, o nó joga fora o "digitando" e deposita a caixa de saída dele, na ordem, um `Deposit` por envelope. Cada `Done` tira o envelope da caixa de saída e marca a mensagem como "na caixa postal" (`messages.in_mailbox`). Um `Refused` (cheia, ficha que não vale) para e deixa o resto na caixa de saída.
+
+**Receber**: ao ligar o nó, a cada 60 segundos e quando um contato novo fecha o aperto de mão, o nó avisa os contatos que ainda não sabem da caixa (`contacts.mailbox_told`), manda o `SetDrops` se as fichas mudaram e busca: `Fetch { after }`, abre cada `Item` como se tivesse chegado direto (`messages::receive_from`) e manda `Remove` até o último lido. Uma falha do banco para antes e deixa o resto na caixa. Para o que é da conversa (texto, atenção, arquivo), um `Receipt.delivered` volta pela sessão: quem mandou passa de "na caixa postal" a "entregue".
+
+**Desligar**: o app manda `Unpair` (se a caixa atender), apaga a caixa do banco e manda um `MailboxInfo` vazio a quem sabia dela.
+
+**Os limites da caixa** (`Limits`): 20 mil envelopes e 256 MiB no total, 2 mil por ficha, 30 dias guardados, 4096 fichas por dono, 256 itens por `Fetch`. Os arquivos não passam pela caixa: a oferta vai, e as fatias continuam pedindo os dois online.
+
 ## A descoberta na rede local (mDNS)
 
 O serviço é `_chirp._udp.local.`, e o anúncio **não leva id fixo nem nome**. O nome da instância e o do host são um token de época:
@@ -207,4 +254,6 @@ Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._
 - `node::tests` (fase 5): com um retransmissor de verdade (o do `iroh::test_utils`), dois nós que não sabem nenhum IP um do outro viram contatos pelo convite só com o retransmissor, e uma mensagem só pelo retransmissor chega e volta o "entregue". Com a internet desligada, um contato só com IP público e retransmissor nem é tentado, e fica "fora de alcance"; e o nó não anuncia nada público.
 - `node::tests`: mensagens nos dois sentidos com os recibos, sobre QUIC de verdade, e a fila de quem estava desligado, entregue na ordem quando ele volta. E um contato que "mudou de endereço" (porta nova, e os dois com o endereço errado um do outro), achado só pelo mDNS: com o mDNS desligado, o mesmo teste falha.
 - `discovery::tests`: o token muda com a época e com a chave, os vetores, as épocas vizinhas, um estranho que não casa com ninguém e os endereços que servem.
+- `chirp_mailbox` (fase 7): o frame que vai e volta, o grande demais e a versão errada; o link em cada corte e com um byte a mais; a pasta da caixa (ligar com código vencido ou repetido, as fichas de outro dono, os limites, o prazo); e, sobre QUIC, ligar, depositar, só o dono buscar e apagar.
+- `messages::tests` e `node::tests` (fase 7): a caixa chega aos contatos uma vez, com uma ficha só de cada um, e o desligar também; um `MailboxInfo` fora do formato é ignorado; e, com uma caixa de verdade, uma mensagem a um contato desligado fica "na caixa postal", ele busca ao voltar e o "entregue" chega a quem mandou. O código de ligação serve uma vez só.
 - `wire::tests` e `invite::tests`: frames grandes demais, versões e lixo recusados; o convite truncado em cada posição é recusado; 20 mil entradas aleatórias não derrubam o leitor.

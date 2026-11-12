@@ -299,6 +299,19 @@ pub struct MessageView {
     pub can_delete_for_everyone: bool,
     /// O arquivo, se a mensagem é um.
     pub file: Option<FileView>,
+    /// Minha, e esperando na caixa postal do contato até ele buscar.
+    pub in_mailbox: bool,
+}
+
+/// A caixa postal deste aparelho, como a UI mostra.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MailboxView {
+    /// Quando foi ligada e quando foi lida por último, em segundos desde 1970 (0:
+    /// ainda não leu).
+    pub paired_at: i64,
+    pub last_fetch: i64,
+    /// Se a última leitura deu certo; nada quando não tentou desde que a rede ligou.
+    pub reachable: Option<bool>,
 }
 
 /// A mensagem com o arquivo dela, se for um.
@@ -344,6 +357,7 @@ impl From<Message> for MessageView {
             can_edit: own_text && age <= messages::EDIT_WINDOW_MS,
             can_delete_for_everyone: own && age <= messages::DELETE_WINDOW_MS,
             file: None,
+            in_mailbox: m.in_mailbox,
         }
     }
 }
@@ -639,6 +653,40 @@ impl ChirpStore {
         let invite = Invite::from_link(&link)?;
         let node = self.started()?;
         Ok(runtime().block_on(node.join(invite, scanned))?.into())
+    }
+
+    /// A caixa postal ligada, se houver.
+    pub fn mailbox(&self) -> Result<Option<MailboxView>, CoreError> {
+        let paired = crate::mailbox::get(self.lock()?.conn())?;
+        let reachable = self.running().and_then(|n| n.mailbox_ok());
+        Ok(paired.map(|p| MailboxView {
+            paired_at: p.paired_at,
+            last_fetch: p.last_fetch,
+            reachable,
+        }))
+    }
+
+    /// Liga este aparelho a uma caixa postal pelo código dela (o link ou o QR que o
+    /// `chirp-mailbox pair` mostra), e avisa os contatos.
+    pub fn pair_mailbox(&self, link: String) -> Result<MailboxView, CoreError> {
+        let link =
+            crate::mailbox::PairLink::from_link(&link).map_err(|_| CoreError::InvalidMailbox)?;
+        let node = self.started()?;
+        runtime().block_on(node.pair_mailbox(link))?;
+        self.mailbox()?.ok_or(CoreError::Storage)
+    }
+
+    /// Desliga a caixa postal e avisa os contatos. Com a rede desligada, os avisos
+    /// saem quando ela ligar.
+    pub fn unpair_mailbox(&self) -> Result<(), CoreError> {
+        match self.running() {
+            Some(node) => runtime().block_on(node.unpair_mailbox()),
+            None => {
+                let mut store = self.lock()?;
+                crate::mailbox::clear(store.conn())?;
+                messages::send_mailbox(&mut store).map(|_| ())
+            }
+        }
     }
 
     pub fn contacts(&self) -> Result<Vec<ContactView>, CoreError> {

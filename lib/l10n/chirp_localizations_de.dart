@@ -834,4 +834,61 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
   @override
   String get pasteTip =>
       'Der Link gilt nur einmal und läuft nach 24 Stunden ab. Stell ihn nicht öffentlich.';
+
+  @override
+  String get statusInMailbox => 'Wartet in ihrem Postfach';
+
+  @override
+  String get mailboxTitle => 'Postfach';
+
+  @override
+  String get mailboxHelp =>
+      'Ein Postfach ist ein kleiner Server von dir oder von jemandem, dem du vertraust. Es bewahrt auf, was deine Kontakte schicken, während dieses Gerät aus ist, bis du Chirp öffnest. Nachrichten kommen dort bereits verschlüsselt an: Es sieht, wer etwas hinterlegt und wann, nie was. Dateien brauchen weiterhin euch beide online.';
+
+  @override
+  String get mailboxCode => 'Postfach-Code';
+
+  @override
+  String get mailboxCodeHelp =>
+      'Führe chirp-mailbox pair auf dem Server aus und füge den angezeigten Code ein. Er gilt einmal, 24 Stunden lang.';
+
+  @override
+  String get mailboxPair => 'Verbinden';
+
+  @override
+  String get mailboxPaired => 'Postfach verbunden';
+
+  @override
+  String get mailboxStatusWaiting => 'Noch nicht abgerufen.';
+
+  @override
+  String mailboxStatusChecked(String time) {
+    return 'Zuletzt abgerufen $time.';
+  }
+
+  @override
+  String get mailboxStatusUnreachable =>
+      'Das Postfach hat nicht geantwortet. Nachrichten an dich warten eventuell bei deinen Kontakten.';
+
+  @override
+  String get mailboxUnpair => 'Trennen';
+
+  @override
+  String get mailboxUnpairTitle => 'Postfach trennen?';
+
+  @override
+  String get mailboxUnpairBody =>
+      'Was darin wartet, geht verloren, und deine Kontakte hinterlegen dort nichts mehr. Mit einem neuen Code kannst du es wieder verbinden.';
+
+  @override
+  String get mailboxInvalid =>
+      'Dieser Code funktioniert nicht. Füge den ganzen chirp://mailbox#-Link ein.';
+
+  @override
+  String get mailboxRefused =>
+      'Das Postfach hat den Code abgelehnt. Er gilt nur einmal und läuft nach 24 Stunden ab: Erzeuge einen neuen.';
+
+  @override
+  String get mailboxUnreachable =>
+      'Das Postfach war nicht erreichbar. Ohne Internet funktioniert nur ein Postfach im lokalen Netz.';
 }

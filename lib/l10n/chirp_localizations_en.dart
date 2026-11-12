@@ -828,4 +828,61 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
   @override
   String get pasteTip =>
       'The link works only once and expires in 24 hours. Don\'t leave it anywhere public.';
+
+  @override
+  String get statusInMailbox => 'Waiting in their mailbox';
+
+  @override
+  String get mailboxTitle => 'Mailbox';
+
+  @override
+  String get mailboxHelp =>
+      'A mailbox is a small server of your own, or of someone you trust, that keeps what your contacts send while this device is off, until you open Chirp. Messages arrive there already encrypted: it sees who leaves something and when, never what. Files still need you both online.';
+
+  @override
+  String get mailboxCode => 'Mailbox code';
+
+  @override
+  String get mailboxCodeHelp =>
+      'Run chirp-mailbox pair on the server and paste the code it shows. It works once, for 24 hours.';
+
+  @override
+  String get mailboxPair => 'Link';
+
+  @override
+  String get mailboxPaired => 'Mailbox linked';
+
+  @override
+  String get mailboxStatusWaiting => 'Not checked yet.';
+
+  @override
+  String mailboxStatusChecked(String time) {
+    return 'Last checked $time.';
+  }
+
+  @override
+  String get mailboxStatusUnreachable =>
+      'The mailbox did not answer. Messages for you may wait with your contacts.';
+
+  @override
+  String get mailboxUnpair => 'Unlink';
+
+  @override
+  String get mailboxUnpairTitle => 'Unlink the mailbox?';
+
+  @override
+  String get mailboxUnpairBody =>
+      'Whatever is waiting in it is lost, and your contacts stop leaving messages there. You can link it again with a new code.';
+
+  @override
+  String get mailboxInvalid =>
+      'That code does not work. Paste the whole chirp://mailbox# link.';
+
+  @override
+  String get mailboxRefused =>
+      'The mailbox refused the code. It works only once and expires in 24 hours: make a new one.';
+
+  @override
+  String get mailboxUnreachable =>
+      'Could not reach the mailbox. With the internet off, only a mailbox on the local network works.';
 }

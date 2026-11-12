@@ -1,12 +1,14 @@
 name: Packages
 
 # Os pacotes de uma versão (docs/PLANO.md, 9), anexados à release:
-#   - Linux: .deb e .rpm; com a chave APT_SIGNING_KEY, também os repositórios APT e DNF
+#   - Linux: .deb e .rpm (e o .deb da caixa postal, o chirp-mailbox); com a chave
+#     APT_SIGNING_KEY, também os repositórios APT e DNF
 #     assinados, publicados no GitHub Pages com a página do projeto (site/);
 #   - Windows: o instalador do Inno Setup;
 #   - Android: o APK, só com a chave ANDROID_KEYSTORE (sem ela, um APK assinado com a
 #     chave de depuração não deixaria atualizar depois);
 #   - macOS: o .dmg, sem assinatura da Apple (build de teste);
+#   - a imagem de contêiner da caixa postal, no GitHub Container Registry;
 #   - o SHA256SUMS de tudo, assinado com a mesma chave dos repositórios.
 # As chaves saem do tool/create-apt-key.sh e do tool/create-android-key.sh. O Pages não
 # guarda nada entre uma publicação e outra: os pacotes antigos vêm das releases.
@@ -69,6 +71,7 @@ jobs:
           flutter build linux --release
           tool/build-deb.sh build/deb --no-build
           tool/build-rpm.sh build/rpm --no-build
+          tool/build-mailbox-deb.sh build/deb
       - name: Attach them to the release
         run: gh release upload "$TAG" build/deb/*.deb build/rpm/*.rpm --clobber
       - uses: actions/upload-artifact@v4
@@ -123,6 +126,29 @@ jobs:
           path: build/site
       - id: deploy
         uses: actions/deploy-pages@v4
+
+  # A caixa postal em contêiner: ghcr.io/<dono>/chirp-mailbox, com a versão e o latest.
+  mailbox-image:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/chirp-mailbox"
+          docker build -f core/chirp-mailbox/Dockerfile \
+            -t "$IMAGE:${TAG#v}" -t "$IMAGE:latest" core
+          docker push "$IMAGE:${TAG#v}"
+          docker push "$IMAGE:latest"
 
   windows:
     runs-on: windows-latest

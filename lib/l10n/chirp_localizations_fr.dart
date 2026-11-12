@@ -836,4 +836,61 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
   @override
   String get pasteTip =>
       'Le lien ne sert qu’une fois et expire en 24 heures. Ne le laissez pas en public.';
+
+  @override
+  String get statusInMailbox => 'En attente dans sa boîte aux lettres';
+
+  @override
+  String get mailboxTitle => 'Boîte aux lettres';
+
+  @override
+  String get mailboxHelp =>
+      'La boîte aux lettres est un petit serveur à vous, ou à quelqu’un de confiance, qui garde ce que vos contacts envoient pendant que cet appareil est éteint, jusqu’à ce que vous ouvriez Chirp. Les messages y arrivent déjà chiffrés : elle voit qui dépose quelque chose et quand, jamais quoi. Les fichiers demandent toujours que vous soyez tous deux en ligne.';
+
+  @override
+  String get mailboxCode => 'Code de la boîte';
+
+  @override
+  String get mailboxCodeHelp =>
+      'Lancez chirp-mailbox pair sur le serveur et collez le code affiché. Il sert une fois, pendant 24 heures.';
+
+  @override
+  String get mailboxPair => 'Associer';
+
+  @override
+  String get mailboxPaired => 'Boîte aux lettres associée';
+
+  @override
+  String get mailboxStatusWaiting => 'Pas encore relevée.';
+
+  @override
+  String mailboxStatusChecked(String time) {
+    return 'Relevée pour la dernière fois $time.';
+  }
+
+  @override
+  String get mailboxStatusUnreachable =>
+      'La boîte aux lettres n’a pas répondu. Les messages pour vous peuvent attendre chez vos contacts.';
+
+  @override
+  String get mailboxUnpair => 'Dissocier';
+
+  @override
+  String get mailboxUnpairTitle => 'Dissocier la boîte aux lettres ?';
+
+  @override
+  String get mailboxUnpairBody =>
+      'Ce qui y attend est perdu, et vos contacts cessent d’y déposer. Vous pourrez l’associer de nouveau avec un autre code.';
+
+  @override
+  String get mailboxInvalid =>
+      'Ce code ne fonctionne pas. Collez le lien chirp://mailbox# en entier.';
+
+  @override
+  String get mailboxRefused =>
+      'La boîte a refusé le code. Il ne sert qu’une fois et expire au bout de 24 heures : créez-en un autre.';
+
+  @override
+  String get mailboxUnreachable =>
+      'Impossible de joindre la boîte. Sans internet, seule une boîte sur le réseau local fonctionne.';
 }

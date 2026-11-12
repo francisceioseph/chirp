@@ -835,4 +835,61 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   @override
   String get pasteTip =>
       'Ссылка действует один раз и истекает через 24 часа. Не публикуйте её.';
+
+  @override
+  String get statusInMailbox => 'Ждёт в почтовом ящике собеседника';
+
+  @override
+  String get mailboxTitle => 'Почтовый ящик';
+
+  @override
+  String get mailboxHelp =>
+      'Почтовый ящик — это небольшой сервер ваш или того, кому вы доверяете. Он хранит то, что присылают контакты, пока это устройство выключено, до тех пор, пока вы не откроете Chirp. Сообщения приходят туда уже зашифрованными: он видит, кто и когда что-то оставил, но не что именно. Для файлов по-прежнему нужно, чтобы вы оба были в сети.';
+
+  @override
+  String get mailboxCode => 'Код ящика';
+
+  @override
+  String get mailboxCodeHelp =>
+      'Запустите chirp-mailbox pair на сервере и вставьте показанный код. Он действует один раз, 24 часа.';
+
+  @override
+  String get mailboxPair => 'Подключить';
+
+  @override
+  String get mailboxPaired => 'Почтовый ящик подключён';
+
+  @override
+  String get mailboxStatusWaiting => 'Ещё не проверялся.';
+
+  @override
+  String mailboxStatusChecked(String time) {
+    return 'Последняя проверка: $time.';
+  }
+
+  @override
+  String get mailboxStatusUnreachable =>
+      'Почтовый ящик не ответил. Сообщения для вас могут ждать у ваших контактов.';
+
+  @override
+  String get mailboxUnpair => 'Отключить';
+
+  @override
+  String get mailboxUnpairTitle => 'Отключить почтовый ящик?';
+
+  @override
+  String get mailboxUnpairBody =>
+      'Всё, что в нём ждёт, пропадёт, и контакты перестанут оставлять там сообщения. Подключить снова можно с новым кодом.';
+
+  @override
+  String get mailboxInvalid =>
+      'Этот код не подходит. Вставьте ссылку chirp://mailbox# целиком.';
+
+  @override
+  String get mailboxRefused =>
+      'Ящик отклонил код. Он действует только один раз и истекает через 24 часа: создайте новый.';
+
+  @override
+  String get mailboxUnreachable =>
+      'Не удалось связаться с ящиком. Без интернета работает только ящик в локальной сети.';
 }

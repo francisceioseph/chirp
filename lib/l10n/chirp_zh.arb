@@ -240,5 +240,21 @@
   "pasteStep1": "通过你们平时聊天的方式，向对方要链接。",
   "pasteStep2": "粘贴到这里。Chirp 会在局域网中寻找对方，开启互联网后也会在互联网上寻找。",
   "pasteStep3": "对方会显示为未验证：见面时请核对安全码。",
-  "pasteTip": "链接只能用一次，24 小时后失效。不要放在公开的地方。"
+  "pasteTip": "链接只能用一次，24 小时后失效。不要放在公开的地方。",
+  "statusInMailbox": "在对方的信箱中等待",
+  "mailboxTitle": "信箱",
+  "mailboxHelp": "信箱是你自己或你信任的人运行的小型服务器，在此设备关机时保存联系人发来的内容，直到你打开 Chirp。消息到达时已经加密：它能看到谁在何时留下了内容，但看不到内容本身。文件仍需要双方同时在线。",
+  "mailboxCode": "信箱代码",
+  "mailboxCodeHelp": "在服务器上运行 chirp-mailbox pair，并粘贴它显示的代码。代码只能使用一次，有效期 24 小时。",
+  "mailboxPair": "连接",
+  "mailboxPaired": "信箱已连接",
+  "mailboxStatusWaiting": "尚未检查。",
+  "mailboxStatusChecked": "上次检查：{time}。",
+  "mailboxStatusUnreachable": "信箱没有响应。发给你的消息可能在联系人那里等待。",
+  "mailboxUnpair": "断开",
+  "mailboxUnpairTitle": "断开信箱？",
+  "mailboxUnpairBody": "其中等待的内容将会丢失，联系人也不会再往那里留言。你可以用新的代码重新连接。",
+  "mailboxInvalid": "这个代码无效。请粘贴完整的 chirp://mailbox# 链接。",
+  "mailboxRefused": "信箱拒绝了这个代码。代码只能使用一次，24 小时后过期：请生成新的代码。",
+  "mailboxUnreachable": "无法连接到信箱。关闭互联网时，只有本地网络上的信箱可用。"
 }

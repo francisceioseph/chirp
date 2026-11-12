@@ -54,7 +54,11 @@ class ConversationTile extends StatelessWidget {
       subtitle = Row(
         children: [
           if (last.outgoing) ...[
-            MessageStatusIcon(status: last.status, size: 16),
+            MessageStatusIcon(
+              status: last.status,
+              inMailbox: last.inMailbox,
+              size: 16,
+            ),
             const SizedBox(width: 4),
           ],
           Flexible(

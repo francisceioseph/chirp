@@ -108,7 +108,10 @@ pub struct Ack {}
 pub struct Content {
     #[prost(bytes = "vec", tag = "1")]
     pub message_id: Vec<u8>,
-    #[prost(oneof = "ContentBody", tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16")]
+    #[prost(
+        oneof = "ContentBody",
+        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17"
+    )]
     pub body: Option<ContentBody>,
     /// O relógio de quem manda, em milissegundos: só para mostrar.
     #[prost(uint64, tag = "13")]
@@ -157,6 +160,20 @@ pub enum ContentBody {
     /// a 14 e a 15 são campos do `Content`.)
     #[prost(message, tag = "16")]
     File(FileOffer),
+    /// A caixa postal de quem manda (fase 7): onde deixar o que não deu para entregar,
+    /// e a ficha deste contato. Vazio: a caixa foi desligada.
+    #[prost(message, tag = "17")]
+    Mailbox(MailboxInfo),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct MailboxInfo {
+    #[prost(bytes = "vec", tag = "1")]
+    pub endpoint_id: Vec<u8>,
+    #[prost(string, repeated, tag = "2")]
+    pub addrs: Vec<String>,
+    #[prost(bytes = "vec", tag = "3")]
+    pub drop: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -193,6 +210,9 @@ pub struct Text {
 pub struct Receipt {
     #[prost(bytes = "vec", repeated, tag = "1")]
     pub read: Vec<Vec<u8>>,
+    /// "Chegou": as que vieram pela caixa postal (fase 7), que não tiveram o `Ack`.
+    #[prost(bytes = "vec", repeated, tag = "2")]
+    pub delivered: Vec<Vec<u8>>,
 }
 
 #[derive(Clone, PartialEq, Message)]

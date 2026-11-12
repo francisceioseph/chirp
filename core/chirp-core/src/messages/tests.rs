@@ -569,3 +569,80 @@ fn the_database_keeps_no_plain_text_of_messages() {
     assert!(!bytes.windows(7).any(|w| w == b"segredo"));
     assert!(!bytes.windows(9).any(|w| w == b"calopsita"));
 }
+
+#[test]
+fn the_mailbox_reaches_contacts_and_the_delivered_receipt_closes_it() {
+    use crate::mailbox::{self, proto};
+    let (mut alice, mut bob) = pair();
+    // Bob liga uma caixa: Alice fica sabendo, com uma ficha só dela, uma vez.
+    mailbox::set(bob.store.conn(), &[8; 32], &["192.168.0.9:47474".into()], 1).unwrap();
+    assert_eq!(send_mailbox(&mut bob.store).unwrap(), vec![bob.other]);
+    assert!(send_mailbox(&mut bob.store).unwrap().is_empty());
+    assert_eq!(
+        post(&mut bob, &mut alice),
+        vec![Effect::Contact(alice.other)]
+    );
+    let theirs = mailbox::theirs(alice.store.conn(), alice.other)
+        .unwrap()
+        .unwrap();
+    assert_eq!(theirs.endpoint_id, [8; 32]);
+    assert_eq!(theirs.addrs, ["192.168.0.9:47474"]);
+    let hash = proto::hash(&theirs.drop);
+    assert_eq!(
+        mailbox::drops(bob.store.conn()).unwrap(),
+        vec![hash.to_vec()]
+    );
+    let at_bob = mailbox::contact_by_drop(bob.store.conn(), &hash)
+        .unwrap()
+        .unwrap();
+    assert_eq!(at_bob.id, bob.other);
+
+    // Alice deixa na caixa: a mensagem fica "na caixa postal" até o recibo.
+    send_text(&mut alice.store, alice.other, "oi", None).unwrap();
+    let out = next_out(alice.store.conn(), alice.other).unwrap().unwrap();
+    assert!(mailbox::deposited(alice.store.conn(), out.id).unwrap());
+    assert_eq!(alice.outbox(), 0);
+    assert!(alice.list()[0].in_mailbox);
+    let (effect, shown) =
+        receive_from(&mut bob.store, &at_bob, out.prekey, &out.ciphertext).unwrap();
+    assert_eq!(effect, Effect::Messages(bob.other));
+    send_delivered(&mut bob.store, bob.other, &[shown.unwrap()]).unwrap();
+    post(&mut bob, &mut alice);
+    let sent = &alice.list()[0];
+    assert_eq!((sent.status, sent.in_mailbox), (Status::Delivered, false));
+
+    // Bob desliga a caixa: Alice esquece.
+    mailbox::clear(bob.store.conn()).unwrap();
+    assert_eq!(send_mailbox(&mut bob.store).unwrap(), vec![bob.other]);
+    post(&mut bob, &mut alice);
+    assert_eq!(
+        mailbox::theirs(alice.store.conn(), alice.other).unwrap(),
+        None
+    );
+}
+
+#[test]
+fn a_bad_mailbox_from_a_contact_is_ignored() {
+    let (mut alice, mut bob) = pair();
+    let me = session::me(&bob.store).unwrap();
+    let contact = contacts::by_id(bob.store.conn(), bob.other).unwrap();
+    enqueue(
+        bob.store.conn(),
+        &me,
+        &contact,
+        ContentBody::Mailbox(wire::MailboxInfo {
+            endpoint_id: vec![1; 31],
+            addrs: vec![],
+            drop: vec![2; 32],
+        }),
+        0,
+        now_ms(),
+        false,
+    )
+    .unwrap();
+    assert_eq!(post(&mut bob, &mut alice), vec![Effect::Nothing]);
+    assert_eq!(
+        crate::mailbox::theirs(alice.store.conn(), alice.other).unwrap(),
+        None
+    );
+}

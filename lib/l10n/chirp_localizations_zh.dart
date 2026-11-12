@@ -786,4 +786,56 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get pasteTip => '链接只能用一次，24 小时后失效。不要放在公开的地方。';
+
+  @override
+  String get statusInMailbox => '在对方的信箱中等待';
+
+  @override
+  String get mailboxTitle => '信箱';
+
+  @override
+  String get mailboxHelp =>
+      '信箱是你自己或你信任的人运行的小型服务器，在此设备关机时保存联系人发来的内容，直到你打开 Chirp。消息到达时已经加密：它能看到谁在何时留下了内容，但看不到内容本身。文件仍需要双方同时在线。';
+
+  @override
+  String get mailboxCode => '信箱代码';
+
+  @override
+  String get mailboxCodeHelp =>
+      '在服务器上运行 chirp-mailbox pair，并粘贴它显示的代码。代码只能使用一次，有效期 24 小时。';
+
+  @override
+  String get mailboxPair => '连接';
+
+  @override
+  String get mailboxPaired => '信箱已连接';
+
+  @override
+  String get mailboxStatusWaiting => '尚未检查。';
+
+  @override
+  String mailboxStatusChecked(String time) {
+    return '上次检查：$time。';
+  }
+
+  @override
+  String get mailboxStatusUnreachable => '信箱没有响应。发给你的消息可能在联系人那里等待。';
+
+  @override
+  String get mailboxUnpair => '断开';
+
+  @override
+  String get mailboxUnpairTitle => '断开信箱？';
+
+  @override
+  String get mailboxUnpairBody => '其中等待的内容将会丢失，联系人也不会再往那里留言。你可以用新的代码重新连接。';
+
+  @override
+  String get mailboxInvalid => '这个代码无效。请粘贴完整的 chirp://mailbox# 链接。';
+
+  @override
+  String get mailboxRefused => '信箱拒绝了这个代码。代码只能使用一次，24 小时后过期：请生成新的代码。';
+
+  @override
+  String get mailboxUnreachable => '无法连接到信箱。关闭互联网时，只有本地网络上的信箱可用。';
 }

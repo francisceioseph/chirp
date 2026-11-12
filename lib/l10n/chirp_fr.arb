@@ -240,5 +240,21 @@
   "pasteStep1": "Demandez le lien à l’autre personne, là où vous discutez déjà.",
   "pasteStep2": "Collez-le ici. Chirp la cherche sur le réseau local, ou sur internet s’il est activé.",
   "pasteStep3": "Le contact arrive non vérifié : vérifiez le code de sécurité en vous voyant.",
-  "pasteTip": "Le lien ne sert qu’une fois et expire en 24 heures. Ne le laissez pas en public."
+  "pasteTip": "Le lien ne sert qu’une fois et expire en 24 heures. Ne le laissez pas en public.",
+  "statusInMailbox": "En attente dans sa boîte aux lettres",
+  "mailboxTitle": "Boîte aux lettres",
+  "mailboxHelp": "La boîte aux lettres est un petit serveur à vous, ou à quelqu’un de confiance, qui garde ce que vos contacts envoient pendant que cet appareil est éteint, jusqu’à ce que vous ouvriez Chirp. Les messages y arrivent déjà chiffrés : elle voit qui dépose quelque chose et quand, jamais quoi. Les fichiers demandent toujours que vous soyez tous deux en ligne.",
+  "mailboxCode": "Code de la boîte",
+  "mailboxCodeHelp": "Lancez chirp-mailbox pair sur le serveur et collez le code affiché. Il sert une fois, pendant 24 heures.",
+  "mailboxPair": "Associer",
+  "mailboxPaired": "Boîte aux lettres associée",
+  "mailboxStatusWaiting": "Pas encore relevée.",
+  "mailboxStatusChecked": "Relevée pour la dernière fois {time}.",
+  "mailboxStatusUnreachable": "La boîte aux lettres n’a pas répondu. Les messages pour vous peuvent attendre chez vos contacts.",
+  "mailboxUnpair": "Dissocier",
+  "mailboxUnpairTitle": "Dissocier la boîte aux lettres ?",
+  "mailboxUnpairBody": "Ce qui y attend est perdu, et vos contacts cessent d’y déposer. Vous pourrez l’associer de nouveau avec un autre code.",
+  "mailboxInvalid": "Ce code ne fonctionne pas. Collez le lien chirp://mailbox# en entier.",
+  "mailboxRefused": "La boîte a refusé le code. Il ne sert qu’une fois et expire au bout de 24 heures : créez-en un autre.",
+  "mailboxUnreachable": "Impossible de joindre la boîte. Sans internet, seule une boîte sur le réseau local fonctionne."
 }

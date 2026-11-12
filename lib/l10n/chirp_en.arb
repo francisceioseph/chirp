@@ -391,5 +391,28 @@
   "pasteStep1": "Ask the other person for the link, wherever you already talk.",
   "pasteStep2": "Paste it here. Chirp looks for them on the local network, or the internet if it's on.",
   "pasteStep3": "They come in as unverified: check the safety code when you meet.",
-  "pasteTip": "The link works only once and expires in 24 hours. Don't leave it anywhere public."
+  "pasteTip": "The link works only once and expires in 24 hours. Don't leave it anywhere public.",
+  "statusInMailbox": "Waiting in their mailbox",
+  "mailboxTitle": "Mailbox",
+  "mailboxHelp": "A mailbox is a small server of your own, or of someone you trust, that keeps what your contacts send while this device is off, until you open Chirp. Messages arrive there already encrypted: it sees who leaves something and when, never what. Files still need you both online.",
+  "mailboxCode": "Mailbox code",
+  "mailboxCodeHelp": "Run chirp-mailbox pair on the server and paste the code it shows. It works once, for 24 hours.",
+  "mailboxPair": "Link",
+  "mailboxPaired": "Mailbox linked",
+  "mailboxStatusWaiting": "Not checked yet.",
+  "mailboxStatusChecked": "Last checked {time}.",
+  "@mailboxStatusChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mailboxStatusUnreachable": "The mailbox did not answer. Messages for you may wait with your contacts.",
+  "mailboxUnpair": "Unlink",
+  "mailboxUnpairTitle": "Unlink the mailbox?",
+  "mailboxUnpairBody": "Whatever is waiting in it is lost, and your contacts stop leaving messages there. You can link it again with a new code.",
+  "mailboxInvalid": "That code does not work. Paste the whole chirp://mailbox# link.",
+  "mailboxRefused": "The mailbox refused the code. It works only once and expires in 24 hours: make a new one.",
+  "mailboxUnreachable": "Could not reach the mailbox. With the internet off, only a mailbox on the local network works."
 }

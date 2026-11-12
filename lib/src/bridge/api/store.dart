@@ -9,7 +9,7 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -84,6 +84,9 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// Continuar recebendo com a janela fechada (no desktop, na bandeja).
   Future<bool> keepRunning();
 
+  /// A caixa postal ligada, se houver.
+  Future<MailboxView?> mailbox();
+
   /// Li a conversa: marca e manda o recibo, se ligado.
   Future<void> markRead({required PlatformInt64 contactId});
 
@@ -118,6 +121,10 @@ abstract class ChirpStore implements RustOpaqueInterface {
     dir: dir,
     passphrase: passphrase,
   );
+
+  /// Liga este aparelho a uma caixa postal pelo código dela (o link ou o QR que o
+  /// `chirp-mailbox pair` mostra), e avisa os contatos.
+  Future<MailboxView> pairMailbox({required String link});
 
   /// Toca a nota de voz de uma mensagem; a que tocava para. O fluxo recebe a
   /// posição a cada décimo de segundo, e fecha no fim.
@@ -201,6 +208,10 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
   /// Só sai se o contato está online agora.
   Future<void> typing({required PlatformInt64 contactId});
+
+  /// Desliga a caixa postal e avisa os contatos. Com a rede desligada, os avisos
+  /// saem quando ela ligar.
+  Future<void> unpairMailbox();
 
   /// Quanto dura a nota de voz de uma mensagem (já baixada).
   Future<BigInt> voiceDuration({required PlatformInt64 messageId});
@@ -464,6 +475,36 @@ class FileView {
           voice == other.voice;
 }
 
+/// A caixa postal deste aparelho, como a UI mostra.
+class MailboxView {
+  /// Quando foi ligada e quando foi lida por último, em segundos desde 1970 (0:
+  /// ainda não leu).
+  final PlatformInt64 pairedAt;
+  final PlatformInt64 lastFetch;
+
+  /// Se a última leitura deu certo; nada quando não tentou desde que a rede ligou.
+  final bool? reachable;
+
+  const MailboxView({
+    required this.pairedAt,
+    required this.lastFetch,
+    this.reachable,
+  });
+
+  @override
+  int get hashCode =>
+      pairedAt.hashCode ^ lastFetch.hashCode ^ reachable.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MailboxView &&
+          runtimeType == other.runtimeType &&
+          pairedAt == other.pairedAt &&
+          lastFetch == other.lastFetch &&
+          reachable == other.reachable;
+}
+
 enum MessageKind {
   text,
 
@@ -508,6 +549,9 @@ class MessageView {
   /// O arquivo, se a mensagem é um.
   final FileView? file;
 
+  /// Minha, e esperando na caixa postal do contato até ele buscar.
+  final bool inMailbox;
+
   const MessageView({
     required this.id,
     required this.contactId,
@@ -525,6 +569,7 @@ class MessageView {
     required this.canEdit,
     required this.canDeleteForEveryone,
     this.file,
+    required this.inMailbox,
   });
 
   @override
@@ -544,7 +589,8 @@ class MessageView {
       theirReaction.hashCode ^
       canEdit.hashCode ^
       canDeleteForEveryone.hashCode ^
-      file.hashCode;
+      file.hashCode ^
+      inMailbox.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -566,7 +612,8 @@ class MessageView {
           theirReaction == other.theirReaction &&
           canEdit == other.canEdit &&
           canDeleteForEveryone == other.canDeleteForEveryone &&
-          file == other.file;
+          file == other.file &&
+          inMailbox == other.inMailbox;
 }
 
 /// A internet e os servidores de retransmissão (os dois desligados no começo).

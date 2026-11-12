@@ -117,7 +117,7 @@ class MessageBubble extends StatelessWidget {
       text,
       if (message.edited) l10n.messageEdited,
       time,
-      if (mine) statusLabel(l10n, message.status),
+      if (mine) statusLabel(l10n, message.status, inMailbox: message.inMailbox),
       if (message.myReaction > 0)
         '${l10n.you}: ${reactionLabel(l10n, message.myReaction)}',
       if (message.theirReaction > 0)
@@ -185,6 +185,7 @@ class MessageBubble extends StatelessWidget {
               if (mine)
                 MessageStatusIcon(
                   status: message.status,
+                  inMailbox: message.inMailbox,
                   size: 14,
                   color: muted,
                 ),

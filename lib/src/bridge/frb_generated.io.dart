@@ -72,6 +72,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AppearanceView dco_decode_box_autoadd_appearance_view(dynamic raw);
 
   @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw);
+
+  @protected
   ChatSettings dco_decode_box_autoadd_chat_settings(dynamic raw);
 
   @protected
@@ -82,6 +85,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw);
+
+  @protected
+  MailboxView dco_decode_box_autoadd_mailbox_view(dynamic raw);
 
   @protected
   MessageView dco_decode_box_autoadd_message_view(dynamic raw);
@@ -150,6 +156,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  MailboxView dco_decode_mailbox_view(dynamic raw);
+
+  @protected
   MessageKind dco_decode_message_kind(dynamic raw);
 
   @protected
@@ -168,10 +177,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   NotificationMode dco_decode_notification_mode(dynamic raw);
 
   @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+
+  @protected
   FileView? dco_decode_opt_box_autoadd_file_view(dynamic raw);
 
   @protected
   PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
+
+  @protected
+  MailboxView? dco_decode_opt_box_autoadd_mailbox_view(dynamic raw);
 
   @protected
   MessageView? dco_decode_opt_box_autoadd_message_view(dynamic raw);
@@ -255,6 +270,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
   ChatSettings sse_decode_box_autoadd_chat_settings(
     SseDeserializer deserializer,
   );
@@ -269,6 +287,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer);
+
+  @protected
+  MailboxView sse_decode_box_autoadd_mailbox_view(SseDeserializer deserializer);
 
   @protected
   MessageView sse_decode_box_autoadd_message_view(SseDeserializer deserializer);
@@ -341,6 +362,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  MailboxView sse_decode_mailbox_view(SseDeserializer deserializer);
+
+  @protected
   MessageKind sse_decode_message_kind(SseDeserializer deserializer);
 
   @protected
@@ -359,10 +383,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   NotificationMode sse_decode_notification_mode(SseDeserializer deserializer);
 
   @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
   FileView? sse_decode_opt_box_autoadd_file_view(SseDeserializer deserializer);
 
   @protected
   PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
+
+  @protected
+  MailboxView? sse_decode_opt_box_autoadd_mailbox_view(
+    SseDeserializer deserializer,
+  );
 
   @protected
   MessageView? sse_decode_opt_box_autoadd_message_view(
@@ -460,6 +492,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_chat_settings(
     ChatSettings self,
     SseSerializer serializer,
@@ -480,6 +515,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_i_64(
     PlatformInt64 self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_mailbox_view(
+    MailboxView self,
     SseSerializer serializer,
   );
 
@@ -574,6 +615,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_mailbox_view(MailboxView self, SseSerializer serializer);
+
+  @protected
   void sse_encode_message_kind(MessageKind self, SseSerializer serializer);
 
   @protected
@@ -598,6 +642,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_box_autoadd_file_view(
     FileView? self,
     SseSerializer serializer,
@@ -606,6 +653,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_i_64(
     PlatformInt64? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_mailbox_view(
+    MailboxView? self,
     SseSerializer serializer,
   );
 

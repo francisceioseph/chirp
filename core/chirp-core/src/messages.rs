@@ -83,6 +83,8 @@ pub struct Message {
     pub deleted: bool,
     pub my_reaction: u32,
     pub their_reaction: u32,
+    /// Minha, e esperando na caixa postal do contato (fase 7) até ele buscar.
+    pub in_mailbox: bool,
 }
 
 /// O que mudou com o que chegou, para avisar a UI.
@@ -116,7 +118,8 @@ const SELECT: &str = "SELECT m.id, m.contact_id, m.message_id, m.outgoing, m.kin
           WHERE r.contact_id = m.contact_id AND r.message_id = m.reply_to),
         m.sent_at, m.received_at, m.lamport, m.status, m.edited, m.deleted,
         COALESCE((SELECT kind FROM reactions WHERE message = m.id AND outgoing = 1), 0),
-        COALESCE((SELECT kind FROM reactions WHERE message = m.id AND outgoing = 0), 0)
+        COALESCE((SELECT kind FROM reactions WHERE message = m.id AND outgoing = 0), 0),
+        m.in_mailbox
    FROM messages m";
 
 fn from_row(row: &Row) -> rusqlite::Result<Message> {
@@ -146,6 +149,7 @@ fn from_row(row: &Row) -> rusqlite::Result<Message> {
         deleted: row.get(12)?,
         my_reaction: row.get(13)?,
         their_reaction: row.get(14)?,
+        in_mailbox: row.get(15)?,
     })
 }
 
@@ -669,6 +673,7 @@ pub fn mark_read(store: &mut Store, contact_id: i64) -> CoreResult<bool> {
                     &contact,
                     ContentBody::Receipt(wire::Receipt {
                         read: chunk.to_vec(),
+                        delivered: vec![],
                     }),
                     lamport,
                     now_ms(),
@@ -811,6 +816,87 @@ pub fn send_file(
     Ok(message)
 }
 
+/// Conta a cada contato estabelecido onde fica a caixa postal deste aparelho, com a
+/// ficha dele (a primeira vez, ou quando a caixa mudou), ou que ela foi desligada.
+/// Devolve a quem mandou.
+pub fn send_mailbox(store: &mut Store) -> CoreResult<Vec<i64>> {
+    let me = session::me(store)?;
+    let tx = store.conn_mut().transaction()?;
+    let mine = crate::mailbox::get(&tx)?;
+    let mut sent = Vec::new();
+    for contact in contacts::list(&tx)? {
+        if contact.state != ContactState::Established {
+            continue;
+        }
+        let told = crate::mailbox::told(&tx, contact.id)?;
+        let info = match &mine {
+            Some(paired) if told.as_deref() != Some(paired.endpoint_id.as_slice()) => {
+                wire::MailboxInfo {
+                    endpoint_id: paired.endpoint_id.to_vec(),
+                    addrs: paired.addrs.clone(),
+                    drop: crate::mailbox::drop_token(&tx, contact.id)?.to_vec(),
+                }
+            }
+            None if told.is_some() => wire::MailboxInfo::default(),
+            _ => continue,
+        };
+        let lamport: i64 = tx.query_row(
+            "SELECT lamport FROM contacts WHERE id = ?1",
+            [contact.id],
+            |r| r.get(0),
+        )?;
+        enqueue(
+            &tx,
+            &me,
+            &contact,
+            ContentBody::Mailbox(info),
+            lamport,
+            now_ms(),
+            false,
+        )?;
+        crate::mailbox::set_told(
+            &tx,
+            contact.id,
+            mine.as_ref().map(|p| p.endpoint_id.as_slice()),
+        )?;
+        sent.push(contact.id);
+    }
+    tx.commit()?;
+    Ok(sent)
+}
+
+/// Avisa o contato de que as mensagens que vieram pela caixa postal chegaram (elas não
+/// tiveram o `Ack`). Vale mesmo sem os recibos de leitura: é o "entregue".
+pub fn send_delivered(store: &mut Store, contact_id: i64, ids: &[Vec<u8>]) -> CoreResult<()> {
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let me = session::me(store)?;
+    let tx = store.conn_mut().transaction()?;
+    let contact = established(&tx, contact_id)?;
+    let lamport: i64 = tx.query_row(
+        "SELECT lamport FROM contacts WHERE id = ?1",
+        [contact_id],
+        |r| r.get(0),
+    )?;
+    for chunk in ids.chunks(MAX_RECEIPT_IDS) {
+        enqueue(
+            &tx,
+            &me,
+            &contact,
+            ContentBody::Receipt(wire::Receipt {
+                read: vec![],
+                delivered: chunk.to_vec(),
+            }),
+            lamport,
+            now_ms(),
+            false,
+        )?;
+    }
+    tx.commit()?;
+    Ok(())
+}
+
 // ---------------------------------------------------------------- a caixa de saída
 
 /// Um envelope esperando entrega.
@@ -892,19 +978,38 @@ pub fn receive(
     prekey: bool,
     bytes: &[u8],
 ) -> CoreResult<Effect> {
-    let me = session::me(store)?;
     let contact =
         contacts::by_endpoint(store.conn(), remote_endpoint)?.ok_or(CoreError::UnknownContact)?;
+    Ok(receive_from(store, &contact, prekey, bytes)?.0)
+}
+
+/// O mesmo, de um contato já conhecido (o que veio pela caixa postal, pela ficha).
+/// Devolve também o id no fio quando é uma mensagem da conversa (texto, atenção,
+/// arquivo), para o recibo de "entregue".
+pub fn receive_from(
+    store: &mut Store,
+    contact: &Contact,
+    prekey: bool,
+    bytes: &[u8],
+) -> CoreResult<(Effect, Option<Vec<u8>>)> {
+    let me = session::me(store)?;
     let tx = store.conn_mut().transaction()?;
     let Some(plain) = session::decrypt(&tx, &me, &contact.identity_key, prekey, bytes)? else {
-        return Ok(Effect::Nothing);
+        return Ok((Effect::Nothing, None));
     };
-    let effect = match Content::decode(plain.as_slice()) {
-        Ok(content) if content.message_id.len() == 16 => apply(&tx, &contact, content)?,
-        _ => Effect::Nothing,
+    let (effect, shown) = match Content::decode(plain.as_slice()) {
+        Ok(content) if content.message_id.len() == 16 => {
+            let shown = matches!(
+                content.body,
+                Some(ContentBody::Text(_) | ContentBody::Nudge(_) | ContentBody::File(_))
+            )
+            .then(|| content.message_id.clone());
+            (apply(&tx, contact, content)?, shown)
+        }
+        _ => (Effect::Nothing, None),
     };
     tx.commit()?;
-    Ok(effect)
+    Ok((effect, shown))
 }
 
 fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<Effect> {
@@ -1028,15 +1133,21 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
             messages
         }
         ContentBody::Receipt(receipt) => {
-            if !settings(conn)?.read_receipts {
-                return Ok(Effect::Nothing);
-            }
-            for message_id in receipt.read.iter().take(MAX_RECEIPT_IDS) {
+            for message_id in receipt.delivered.iter().take(MAX_RECEIPT_IDS) {
                 conn.execute(
-                    "UPDATE messages SET status = 2
-                      WHERE contact_id = ?1 AND message_id = ?2 AND outgoing = 1",
+                    "UPDATE messages SET status = 1, in_mailbox = 0
+                      WHERE contact_id = ?1 AND message_id = ?2 AND outgoing = 1 AND status = 0",
                     (id, message_id),
                 )?;
+            }
+            if settings(conn)?.read_receipts {
+                for message_id in receipt.read.iter().take(MAX_RECEIPT_IDS) {
+                    conn.execute(
+                        "UPDATE messages SET status = 2, in_mailbox = 0
+                          WHERE contact_id = ?1 AND message_id = ?2 AND outgoing = 1",
+                        (id, message_id),
+                    )?;
+                }
             }
             messages
         }
@@ -1128,6 +1239,25 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
                 },
             )?;
             messages
+        }
+        ContentBody::Mailbox(info) => {
+            let theirs = match (
+                <[u8; 32]>::try_from(info.endpoint_id.as_slice()),
+                <[u8; 32]>::try_from(info.drop.as_slice()),
+            ) {
+                (Ok(endpoint_id), Ok(drop)) => Some(crate::mailbox::Theirs {
+                    endpoint_id,
+                    addrs: crate::network::clean_addrs(info.addrs),
+                    drop,
+                }),
+                _ if info.endpoint_id.is_empty() => None,
+                _ => return Ok(Effect::Nothing),
+            };
+            if crate::mailbox::set_theirs(conn, id, theirs.as_ref())? {
+                Effect::Contact(id)
+            } else {
+                Effect::Nothing
+            }
         }
         // O aperto de mão já passou.
         ContentBody::Hello(_) | ContentBody::Welcome(_) => Effect::Nothing,

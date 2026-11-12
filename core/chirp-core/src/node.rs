@@ -20,6 +20,10 @@
 //! e só tira um envelope com o `Ack`. Tenta de novo a cada `RETRY_INTERVAL`, quando
 //! o contato fala com a gente, quando a descoberta (mDNS, `discovery`) o acha num
 //! endereço novo e quando há algo novo na caixa.
+//!
+//! A caixa postal (fase 7, o `mailbox`): um contato que não atende e que tem uma
+//! recebe o que esperava na caixa dele, que guarda até ele buscar. A deste aparelho é
+//! lida ao ligar e a cada `MAILBOX_INTERVAL`.
 
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
@@ -36,6 +40,7 @@ use crate::discovery;
 use crate::error::{CoreError, CoreResult};
 use crate::files;
 use crate::invite::Invite;
+use crate::mailbox::{self, proto as mproto, PairLink};
 use crate::messages::{self, Effect};
 use crate::network;
 use crate::session::{self, InviteKind};
@@ -63,6 +68,8 @@ const RETRY_INTERVAL: Duration = Duration::from_secs(20);
 const ONLINE_FOR: Duration = Duration::from_secs(90);
 /// De quanto em quanto tempo o anúncio do mDNS é conferido (a época, os endereços).
 const ANNOUNCE_CHECK: Duration = Duration::from_secs(60);
+/// De quanto em quanto tempo a caixa postal deste aparelho é lida.
+const MAILBOX_INTERVAL: Duration = Duration::from_secs(60);
 
 /// O que muda no núcleo sem a UI pedir.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -119,6 +126,10 @@ pub struct Node {
     fetch: mpsc::UnboundedSender<()>,
     /// Onde ficam os blobs.
     files_dir: std::path::PathBuf,
+    /// Acorda a leitura da caixa postal (ligou agora, um contato novo).
+    mailbox_wake: tokio::sync::Notify,
+    /// Se a última leitura da caixa postal deu certo (nada: ainda não tentou).
+    mailbox_ok: Mutex<Option<bool>>,
 }
 
 /// Um endereço da rede local: IPv4 privado (RFC 1918) ou IPv6 local único (fc00::/7).
@@ -244,6 +255,8 @@ impl Node {
             reach: Mutex::new(HashMap::new()),
             fetch,
             files_dir,
+            mailbox_wake: tokio::sync::Notify::new(),
+            mailbox_ok: Mutex::new(None),
         });
         tokio::spawn(node.clone().accept_loop());
         tokio::spawn(node.clone().delivery_loop(woken));
@@ -251,6 +264,7 @@ impl Node {
         tokio::spawn(node.clone().discovery_loop());
         tokio::spawn(node.clone().addrs_loop());
         tokio::spawn(node.clone().download_loop(fetching));
+        tokio::spawn(node.clone().mailbox_loop());
         Ok(node)
     }
 
@@ -481,11 +495,79 @@ impl Node {
         }
         let result = self.deliver_to(&contact).await;
         // O "digitando" que não saiu agora não vale depois.
-        let _ = with_store(&self.store, move |s| {
-            messages::drop_ephemeral(s.conn(), Some(contact_id))
+        let theirs = with_store(&self.store, move |s| {
+            messages::drop_ephemeral(s.conn(), Some(contact_id))?;
+            mailbox::theirs(s.conn(), contact_id)
         })
         .await;
+        match (result, theirs) {
+            // Não atendeu, e tem caixa postal: o resto fica lá.
+            (Err(CoreError::Unreachable), Ok(Some(theirs))) => {
+                self.deposit(contact_id, theirs).await
+            }
+            (result, _) => result,
+        }
+    }
+
+    /// Deixa na caixa postal do contato o que está na caixa de saída, na ordem. Cada
+    /// envelope sai daqui quando a caixa diz que guardou.
+    async fn deposit(&self, contact_id: i64, theirs: mailbox::Theirs) -> CoreResult<()> {
+        let conn = self
+            .dial(&theirs.endpoint_id, &theirs.addrs, mproto::ALPN)
+            .await?;
+        let result = self.deposit_on(&conn, contact_id, &theirs.drop).await;
+        conn.close(0u32.into(), b"");
         result
+    }
+
+    async fn deposit_on(
+        &self,
+        conn: &Connection,
+        contact_id: i64,
+        drop: &[u8; 32],
+    ) -> CoreResult<()> {
+        let (mut send, mut recv) = conn.open_bi().await.map_err(|_| CoreError::Unreachable)?;
+        for _ in 0..MAX_MESSAGES {
+            let Some(out) = with_store(&self.store, move |s| {
+                messages::next_out(s.conn(), contact_id)
+            })
+            .await?
+            else {
+                break;
+            };
+            let body = if out.prekey {
+                Body::PreKeyMessage(out.ciphertext)
+            } else {
+                Body::Message(out.ciphertext)
+            };
+            let envelope = prost::Message::encode_to_vec(&wire::frame(body));
+            let deposit = mproto::Body::Deposit(mproto::Deposit {
+                drop: drop.to_vec(),
+                envelope,
+            });
+            mproto::write(&mut send, deposit)
+                .await
+                .map_err(|_| CoreError::Unreachable)?;
+            match Self::mailbox_reply(&mut recv).await? {
+                mproto::Body::Done(_) => {
+                    let id = out.id;
+                    if with_store(&self.store, move |s| mailbox::deposited(s.conn(), id)).await? {
+                        self.emit(NodeEvent::MessagesChanged(contact_id));
+                    }
+                }
+                // Cheia, ou a ficha não vale mais: fica na caixa de saída.
+                _ => return Err(CoreError::Unreachable),
+            }
+        }
+        let _ = send.finish();
+        Ok(())
+    }
+
+    async fn mailbox_reply(recv: &mut RecvStream) -> CoreResult<mproto::Body> {
+        tokio::time::timeout(IDLE_TIMEOUT, mproto::read(recv))
+            .await
+            .map_err(|_| CoreError::Unreachable)?
+            .map_err(|_| CoreError::Unreachable)
     }
 
     async fn deliver_to(&self, contact: &Contact) -> CoreResult<()> {
@@ -496,22 +578,30 @@ impl Node {
         result
     }
 
-    async fn connect(&self, contact: &Contact) -> CoreResult<Connection> {
-        let remote = EndpointId::from_bytes(
-            contact
-                .endpoint_id
-                .as_slice()
-                .try_into()
-                .map_err(|_| CoreError::Storage)?,
-        )
-        .map_err(|_| CoreError::Storage)?;
-        let addr = EndpointAddr::from_parts(remote, self.usable(&contact.addrs));
+    /// Conecta a um nó pelos endereços que este nó pode usar agora.
+    async fn dial(
+        &self,
+        endpoint_id: &[u8],
+        addrs: &[String],
+        alpn: &[u8],
+    ) -> CoreResult<Connection> {
+        let remote =
+            EndpointId::from_bytes(endpoint_id.try_into().map_err(|_| CoreError::Storage)?)
+                .map_err(|_| CoreError::Storage)?;
+        let usable = self.usable(addrs);
+        if usable.is_empty() {
+            return Err(CoreError::Unreachable);
+        }
+        let addr = EndpointAddr::from_parts(remote, usable);
         self.lookup.add_endpoint_info(addr.clone());
-        let result =
-            tokio::time::timeout(self.connect_timeout(), self.endpoint.connect(addr, ALPN))
-                .await
-                .map_err(|_| CoreError::Unreachable)
-                .and_then(|r| r.map_err(|_| CoreError::Unreachable));
+        tokio::time::timeout(self.connect_timeout(), self.endpoint.connect(addr, alpn))
+            .await
+            .map_err(|_| CoreError::Unreachable)
+            .and_then(|r| r.map_err(|_| CoreError::Unreachable))
+    }
+
+    async fn connect(&self, contact: &Contact) -> CoreResult<Connection> {
+        let result = self.dial(&contact.endpoint_id, &contact.addrs, ALPN).await;
         match &result {
             Ok(conn) => self.reached(contact.id, Self::path_of(conn)),
             Err(_) => self.reached(contact.id, Reach::Unreachable),
@@ -790,6 +880,8 @@ impl Node {
             Ok(contact) => {
                 let _ = send.finish();
                 self.emit(NodeEvent::ContactChanged(contact.id));
+                // O contato novo fica sabendo da caixa postal, se houver.
+                self.check_mailbox();
                 Ok(contact)
             }
             Err(error) => {
@@ -883,16 +975,7 @@ impl Node {
             .await;
             let reply = match result {
                 Ok(effect) => {
-                    match effect {
-                        Effect::Messages(id) => {
-                            self.emit(NodeEvent::MessagesChanged(id));
-                            // Pode ser um arquivo novo para baixar.
-                            self.fetch();
-                        }
-                        Effect::Typing(id) => self.emit(NodeEvent::Typing(id)),
-                        Effect::Contact(id) => self.emit(NodeEvent::ContactChanged(id)),
-                        Effect::Nothing => {}
-                    }
+                    self.saw_effect(effect);
                     Body::Ack(wire::Ack {})
                 }
                 Err(_) => Body::Refused(wire::Refused {}),
@@ -1074,6 +1157,7 @@ impl Node {
                                 .await?;
                             let _ = send.finish();
                             self.emit(NodeEvent::ContactChanged(contact.id));
+                            self.check_mailbox();
                             // Espera o outro lado ler antes de fechar.
                             let _ =
                                 tokio::time::timeout(Duration::from_secs(5), conn.closed()).await;
@@ -1087,6 +1171,247 @@ impl Node {
             wire::write_frame(&mut send, &wire::frame(reply)).await?;
         }
         Err(CoreError::Protocol)
+    }
+
+    /// Pede uma leitura da caixa postal agora (e o aviso aos contatos que faltam).
+    pub fn check_mailbox(&self) {
+        self.mailbox_wake.notify_one();
+    }
+
+    /// Se a última leitura da caixa postal deu certo.
+    pub fn mailbox_ok(&self) -> Option<bool> {
+        self.mailbox_ok.lock().ok().and_then(|ok| *ok)
+    }
+
+    async fn mailbox_loop(self: Arc<Self>) {
+        let mut tick = tokio::time::interval(MAILBOX_INTERVAL);
+        loop {
+            tokio::select! {
+                _ = tick.tick() => {}
+                _ = self.mailbox_wake.notified() => {}
+            }
+            if self.endpoint.is_closed() {
+                return;
+            }
+            let result = self.mailbox_round().await;
+            if let Ok(mut ok) = self.mailbox_ok.lock() {
+                *ok = match result {
+                    Ok(true) => Some(true),
+                    Ok(false) => None,
+                    Err(_) => Some(false),
+                };
+            }
+        }
+    }
+
+    /// Avisa os contatos que ainda não sabem da caixa, manda as fichas que mudaram e
+    /// busca o que chegou. Devolve se há caixa.
+    async fn mailbox_round(&self) -> CoreResult<bool> {
+        let (paired, told) = with_store(&self.store, |s| {
+            let told = messages::send_mailbox(s)?;
+            Ok((mailbox::get(s.conn())?, told))
+        })
+        .await?;
+        for id in told {
+            self.flush(id);
+        }
+        let Some(paired) = paired else {
+            return Ok(false);
+        };
+        let conn = self
+            .dial(&paired.endpoint_id, &paired.addrs, mproto::ALPN)
+            .await?;
+        let result = self.fetch_mailbox(&conn, paired.synced).await;
+        conn.close(0u32.into(), b"");
+        result.map(|_| true)
+    }
+
+    async fn fetch_mailbox(&self, conn: &Connection, synced: Option<Vec<u8>>) -> CoreResult<()> {
+        let (mut send, mut recv) = conn.open_bi().await.map_err(|_| CoreError::Unreachable)?;
+        let hashes = with_store(&self.store, |s| mailbox::drops(s.conn())).await?;
+        let digest = mailbox::digest(&hashes);
+        if synced.as_ref() != Some(&digest) {
+            mproto::write(
+                &mut send,
+                mproto::Body::SetDrops(mproto::SetDrops { hashes }),
+            )
+            .await
+            .map_err(|_| CoreError::Unreachable)?;
+            let mproto::Body::Done(_) = Self::mailbox_reply(&mut recv).await? else {
+                // A caixa não nos conhece mais (desligada do outro lado).
+                return Err(CoreError::Protocol);
+            };
+            with_store(&self.store, move |s| mailbox::set_synced(s.conn(), &digest)).await?;
+        }
+        let mut after = 0;
+        loop {
+            mproto::write(&mut send, mproto::Body::Fetch(mproto::Fetch { after }))
+                .await
+                .map_err(|_| CoreError::Unreachable)?;
+            let mut items = Vec::new();
+            loop {
+                match Self::mailbox_reply(&mut recv).await? {
+                    mproto::Body::Item(item) if items.len() < mproto::FETCH_BATCH => {
+                        items.push(item)
+                    }
+                    mproto::Body::Done(_) => break,
+                    _ => return Err(CoreError::Protocol),
+                }
+            }
+            let full = items.len() == mproto::FETCH_BATCH;
+            let Some(read) = self.open_items(items).await? else {
+                break;
+            };
+            mproto::write(
+                &mut send,
+                mproto::Body::Remove(mproto::Remove { up_to: read }),
+            )
+            .await
+            .map_err(|_| CoreError::Unreachable)?;
+            let mproto::Body::Done(_) = Self::mailbox_reply(&mut recv).await? else {
+                return Err(CoreError::Protocol);
+            };
+            after = read;
+            if !full {
+                break;
+            }
+        }
+        let _ = send.finish();
+        let now = Self::now_secs() as i64;
+        with_store(&self.store, move |s| mailbox::set_last_fetch(s.conn(), now)).await
+    }
+
+    /// Abre o que veio da caixa, como se tivesse chegado direto, e devolve até onde leu
+    /// (o que não decifra também conta: é jogado fora). Uma falha do banco para antes.
+    async fn open_items(&self, items: Vec<mproto::Item>) -> CoreResult<Option<u64>> {
+        let mut read = None;
+        let mut delivered: HashMap<i64, Vec<Vec<u8>>> = HashMap::new();
+        for item in items {
+            let result = with_store(&self.store, move |s| {
+                let Some(contact) = mailbox::contact_by_drop(s.conn(), &item.drop)? else {
+                    return Ok(None);
+                };
+                let (prekey, bytes) = match wire::decode_frame(&item.envelope) {
+                    Ok(Body::Message(bytes)) => (false, bytes),
+                    Ok(Body::PreKeyMessage(bytes)) => (true, bytes),
+                    _ => return Ok(None),
+                };
+                match messages::receive_from(s, &contact, prekey, &bytes) {
+                    Ok(done) => Ok(Some((contact.id, done))),
+                    Err(CoreError::Storage) => Err(CoreError::Storage),
+                    Err(_) => Ok(None),
+                }
+            })
+            .await;
+            match result {
+                Ok(Some((contact_id, (effect, shown)))) => {
+                    self.saw_effect(effect);
+                    delivered.entry(contact_id).or_default().extend(shown);
+                }
+                Ok(None) => {}
+                Err(_) => break,
+            }
+            read = Some(item.seq);
+        }
+        for (contact_id, ids) in delivered {
+            let sent = with_store(&self.store, move |s| {
+                messages::send_delivered(s, contact_id, &ids)
+            })
+            .await;
+            if sent.is_ok() {
+                self.flush(contact_id);
+            }
+        }
+        Ok(read)
+    }
+
+    /// Avisa a UI do que mudou com uma mensagem que chegou.
+    fn saw_effect(&self, effect: Effect) {
+        match effect {
+            Effect::Messages(id) => {
+                self.emit(NodeEvent::MessagesChanged(id));
+                // Pode ser um arquivo novo para baixar.
+                self.fetch();
+            }
+            Effect::Typing(id) => self.emit(NodeEvent::Typing(id)),
+            Effect::Contact(id) => self.emit(NodeEvent::ContactChanged(id)),
+            Effect::Nothing => {}
+        }
+    }
+
+    /// Liga este aparelho à caixa do código e avisa os contatos. Uma caixa anterior é
+    /// desligada antes.
+    pub async fn pair_mailbox(&self, link: PairLink) -> CoreResult<()> {
+        let addrs = mailbox::link_addrs(&link);
+        let conn = self.dial(&link.endpoint_id, &addrs, mproto::ALPN).await?;
+        let result = async {
+            let (mut send, mut recv) = conn.open_bi().await.map_err(|_| CoreError::Unreachable)?;
+            mproto::write(
+                &mut send,
+                mproto::Body::Pair(mproto::Pair {
+                    token: link.token.to_vec(),
+                }),
+            )
+            .await
+            .map_err(|_| CoreError::Unreachable)?;
+            let reply = Self::mailbox_reply(&mut recv).await?;
+            let _ = send.finish();
+            Ok::<_, CoreError>(reply)
+        }
+        .await;
+        conn.close(0u32.into(), b"");
+        let mproto::Body::Done(_) = result? else {
+            return Err(CoreError::MailboxRefused);
+        };
+        let old = with_store(&self.store, |s| mailbox::get(s.conn())).await?;
+        if let Some(old) = old.filter(|o| o.endpoint_id != link.endpoint_id) {
+            self.say_unpair(&old).await;
+        }
+        let now = Self::now_secs() as i64;
+        with_store(&self.store, move |s| {
+            mailbox::set(s.conn(), &link.endpoint_id, &addrs, now)
+        })
+        .await?;
+        if let Ok(mut ok) = self.mailbox_ok.lock() {
+            *ok = Some(true);
+        }
+        self.check_mailbox();
+        Ok(())
+    }
+
+    /// Desliga a caixa (o que estava guardado nela se perde) e avisa os contatos.
+    pub async fn unpair_mailbox(&self) -> CoreResult<()> {
+        let old = with_store(&self.store, |s| mailbox::get(s.conn())).await?;
+        if let Some(old) = old {
+            self.say_unpair(&old).await;
+        }
+        with_store(&self.store, |s| mailbox::clear(s.conn())).await?;
+        if let Ok(mut ok) = self.mailbox_ok.lock() {
+            *ok = None;
+        }
+        self.check_mailbox();
+        Ok(())
+    }
+
+    /// Pede à caixa que esqueça este aparelho, se ela atender. Se não, ela esquece
+    /// sozinha o que guardava, no prazo dela.
+    async fn say_unpair(&self, paired: &mailbox::Paired) {
+        let Ok(conn) = self
+            .dial(&paired.endpoint_id, &paired.addrs, mproto::ALPN)
+            .await
+        else {
+            return;
+        };
+        if let Ok((mut send, mut recv)) = conn.open_bi().await {
+            if mproto::write(&mut send, mproto::Body::Unpair(mproto::Unpair {}))
+                .await
+                .is_ok()
+            {
+                let _ = Self::mailbox_reply(&mut recv).await;
+            }
+            let _ = send.finish();
+        }
+        conn.close(0u32.into(), b"");
     }
 
     pub async fn close(&self) {
@@ -1459,6 +1784,94 @@ mod tests {
         .await;
         alice.close().await;
         bob.close().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_message_waits_in_the_mailbox_while_the_contact_is_off() {
+        use crate::messages::{self, Status};
+        use chirp_mailbox::server::{self, Config, Server};
+        let dir = tempfile::tempdir().unwrap();
+        let mailbox_server = Server::start(Config {
+            dir: dir.path().to_path_buf(),
+            port: 0,
+            public: vec![],
+            relay: None,
+            limits: Default::default(),
+        })
+        .await
+        .unwrap();
+        chirp_mailbox::store::create_pairing(dir.path(), [4; 32], server::now()).unwrap();
+        let link = PairLink {
+            endpoint_id: *mailbox_server.endpoint.id().as_bytes(),
+            token: [4; 32],
+            addrs: mailbox_server.endpoint.addr().ip_addrs().copied().collect(),
+            relay: None,
+        };
+
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
+        let alice_knows = |store: &SharedStore| {
+            mailbox::theirs(store.lock().unwrap().conn(), bob_at_alice)
+                .unwrap()
+                .is_some()
+        };
+
+        // O código serve uma vez só.
+        bob.pair_mailbox(link.clone()).await.unwrap();
+        assert_eq!(
+            alice.pair_mailbox(link).await.err(),
+            Some(CoreError::MailboxRefused)
+        );
+        until("Alice learns about Bob's mailbox", || {
+            alice_knows(&alice_store)
+        })
+        .await;
+        bob.close().await;
+
+        messages::send_text(
+            &mut alice_store.lock().unwrap(),
+            bob_at_alice,
+            "na caixa",
+            None,
+        )
+        .unwrap();
+        alice.flush(bob_at_alice);
+        until("the message waits in the mailbox", || {
+            let list =
+                messages::list(alice_store.lock().unwrap().conn(), bob_at_alice, None, 10).unwrap();
+            list.last()
+                .is_some_and(|m| m.in_mailbox && m.status == Status::Pending)
+        })
+        .await;
+
+        // Bob volta: busca na caixa, e o "entregue" chega a Alice.
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        until("Bob reads the mailbox", || {
+            texts(&bob_store, alice_at_bob)
+                .iter()
+                .map(|(t, _)| t.as_str())
+                .collect::<Vec<_>>()
+                == ["na caixa"]
+        })
+        .await;
+        until("Alice sees it delivered", || {
+            let list =
+                messages::list(alice_store.lock().unwrap().conn(), bob_at_alice, None, 10).unwrap();
+            list.last()
+                .is_some_and(|m| !m.in_mailbox && m.status == Status::Delivered)
+        })
+        .await;
+        assert_eq!(bob.mailbox_ok(), Some(true));
+
+        // Bob desliga: Alice esquece a caixa.
+        bob.unpair_mailbox().await.unwrap();
+        until("Alice forgets the mailbox", || !alice_knows(&alice_store)).await;
+        for node in [alice, bob] {
+            node.close().await;
+        }
+        mailbox_server.close().await;
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

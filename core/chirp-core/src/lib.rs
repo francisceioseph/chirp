@@ -13,6 +13,7 @@ mod error;
 mod files;
 mod identity;
 mod invite;
+mod mailbox;
 mod messages;
 mod network;
 mod node;

@@ -1,0 +1,44 @@
+# A caixa postal do Chirp como serviço do sistema (o pacote .deb instala e liga).
+# Roda com um usuário que só existe enquanto ela roda, sem ver nada além da pasta dela.
+# Para mudar a porta, os endereços públicos ou o retransmissor:
+#   sudo systemctl edit chirp-mailbox
+# e um ExecStart= vazio seguido do novo. Para ligar o app:
+#   sudo chirp-mailbox pair --data /var/lib/chirp-mailbox
+[Unit]
+Description=Chirp mailbox (keeps encrypted messages until the app comes online)
+Documentation=https://github.com/francisceioseph/chirp/blob/master/docs/CAIXA-POSTAL.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/chirp-mailbox run --data /var/lib/chirp-mailbox
+Restart=on-failure
+RestartSec=5
+DynamicUser=yes
+StateDirectory=chirp-mailbox
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_INET AF_INET6 AF_NETLINK AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target

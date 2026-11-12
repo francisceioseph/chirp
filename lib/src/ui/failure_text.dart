@@ -24,5 +24,7 @@ String failureText(
   CoreFailure.invalidRelay => l10n.relayInvalid,
   CoreFailure.invalidFile => l10n.fileInvalid,
   CoreFailure.noAudio => l10n.audioUnavailable,
+  CoreFailure.invalidMailbox => l10n.mailboxInvalid,
+  CoreFailure.mailboxRefused => l10n.mailboxRefused,
   _ => l10n.somethingWentWrong,
 };

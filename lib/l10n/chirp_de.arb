@@ -240,5 +240,21 @@
   "pasteStep1": "Bitte die andere Person um den Link, dort, wo ihr schon schreibt.",
   "pasteStep2": "Füge ihn hier ein. Chirp sucht im lokalen Netz, oder im Internet, wenn es an ist.",
   "pasteStep3": "Der Kontakt kommt unverifiziert: Prüft den Sicherheitscode, wenn ihr euch seht.",
-  "pasteTip": "Der Link gilt nur einmal und läuft nach 24 Stunden ab. Stell ihn nicht öffentlich."
+  "pasteTip": "Der Link gilt nur einmal und läuft nach 24 Stunden ab. Stell ihn nicht öffentlich.",
+  "statusInMailbox": "Wartet in ihrem Postfach",
+  "mailboxTitle": "Postfach",
+  "mailboxHelp": "Ein Postfach ist ein kleiner Server von dir oder von jemandem, dem du vertraust. Es bewahrt auf, was deine Kontakte schicken, während dieses Gerät aus ist, bis du Chirp öffnest. Nachrichten kommen dort bereits verschlüsselt an: Es sieht, wer etwas hinterlegt und wann, nie was. Dateien brauchen weiterhin euch beide online.",
+  "mailboxCode": "Postfach-Code",
+  "mailboxCodeHelp": "Führe chirp-mailbox pair auf dem Server aus und füge den angezeigten Code ein. Er gilt einmal, 24 Stunden lang.",
+  "mailboxPair": "Verbinden",
+  "mailboxPaired": "Postfach verbunden",
+  "mailboxStatusWaiting": "Noch nicht abgerufen.",
+  "mailboxStatusChecked": "Zuletzt abgerufen {time}.",
+  "mailboxStatusUnreachable": "Das Postfach hat nicht geantwortet. Nachrichten an dich warten eventuell bei deinen Kontakten.",
+  "mailboxUnpair": "Trennen",
+  "mailboxUnpairTitle": "Postfach trennen?",
+  "mailboxUnpairBody": "Was darin wartet, geht verloren, und deine Kontakte hinterlegen dort nichts mehr. Mit einem neuen Code kannst du es wieder verbinden.",
+  "mailboxInvalid": "Dieser Code funktioniert nicht. Füge den ganzen chirp://mailbox#-Link ein.",
+  "mailboxRefused": "Das Postfach hat den Code abgelehnt. Er gilt nur einmal und läuft nach 24 Stunden ab: Erzeuge einen neuen.",
+  "mailboxUnreachable": "Das Postfach war nicht erreichbar. Ohne Internet funktioniert nur ein Postfach im lokalen Netz."
 }

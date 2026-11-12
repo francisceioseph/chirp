@@ -63,6 +63,12 @@ enum CoreFailure {
 
   /// Sem microfone ou alto-falante, ou o sistema não deixou usar.
   noAudio,
+
+  /// O código da caixa postal não se lê.
+  invalidMailbox,
+
+  /// A caixa postal recusou o código: vencido, já usado ou de outra caixa.
+  mailboxRefused,
   storage,
 }
 
@@ -158,6 +164,21 @@ class NetworkSettings {
 
 /// Quantos retransmissores, no máximo (o núcleo recusa mais).
 const maxRelays = 3;
+
+/// A caixa postal deste aparelho (fase 7): um servidor de quem usa, que guarda o
+/// que os contatos não conseguiram entregar.
+@immutable
+class MailboxState {
+  const MailboxState({required this.pairedAt, this.lastFetch, this.reachable});
+
+  final DateTime pairedAt;
+
+  /// Quando foi lida por último; nada se ainda não leu.
+  final DateTime? lastFetch;
+
+  /// Se a última leitura deu certo; nada quando não tentou desde que a rede ligou.
+  final bool? reachable;
+}
 
 /// Como a rede está agora.
 @immutable
@@ -278,6 +299,7 @@ class ChatMessage {
     this.canEdit = false,
     this.canDeleteForEveryone = false,
     this.file,
+    this.inMailbox = false,
   });
 
   final int id;
@@ -304,6 +326,9 @@ class ChatMessage {
 
   /// O arquivo, se a mensagem é um.
   final ChatFile? file;
+
+  /// Minha, e esperando na caixa postal do contato até ele buscar.
+  final bool inMailbox;
 
   bool get unread => !outgoing && status == MessageStatus.pending;
 }
@@ -545,6 +570,16 @@ abstract interface class ProfileStore {
   Future<NetworkSettings> setNetworkSettings(NetworkSettings settings);
 
   Future<NetworkStatus> networkStatus();
+
+  /// A caixa postal ligada, se houver.
+  Future<MailboxState?> mailbox();
+
+  /// Liga a uma caixa postal pelo código dela (o link que o `chirp-mailbox pair`
+  /// mostra) e avisa os contatos.
+  Future<MailboxState> pairMailbox(String link);
+
+  /// Desliga a caixa postal e avisa os contatos.
+  Future<void> unpairMailbox();
 
   Future<void> setAppearance(Appearance appearance);
 
@@ -788,7 +823,8 @@ class _BridgeStore implements ProfileStore {
         ),
       )
       .handleError(
-        (Object error) => throw CoreException(_failure(error as bridge.CoreError)),
+        (Object error) =>
+            throw CoreException(_failure(error as bridge.CoreError)),
         test: (error) => error is bridge.CoreError,
       );
 
@@ -878,6 +914,19 @@ class _BridgeStore implements ProfileStore {
   });
 
   @override
+  Future<MailboxState?> mailbox() => _guardAsync(() async {
+    final m = await _store.mailbox();
+    return m == null ? null : _mailbox(m);
+  });
+
+  @override
+  Future<MailboxState> pairMailbox(String link) =>
+      _guardAsync(() async => _mailbox(await _store.pairMailbox(link: link)));
+
+  @override
+  Future<void> unpairMailbox() => _guardAsync(_store.unpairMailbox);
+
+  @override
   Future<NotificationMode> notificationMode() => _guardAsync(
     () async =>
         NotificationMode.values[(await _store.notificationMode()).index],
@@ -938,6 +987,14 @@ class _BridgeStore implements ProfileStore {
   );
 }
 
+MailboxState _mailbox(bridge.MailboxView m) => MailboxState(
+  pairedAt: DateTime.fromMillisecondsSinceEpoch(m.pairedAt * 1000),
+  lastFetch: m.lastFetch == 0
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(m.lastFetch * 1000),
+  reachable: m.reachable,
+);
+
 ChatMessage _message(bridge.MessageView m) => ChatMessage(
   id: m.id,
   contactId: m.contactId,
@@ -962,6 +1019,7 @@ ChatMessage _message(bridge.MessageView m) => ChatMessage(
   theirReaction: m.theirReaction,
   canEdit: m.canEdit,
   canDeleteForEveryone: m.canDeleteForEveryone,
+  inMailbox: m.inMailbox,
   file: switch (m.file) {
     null => null,
     final f => ChatFile(
@@ -1017,6 +1075,8 @@ CoreFailure _failure(bridge.CoreError error) => switch (error) {
   bridge.CoreError.invalidRelay => CoreFailure.invalidRelay,
   bridge.CoreError.invalidFile => CoreFailure.invalidFile,
   bridge.CoreError.noAudio => CoreFailure.noAudio,
+  bridge.CoreError.invalidMailbox => CoreFailure.invalidMailbox,
+  bridge.CoreError.mailboxRefused => CoreFailure.mailboxRefused,
   bridge.CoreError.storage => CoreFailure.storage,
 };
 

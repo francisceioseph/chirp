@@ -69,6 +69,12 @@ pub enum CoreError {
     /// Sem microfone ou alto-falante, ou o sistema não deixou usar.
     #[error("no audio device")]
     NoAudio,
+    /// O código da caixa postal não se lê.
+    #[error("the mailbox code is not valid")]
+    InvalidMailbox,
+    /// A caixa postal recusou o código: vencido, já usado ou de outra caixa.
+    #[error("the mailbox refused the code")]
+    MailboxRefused,
     /// Falha de disco ou do SQLite que não é nenhuma das acima.
     #[error("storage failure")]
     Storage,

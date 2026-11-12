@@ -240,5 +240,21 @@
   "pasteStep1": "Peça o link à outra pessoa, por onde vocês já conversam.",
   "pasteStep2": "Cole aqui. O Chirp procura a pessoa pela rede local, ou pela internet se estiver ligada.",
   "pasteStep3": "O contato entra como não verificado: confiram o código de segurança quando se encontrarem.",
-  "pasteTip": "O link só serve uma vez e vence em 24 horas. Não deixe em lugar público."
+  "pasteTip": "O link só serve uma vez e vence em 24 horas. Não deixe em lugar público.",
+  "statusInMailbox": "Esperando na caixa postal do contato",
+  "mailboxTitle": "Caixa postal",
+  "mailboxHelp": "A caixa postal é um pequeno servidor seu, ou de alguém em quem você confia, que guarda o que os contatos mandam enquanto este aparelho está desligado, até você abrir o Chirp. As mensagens chegam lá já cifradas: ela vê quem deixa algo e quando, nunca o quê. Arquivos ainda pedem os dois online.",
+  "mailboxCode": "Código da caixa",
+  "mailboxCodeHelp": "Rode chirp-mailbox pair no servidor e cole o código que ele mostra. Vale uma vez, por 24 horas.",
+  "mailboxPair": "Ligar",
+  "mailboxPaired": "Caixa postal ligada",
+  "mailboxStatusWaiting": "Ainda não foi lida.",
+  "mailboxStatusChecked": "Lida por último {time}.",
+  "mailboxStatusUnreachable": "A caixa postal não respondeu. As mensagens para você podem esperar com os contatos.",
+  "mailboxUnpair": "Desligar",
+  "mailboxUnpairTitle": "Desligar a caixa postal?",
+  "mailboxUnpairBody": "O que estiver esperando nela se perde, e os contatos deixam de mandar para lá. Dá para ligar de novo com outro código.",
+  "mailboxInvalid": "Esse código não serve. Cole o link chirp://mailbox# inteiro.",
+  "mailboxRefused": "A caixa recusou o código. Ele vale uma vez só e vence em 24 horas: gere outro.",
+  "mailboxUnreachable": "Não deu para falar com a caixa. Com a internet desligada, só uma caixa na rede local funciona."
 }

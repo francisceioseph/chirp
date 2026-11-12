@@ -13,6 +13,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
     - `session/`: a sessão pelo libsignal (as lojas sobre o banco, os convites com as prekeys deles e o aperto de mão BundleRequest, Bundle, Hello e Welcome, cada passo numa transação). `invite.rs` (o QR e o link), `wire.rs` (os frames e o conteúdo em Protobuf pelo `prost`, sem `.proto`), `contacts.rs` e `node.rs` (o endpoint do iroh: a rede local e, se ligados, a internet e o retransmissor escolhido, sem descoberta por servidor; uma conexão de um contato é de mensagens, a de qualquer outro é um aperto de mão; guarda por onde alcançou cada contato e manda os endereços novos pela sessão).
     - `discovery.rs`: o mDNS (`_chirp._udp`) com o token de época, sem nome nem id fixo; o nó anuncia e procura, e um contato achado ganha o endereço novo.
     - `files.rs`: os arquivos (fatias de 60 KiB em AES-256-GCM, o blob cifrado em `files/` ao lado do banco, a oferta conferida, as fotos sem EXIF e a miniatura) e a tabela deles; o nó serve e baixa as fatias.
+    - `mailbox.rs`: a caixa postal (fase 7) do lado do banco (migração 10): a deste aparelho, a ficha de cada contato (só o SHA-256 vai para a caixa), a caixa de cada contato e o "na caixa postal" das mensagens. O `node.rs` deposita a caixa de saída de quem não atende e tem caixa, e lê a deste aparelho ao ligar e a cada 60 segundos; o `messages::send_mailbox` avisa os contatos, e o `Receipt.delivered` fecha o "entregue".
     - `network.rs`: a internet e os retransmissores (desligados por padrão), a conferência dos endereços que um contato manda e os últimos anunciados.
     - `notifications.rs`: o que as notificações mostram (desligadas, sem conteúdo, o nome, ou o nome e o texto; o padrão é o nome) e o continuar recebendo com a janela fechada (ligado por padrão).
     - `downloads.rs`: o baixar sozinho (o limite: nunca, 4, 32 ou 256 MiB, e se só dos contatos verificados).
@@ -20,6 +21,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
     - `appearance.rs`: a aparência (o id do tema, claro ou escuro, o vidro), no banco como o resto.
     - `messages.rs`: as mensagens, a caixa de saída (cifrada na mesma transação do ratchet, só sai com o `ack`) e a de entrada (idempotente), os recibos, o digitando, editar, apagar, reagir, chamar atenção e a busca (FTS5).
     - `api/store.rs`: o `ChirpStore` opaco, as funções do banco, a rede (`start_network`, `create_invite`, `add_contact`, `watch_events`), as mensagens (`conversations`, `messages`, `send_text` e o resto) e o runtime do tokio. Os arquivos ficam na pasta de suporte do app: `chirp.db` e, só com senha, `chirp.salt`.
+  - `chirp-mailbox/`: a caixa postal (`chirp_mailbox`). A biblioteca tem o protocolo (`proto.rs`, ALPN `chirp-mailbox/1`) e o código de ligação (`link.rs`), que o núcleo usa sem o servidor (`default-features = false`); com a feature `server` (a padrão), a pasta da caixa (`store.rs`: um arquivo por envelope, os códigos de ligação, as fichas de cada dono e os limites), o servidor no iroh (`server.rs`) e o binário (`main.rs`: `run`, `pair` e `status`). A unidade do systemd fica em `packaging/`, e a imagem no `Dockerfile` (o contexto é `core/`). Como instalar e ligar: `docs/CAIXA-POSTAL.md`.
   - O protocolo no fio está em `docs/PROTOCOLO.md`: mudou o formato, muda lá também.
 - `rust_builder/`: o plugin que compila o núcleo dentro do `flutter build` (cargokit, gerado pelo `flutter_rust_bridge_codegen integrate`). Aponta para `core/chirp-core`.
 - `flutter_rust_bridge.yaml`: de `crate::api` para `lib/src/bridge/`.
@@ -39,6 +41,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 - A distribuição (`docs/PLANO.md`, seção 9), feita pelo `.github/workflows/packages.yml` a cada versão nova:
   - `linux/packaging/`: o `.desktop` e o AppStream (`org.psito.chirp`).
     - `tool/stage-package.sh`, `build-deb.sh`, `build-rpm.sh` e `build-aur.sh` montam os pacotes `psito-chirp`, a partir do bundle de release, com o binário em `/usr/lib/psito-chirp/`.
+    - `tool/build-mailbox-deb.sh` monta o pacote `chirp-mailbox` (o binário e a unidade do systemd, ligada na instalação). O CI também publica a imagem em `ghcr.io/<dono>/chirp-mailbox`.
     - `tool/build-apt-repo.sh` e `build-dnf-repo.sh` montam os repositórios assinados do GitHub Pages, com a página do projeto (`site/`, com os sete idiomas no `i18n.js`).
   - `windows/installer/psito-chirp.iss`: o Inno Setup. Só para quem usa, ou para todos, com a regra do firewall.
   - `fastlane/metadata/android/`: o que o F-Droid mostra.
@@ -49,7 +52,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 - `flutter run -d linux`: o app, com o núcleo compilado pelo cargokit. Flutter 3.50.0 (Dart 3.14), o mesmo do CI.
 - No Linux, o `libsecret-1-dev` (o cofre) e o `libasound2-dev` (o som das notas de voz, pelo `cpal`) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
 - `flutter_rust_bridge_codegen generate`: depois de mudar `core/chirp-core/src/api/`. Instalado com `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked` (a mesma versão do `flutter_rust_bridge` no `pubspec.yaml` e no `Cargo.toml`).
-- `cd core && cargo test && cargo clippy --all-targets -- -D warnings && cargo fmt --all --check`
+- `cd core && cargo test -j 2 && cargo clippy --all-targets -j 2 -- -D warnings && cargo fmt --all --check` (o workspace inteiro: o núcleo e a caixa postal; sem o `-j`, a compilação pode estourar a memória do host)
 - `flutter analyze` e `flutter test -j 2` (o host tem pouca memória: não rode sem o `-j`). Mudou a UI de propósito: `flutter test test/golden_test.dart --update-goldens`, e olhe as imagens em `test/goldens/` antes de comitar.
 - `flutter test integration_test -d linux`: o app de verdade (núcleo, SQLCipher e o cofre do sistema) numa pasta temporária e com uma entrada própria no cofre, sem tocar nos dados de quem usa, e dois bancos conversando pela ponte (`messages_test.dart`). Fora do CI, porque lá não há cofre nem tela.
 
@@ -68,4 +71,4 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 - A janela funciona até 240×160 no desktop, e num celular de 320×568.
 - Os testes rodam em português (`test/flutter_test_config.dart`).
 - Trabalhe na `master`; commit e push só quando pedidos.
-- Versão pelo semantic-release (`.releaserc.json`, `tool/set-version.sh`, que grava no `pubspec.yaml`, com o versionCode do Android depois do `+`, e no `Cargo.toml` do núcleo): `feat` sobe o minor, `fix` o patch e `BREAKING CHANGE` o major. A contagem parte da tag `v0.2.0`, para a 1.0 ser o fim da fase 6. O CI devolve à `master` o commit da versão, então rode `git pull --rebase` antes de cada push.
+- Versão pelo semantic-release (`.releaserc.json`, `tool/set-version.sh`, que grava no `pubspec.yaml`, com o versionCode do Android depois do `+`, e nos `Cargo.toml` do núcleo e da caixa postal): `feat` sobe o minor, `fix` o patch e `BREAKING CHANGE` o major. A contagem parte da tag `v0.2.0`, para a 1.0 ser o fim da fase 6. O CI devolve à `master` o commit da versão, então rode `git pull --rebase` antes de cada push.

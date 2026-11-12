@@ -168,6 +168,24 @@ const MIGRATIONS: &[&str] = &[
          only_verified INTEGER NOT NULL
      );
      INSERT INTO downloads (id, auto_limit, only_verified) VALUES (1, 2, 0);",
+    // 10: a caixa postal (fase 7). A deste aparelho, a ficha que cada contato recebeu
+    // dela, a caixa de cada contato e as mensagens que esperam numa caixa.
+    "CREATE TABLE mailbox (
+         id          INTEGER PRIMARY KEY CHECK (id = 1),
+         endpoint_id BLOB NOT NULL,
+         addrs       TEXT NOT NULL,
+         paired_at   INTEGER NOT NULL,
+         last_fetch  INTEGER NOT NULL DEFAULT 0,
+         synced      BLOB
+     );
+     ALTER TABLE contacts ADD COLUMN drop_token BLOB;
+     ALTER TABLE contacts ADD COLUMN drop_hash BLOB;
+     ALTER TABLE contacts ADD COLUMN mailbox_told BLOB;
+     ALTER TABLE contacts ADD COLUMN their_mailbox BLOB;
+     ALTER TABLE contacts ADD COLUMN their_mailbox_addrs TEXT NOT NULL DEFAULT '';
+     ALTER TABLE contacts ADD COLUMN their_drop BLOB;
+     CREATE INDEX contacts_drop ON contacts (drop_hash);
+     ALTER TABLE messages ADD COLUMN in_mailbox INTEGER NOT NULL DEFAULT 0;",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

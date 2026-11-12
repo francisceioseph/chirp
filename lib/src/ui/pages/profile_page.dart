@@ -15,6 +15,7 @@ import '../organisms/appearance_card.dart';
 import '../organisms/background_card.dart';
 import '../organisms/chat_settings_card.dart';
 import '../organisms/downloads_card.dart';
+import '../organisms/mailbox_card.dart';
 import '../organisms/network_card.dart';
 import '../organisms/notifications_card.dart';
 import '../organisms/profile_card.dart';
@@ -88,6 +89,11 @@ class ProfilePage extends StatelessWidget {
           label: l10n.networkTitle,
           child: NetworkCard(store: store),
         ),
+        (
+          icon: Icons.markunread_mailbox_outlined,
+          label: l10n.mailboxTitle,
+          child: MailboxCard(store: store),
+        ),
       ],
       if (appearance != null)
         (
@@ -126,6 +132,8 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 16),
               ],
               NetworkCard(store: store),
+              const SizedBox(height: 16),
+              MailboxCard(store: store),
             ],
             if (appearance case final appearance?) ...[
               const SizedBox(height: 16),

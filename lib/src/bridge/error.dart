@@ -72,6 +72,12 @@ enum CoreError {
   /// Sem microfone ou alto-falante, ou o sistema não deixou usar.
   noAudio,
 
+  /// O código da caixa postal não se lê.
+  invalidMailbox,
+
+  /// A caixa postal recusou o código: vencido, já usado ou de outra caixa.
+  mailboxRefused,
+
   /// Falha de disco ou do SQLite que não é nenhuma das acima.
   storage,
 }

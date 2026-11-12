@@ -38,11 +38,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip(l10n.renameTooltip));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), ' ');
+    final field = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(field, ' ');
     await tester.tap(find.text(l10n.save));
     await tester.pumpAndSettle();
     expect(find.text(l10n.nameInvalid), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'Arlequim');
+    await tester.enterText(field, 'Arlequim');
     await tester.tap(find.text(l10n.save));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);

@@ -589,6 +589,31 @@ class FakeStore implements ProfileStore {
     relayConnected: network.internet && relayConnected,
   );
 
+  /// A caixa postal ligada, e o código que a caixa de mentira aceita.
+  MailboxState? mailboxState;
+  static const mailboxLink = 'chirp://mailbox#AQ';
+
+  @override
+  Future<MailboxState?> mailbox() async => mailboxState;
+
+  @override
+  Future<MailboxState> pairMailbox(String link) async {
+    final clean = link.trim();
+    if (!clean.startsWith('chirp://mailbox#')) {
+      throw const CoreException(CoreFailure.invalidMailbox);
+    }
+    if (clean != mailboxLink) {
+      throw const CoreException(CoreFailure.mailboxRefused);
+    }
+    return mailboxState = MailboxState(
+      pairedAt: DateTime(2026, 11, 12, 9),
+      reachable: true,
+    );
+  }
+
+  @override
+  Future<void> unpairMailbox() async => mailboxState = null;
+
   /// Muda por onde o contato foi alcançado, como o nó faria.
   void reached(int contactId, ContactReach reach) {
     final i = people.indexWhere((c) => c.id == contactId);

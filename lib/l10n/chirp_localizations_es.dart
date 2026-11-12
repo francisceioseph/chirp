@@ -830,4 +830,61 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   @override
   String get pasteTip =>
       'El enlace solo sirve una vez y caduca en 24 horas. No lo dejes en un lugar público.';
+
+  @override
+  String get statusInMailbox => 'Esperando en su buzón';
+
+  @override
+  String get mailboxTitle => 'Buzón';
+
+  @override
+  String get mailboxHelp =>
+      'El buzón es un pequeño servidor tuyo, o de alguien de confianza, que guarda lo que tus contactos envían mientras este dispositivo está apagado, hasta que abras Chirp. Los mensajes llegan ya cifrados: ve quién deja algo y cuándo, nunca qué. Los archivos aún necesitan a los dos en línea.';
+
+  @override
+  String get mailboxCode => 'Código del buzón';
+
+  @override
+  String get mailboxCodeHelp =>
+      'Ejecuta chirp-mailbox pair en el servidor y pega el código que muestra. Sirve una vez, durante 24 horas.';
+
+  @override
+  String get mailboxPair => 'Vincular';
+
+  @override
+  String get mailboxPaired => 'Buzón vinculado';
+
+  @override
+  String get mailboxStatusWaiting => 'Aún no se ha revisado.';
+
+  @override
+  String mailboxStatusChecked(String time) {
+    return 'Revisado por última vez $time.';
+  }
+
+  @override
+  String get mailboxStatusUnreachable =>
+      'El buzón no respondió. Los mensajes para ti pueden esperar con tus contactos.';
+
+  @override
+  String get mailboxUnpair => 'Desvincular';
+
+  @override
+  String get mailboxUnpairTitle => '¿Desvincular el buzón?';
+
+  @override
+  String get mailboxUnpairBody =>
+      'Lo que esté esperando en él se pierde, y tus contactos dejan de enviar allí. Puedes vincularlo de nuevo con otro código.';
+
+  @override
+  String get mailboxInvalid =>
+      'Ese código no sirve. Pega el enlace chirp://mailbox# completo.';
+
+  @override
+  String get mailboxRefused =>
+      'El buzón rechazó el código. Sirve una sola vez y caduca en 24 horas: genera otro.';
+
+  @override
+  String get mailboxUnreachable =>
+      'No se pudo contactar con el buzón. Con internet apagado, solo funciona un buzón en la red local.';
 }

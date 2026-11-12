@@ -831,4 +831,61 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
   @override
   String get pasteTip =>
       'O link só serve uma vez e vence em 24 horas. Não deixe em lugar público.';
+
+  @override
+  String get statusInMailbox => 'Esperando na caixa postal do contato';
+
+  @override
+  String get mailboxTitle => 'Caixa postal';
+
+  @override
+  String get mailboxHelp =>
+      'A caixa postal é um pequeno servidor seu, ou de alguém em quem você confia, que guarda o que os contatos mandam enquanto este aparelho está desligado, até você abrir o Chirp. As mensagens chegam lá já cifradas: ela vê quem deixa algo e quando, nunca o quê. Arquivos ainda pedem os dois online.';
+
+  @override
+  String get mailboxCode => 'Código da caixa';
+
+  @override
+  String get mailboxCodeHelp =>
+      'Rode chirp-mailbox pair no servidor e cole o código que ele mostra. Vale uma vez, por 24 horas.';
+
+  @override
+  String get mailboxPair => 'Ligar';
+
+  @override
+  String get mailboxPaired => 'Caixa postal ligada';
+
+  @override
+  String get mailboxStatusWaiting => 'Ainda não foi lida.';
+
+  @override
+  String mailboxStatusChecked(String time) {
+    return 'Lida por último $time.';
+  }
+
+  @override
+  String get mailboxStatusUnreachable =>
+      'A caixa postal não respondeu. As mensagens para você podem esperar com os contatos.';
+
+  @override
+  String get mailboxUnpair => 'Desligar';
+
+  @override
+  String get mailboxUnpairTitle => 'Desligar a caixa postal?';
+
+  @override
+  String get mailboxUnpairBody =>
+      'O que estiver esperando nela se perde, e os contatos deixam de mandar para lá. Dá para ligar de novo com outro código.';
+
+  @override
+  String get mailboxInvalid =>
+      'Esse código não serve. Cole o link chirp://mailbox# inteiro.';
+
+  @override
+  String get mailboxRefused =>
+      'A caixa recusou o código. Ele vale uma vez só e vence em 24 horas: gere outro.';
+
+  @override
+  String get mailboxUnreachable =>
+      'Não deu para falar com a caixa. Com a internet desligada, só uma caixa na rede local funciona.';
 }
