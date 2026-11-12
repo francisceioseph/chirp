@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `flush`, `lock`, `open`, `runtime`, `started`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `flush`, `lock`, `open`, `running`, `runtime`, `started`, `view`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -81,6 +81,10 @@ abstract class ChirpStore implements RustOpaqueInterface {
     required int limit,
   });
 
+  Future<NetworkSettings> networkSettings();
+
+  Future<NetworkStatus> networkStatus();
+
   /// Abre (ou cria) com a chave do cofre.
   static Future<ChirpStore> openWithKey({
     required String dir,
@@ -125,6 +129,12 @@ abstract class ChirpStore implements RustOpaqueInterface {
   Future<void> setAppearance({required AppearanceView appearance});
 
   Future<void> setChatSettings({required ChatSettings settings});
+
+  /// Grava a internet e os retransmissores (conferidos) e, se o nó está ligado,
+  /// religa com eles. Devolve o que ficou gravado.
+  Future<NetworkSettings> setNetworkSettings({
+    required NetworkSettings settings,
+  });
 
   Future<ContactView> setVerified({
     required PlatformInt64 contactId,
@@ -191,6 +201,24 @@ class ChatSettings {
           typing == other.typing;
 }
 
+/// Por onde um contato foi alcançado da última vez.
+enum ContactReach {
+  /// Ainda não tentou (ou a rede está desligada).
+  unknown,
+
+  /// Direto, na rede local.
+  lan,
+
+  /// Direto, pela internet.
+  direct,
+
+  /// Pelo servidor de retransmissão.
+  relay,
+
+  /// Não alcançou.
+  unreachable,
+}
+
 /// Um contato como a UI mostra.
 class ContactView {
   final PlatformInt64 id;
@@ -203,12 +231,16 @@ class ContactView {
   /// O aperto de mão fechou dos dois lados.
   final bool established;
 
+  /// Por onde foi alcançado da última vez, com a rede ligada.
+  final ContactReach reach;
+
   const ContactView({
     required this.id,
     required this.displayName,
     required this.avatarSeed,
     required this.verified,
     required this.established,
+    required this.reach,
   });
 
   @override
@@ -217,7 +249,8 @@ class ContactView {
       displayName.hashCode ^
       avatarSeed.hashCode ^
       verified.hashCode ^
-      established.hashCode;
+      established.hashCode ^
+      reach.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -228,7 +261,8 @@ class ContactView {
           displayName == other.displayName &&
           avatarSeed == other.avatarSeed &&
           verified == other.verified &&
-          established == other.established;
+          established == other.established &&
+          reach == other.reach;
 }
 
 /// Uma conversa na lista.
@@ -380,6 +414,64 @@ class MessageView {
           theirReaction == other.theirReaction &&
           canEdit == other.canEdit &&
           canDeleteForEveryone == other.canDeleteForEveryone;
+}
+
+/// A internet e os servidores de retransmissão (os dois desligados no começo).
+class NetworkSettings {
+  final bool internet;
+
+  /// Os endereços dos retransmissores (`https://...`), até três.
+  final List<String> relays;
+
+  const NetworkSettings({required this.internet, required this.relays});
+
+  @override
+  int get hashCode => internet.hashCode ^ relays.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NetworkSettings &&
+          runtimeType == other.runtimeType &&
+          internet == other.internet &&
+          relays == other.relays;
+}
+
+/// Como a rede está agora, para a tela de Rede.
+class NetworkStatus {
+  /// O nó está ligado.
+  final bool running;
+  final bool internet;
+
+  /// Quantos retransmissores estão configurados (e valem: com a internet ligada).
+  final int relays;
+
+  /// Algum retransmissor respondeu.
+  final bool relayConnected;
+
+  const NetworkStatus({
+    required this.running,
+    required this.internet,
+    required this.relays,
+    required this.relayConnected,
+  });
+
+  @override
+  int get hashCode =>
+      running.hashCode ^
+      internet.hashCode ^
+      relays.hashCode ^
+      relayConnected.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NetworkStatus &&
+          runtimeType == other.runtimeType &&
+          running == other.running &&
+          internet == other.internet &&
+          relays == other.relays &&
+          relayConnected == other.relayConnected;
 }
 
 /// O perfil como a UI mostra.

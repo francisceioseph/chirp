@@ -941,6 +941,144 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'System color'**
   String get themeSystem;
+
+  /// No description provided for @networkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get networkTitle;
+
+  /// No description provided for @networkLocalAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'The local network is always on: people on the same Wi-Fi talk without anything leaving it.'**
+  String get networkLocalAlways;
+
+  /// No description provided for @internetToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Internet'**
+  String get internetToggle;
+
+  /// No description provided for @internetHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'To talk with people on other networks. Your contacts get your public address (the IP), which shows your provider and roughly your city.'**
+  String get internetHelp;
+
+  /// No description provided for @relaysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay servers'**
+  String get relaysTitle;
+
+  /// No description provided for @relaysHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Without one, only direct connections work, and many networks (mobile ones, almost always) block them. A relay sees your IP, your contacts’ IPs and when you talk, and passes on messages already encrypted, without reading or keeping them. Use your own or one run by someone you trust.'**
+  String get relaysHelp;
+
+  /// No description provided for @relayAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay address'**
+  String get relayAddress;
+
+  /// No description provided for @relayAddressHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts with https://'**
+  String get relayAddressHelp;
+
+  /// No description provided for @relayAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get relayAdd;
+
+  /// No description provided for @relayRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get relayRemove;
+
+  /// No description provided for @relayInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That address does not work. Use one starting with https://, without user or password, up to three.'**
+  String get relayInvalid;
+
+  /// No description provided for @relayStatusNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No relay: direct connections only.'**
+  String get relayStatusNone;
+
+  /// No description provided for @relayStatusConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to the relay.'**
+  String get relayStatusConnected;
+
+  /// No description provided for @relayStatusWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'The relay has not answered yet.'**
+  String get relayStatusWaiting;
+
+  /// No description provided for @reachTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get reachTitle;
+
+  /// No description provided for @reachLan.
+  ///
+  /// In en, this message translates to:
+  /// **'On the local network'**
+  String get reachLan;
+
+  /// No description provided for @reachDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the internet, direct'**
+  String get reachDirect;
+
+  /// No description provided for @reachRelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Through the relay'**
+  String get reachRelay;
+
+  /// No description provided for @reachUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of reach right now'**
+  String get reachUnreachable;
+
+  /// No description provided for @reachUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not tried yet'**
+  String get reachUnknown;
+
+  /// No description provided for @unreachableLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of reach on the local network. If they are on another network, turn on the internet in Your profile, Network. Messages wait here.'**
+  String get unreachableLocalOnly;
+
+  /// No description provided for @unreachableNoRelay.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect directly. Without a relay server this only works if one of you accepts outside connections, and many networks (like mobile ones) do not. Messages wait here.'**
+  String get unreachableNoRelay;
+
+  /// No description provided for @unreachableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'The contact seems to be offline. Messages wait here and go out when they show up.'**
+  String get unreachableOffline;
 }
 
 class _ChirpLocalizationsDelegate

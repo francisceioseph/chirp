@@ -35,6 +35,11 @@ class ContactsController extends ChangeNotifier {
   bool _loaded = false;
   bool get loaded => _loaded;
 
+  /// A internet e os retransmissores, para explicar por que um contato não é
+  /// alcançado.
+  NetworkSettings _network = const NetworkSettings();
+  NetworkSettings get network => _network;
+
   final Map<int, Timer> _typing = {};
 
   /// O contato está digitando agora.
@@ -84,6 +89,7 @@ class ContactsController extends ChangeNotifier {
   Future<void> reload() async {
     try {
       _conversations = await store.conversations();
+      _network = await store.networkSettings();
     } on CoreException {
       // A lista fica a de antes.
     }

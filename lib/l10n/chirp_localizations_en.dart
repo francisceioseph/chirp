@@ -473,4 +473,80 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
 
   @override
   String get themeSystem => 'System color';
+
+  @override
+  String get networkTitle => 'Network';
+
+  @override
+  String get networkLocalAlways =>
+      'The local network is always on: people on the same Wi-Fi talk without anything leaving it.';
+
+  @override
+  String get internetToggle => 'Internet';
+
+  @override
+  String get internetHelp =>
+      'To talk with people on other networks. Your contacts get your public address (the IP), which shows your provider and roughly your city.';
+
+  @override
+  String get relaysTitle => 'Relay servers';
+
+  @override
+  String get relaysHelp =>
+      'Without one, only direct connections work, and many networks (mobile ones, almost always) block them. A relay sees your IP, your contacts’ IPs and when you talk, and passes on messages already encrypted, without reading or keeping them. Use your own or one run by someone you trust.';
+
+  @override
+  String get relayAddress => 'Relay address';
+
+  @override
+  String get relayAddressHelp => 'Starts with https://';
+
+  @override
+  String get relayAdd => 'Add';
+
+  @override
+  String get relayRemove => 'Remove';
+
+  @override
+  String get relayInvalid =>
+      'That address does not work. Use one starting with https://, without user or password, up to three.';
+
+  @override
+  String get relayStatusNone => 'No relay: direct connections only.';
+
+  @override
+  String get relayStatusConnected => 'Connected to the relay.';
+
+  @override
+  String get relayStatusWaiting => 'The relay has not answered yet.';
+
+  @override
+  String get reachTitle => 'Connection';
+
+  @override
+  String get reachLan => 'On the local network';
+
+  @override
+  String get reachDirect => 'Over the internet, direct';
+
+  @override
+  String get reachRelay => 'Through the relay';
+
+  @override
+  String get reachUnreachable => 'Out of reach right now';
+
+  @override
+  String get reachUnknown => 'Not tried yet';
+
+  @override
+  String get unreachableLocalOnly =>
+      'Out of reach on the local network. If they are on another network, turn on the internet in Your profile, Network. Messages wait here.';
+
+  @override
+  String get unreachableNoRelay =>
+      'Could not connect directly. Without a relay server this only works if one of you accepts outside connections, and many networks (like mobile ones) do not. Messages wait here.';
+
+  @override
+  String get unreachableOffline =>
+      'The contact seems to be offline. Messages wait here and go out when they show up.';
 }

@@ -18,7 +18,8 @@ use crate::frb_generated::StreamSink;
 use crate::identity::{avatar_seed, fingerprint};
 use crate::invite::Invite;
 use crate::messages::{self, Kind, Message, Status};
-use crate::node::{Node, NodeEvent};
+use crate::network;
+use crate::node::{Node, NodeEvent, Reach};
 use crate::passphrase;
 use crate::profile::StoredProfile;
 use crate::random::secret_bytes;
@@ -110,6 +111,55 @@ pub struct ContactView {
     pub verified: bool,
     /// O aperto de mão fechou dos dois lados.
     pub established: bool,
+    /// Por onde foi alcançado da última vez, com a rede ligada.
+    pub reach: ContactReach,
+}
+
+/// Por onde um contato foi alcançado da última vez.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContactReach {
+    /// Ainda não tentou (ou a rede está desligada).
+    Unknown,
+    /// Direto, na rede local.
+    Lan,
+    /// Direto, pela internet.
+    Direct,
+    /// Pelo servidor de retransmissão.
+    Relay,
+    /// Não alcançou.
+    Unreachable,
+}
+
+impl From<Reach> for ContactReach {
+    fn from(reach: Reach) -> Self {
+        match reach {
+            Reach::Unknown => ContactReach::Unknown,
+            Reach::Lan => ContactReach::Lan,
+            Reach::Direct => ContactReach::Direct,
+            Reach::Relay => ContactReach::Relay,
+            Reach::Unreachable => ContactReach::Unreachable,
+        }
+    }
+}
+
+/// A internet e os servidores de retransmissão (os dois desligados no começo).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NetworkSettings {
+    pub internet: bool,
+    /// Os endereços dos retransmissores (`https://...`), até três.
+    pub relays: Vec<String>,
+}
+
+/// Como a rede está agora, para a tela de Rede.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NetworkStatus {
+    /// O nó está ligado.
+    pub running: bool,
+    pub internet: bool,
+    /// Quantos retransmissores estão configurados (e valem: com a internet ligada).
+    pub relays: u32,
+    /// Algum retransmissor respondeu.
+    pub relay_connected: bool,
 }
 
 impl From<Contact> for ContactView {
@@ -120,6 +170,7 @@ impl From<Contact> for ContactView {
             display_name: contact.display_name,
             verified: contact.verified,
             established: contact.state == ContactState::Established,
+            reach: ContactReach::Unknown,
         }
     }
 }
@@ -273,6 +324,8 @@ fn runtime() -> &'static tokio::runtime::Runtime {
 pub struct ChirpStore {
     inner: Arc<Mutex<Store>>,
     node: Mutex<Option<Arc<Node>>>,
+    /// Os eventos do nó; ficam aqui para a UI não perder o fio quando o nó reinicia.
+    events: tokio::sync::broadcast::Sender<NodeEvent>,
 }
 
 impl ChirpStore {
@@ -317,6 +370,7 @@ impl ChirpStore {
         Ok(ChirpStore {
             inner: Arc::new(Mutex::new(Store::open(&dir.join(DB_FILE), key)?)),
             node: Mutex::new(None),
+            events: tokio::sync::broadcast::channel(256).0,
         })
     }
 
@@ -359,14 +413,82 @@ impl ChirpStore {
         self.inner.lock().map_err(|_| CoreError::Storage)
     }
 
+    fn running(&self) -> Option<Arc<Node>> {
+        self.node.lock().ok().and_then(|slot| slot.clone())
+    }
+
+    /// O contato como a UI mostra, com o caminho de agora.
+    fn view(&self, contact: Contact) -> ContactView {
+        let reach = self
+            .running()
+            .map(|n| n.reach(contact.id).into())
+            .unwrap_or(ContactReach::Unknown);
+        ContactView {
+            reach,
+            ..contact.into()
+        }
+    }
+
+    pub fn network_settings(&self) -> Result<NetworkSettings, CoreError> {
+        let s = network::get(self.lock()?.conn())?;
+        Ok(NetworkSettings {
+            internet: s.internet,
+            relays: s.relays,
+        })
+    }
+
+    /// Grava a internet e os retransmissores (conferidos) e, se o nó está ligado,
+    /// religa com eles. Devolve o que ficou gravado.
+    pub fn set_network_settings(
+        &self,
+        settings: NetworkSettings,
+    ) -> Result<NetworkSettings, CoreError> {
+        let saved = network::set(
+            self.lock()?.conn(),
+            &network::Settings {
+                internet: settings.internet,
+                relays: settings.relays,
+            },
+        )?;
+        if self.running().is_some() {
+            self.stop_node()?;
+            self.started()?;
+            // A UI relê tudo: os caminhos de antes não valem mais.
+            let _ = self.events.send(NodeEvent::ContactChanged(0));
+        }
+        Ok(NetworkSettings {
+            internet: saved.internet,
+            relays: saved.relays,
+        })
+    }
+
+    pub fn network_status(&self) -> Result<NetworkStatus, CoreError> {
+        let settings = network::get(self.lock()?.conn())?;
+        let node = self.running();
+        let (_, relay_connected) = node.as_ref().map(|n| n.internet()).unwrap_or_default();
+        Ok(NetworkStatus {
+            running: node.is_some(),
+            internet: settings.internet,
+            relays: settings.relay_urls().len() as u32,
+            relay_connected,
+        })
+    }
+
     /// Liga o nó da rede local. Pede o perfil (a identidade); chamar de novo não faz
     /// nada.
     pub fn start_network(&self) -> Result<(), CoreError> {
         self.started().map(|_| ())
     }
 
-    /// Desliga o nó (antes de apagar tudo, por exemplo).
+    /// Desliga o nó (antes de apagar tudo, por exemplo) e fecha o fluxo de eventos.
     pub fn stop_network(&self) -> Result<(), CoreError> {
+        self.stop_node()?;
+        let _ = self.events.send(NodeEvent::Closed);
+        Ok(())
+    }
+
+    /// Desliga só o nó: o fluxo de eventos continua (religar com outros ajustes).
+    fn stop_node(&self) -> CoreResult<()> {
         let node = self.node.lock().map_err(|_| CoreError::Storage)?.take();
         if let Some(node) = node {
             runtime().block_on(node.close());
@@ -382,7 +504,7 @@ impl ChirpStore {
         if self.lock()?.profile()?.is_none() {
             return Err(CoreError::NoProfile);
         }
-        let node = runtime().block_on(Node::start(self.inner.clone()))?;
+        let node = runtime().block_on(Node::start(self.inner.clone(), self.events.clone()))?;
         *slot = Some(node.clone());
         Ok(node)
     }
@@ -406,7 +528,7 @@ impl ChirpStore {
     pub fn contacts(&self) -> Result<Vec<ContactView>, CoreError> {
         Ok(crate::contacts::list(self.lock()?.conn())?
             .into_iter()
-            .map(ContactView::from)
+            .map(|c| self.view(c))
             .collect())
     }
 
@@ -425,7 +547,8 @@ impl ChirpStore {
     /// Avisa a UI do que muda sem ela pedir: alguém leu um convite nosso, chegou
     /// mensagem, o contato está digitando.
     pub fn watch_events(&self, sink: StreamSink<CoreEvent>) -> Result<(), CoreError> {
-        let mut events = self.started()?.subscribe();
+        self.started()?;
+        let mut events = self.events.subscribe();
         runtime().spawn(async move {
             loop {
                 let event = match events.recv().await {
@@ -441,6 +564,8 @@ impl ChirpStore {
                         kind: EventKind::Typing,
                         contact_id: id,
                     },
+                    // A rede desligou: o fluxo fecha, como fechava com o nó.
+                    Ok(NodeEvent::Closed) => break,
                     // Perdeu eventos: o id 0 faz a UI reler tudo.
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => CoreEvent {
                         kind: EventKind::Contact,
@@ -461,7 +586,7 @@ impl ChirpStore {
         Ok(messages::conversations(self.lock()?.conn())?
             .into_iter()
             .map(|c| ConversationView {
-                contact: c.contact.into(),
+                contact: self.view(c.contact),
                 last: c.last.map(MessageView::from),
                 unread: c.unread,
             })
@@ -606,6 +731,7 @@ impl ChirpStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     fn dir() -> (tempfile::TempDir, String) {
         let tmp = tempfile::tempdir().unwrap();
@@ -629,6 +755,105 @@ mod tests {
             ChirpStore::open_with_key(dir, other),
             Err(CoreError::WrongKey)
         ));
+    }
+
+    #[test]
+    fn changing_the_network_restarts_the_node() {
+        let (_tmp, dir) = dir();
+        let store = ChirpStore::open_with_key(dir, vec![9; 32]).unwrap();
+        store.create_profile("Lutino".into()).unwrap();
+        assert_eq!(
+            store.network_status().unwrap(),
+            NetworkStatus {
+                running: false,
+                internet: false,
+                relays: 0,
+                relay_connected: false,
+            }
+        );
+        store.start_network().unwrap();
+        let mut events = store.events.subscribe();
+        let saved = store
+            .set_network_settings(NetworkSettings {
+                internet: true,
+                // No loopback: o teste não procura nenhum servidor de verdade.
+                relays: vec![" http://127.0.0.1:9 ".into()],
+            })
+            .unwrap();
+        assert_eq!(saved.relays, ["http://127.0.0.1:9/"]);
+        let status = store.network_status().unwrap();
+        assert!(status.running && status.internet);
+        assert_eq!(status.relays, 1);
+        // A UI relê tudo, e o canal continua o mesmo depois de religar.
+        assert_eq!(events.try_recv(), Ok(NodeEvent::ContactChanged(0)));
+
+        // Um retransmissor ruim não muda nada.
+        assert_eq!(
+            store.set_network_settings(NetworkSettings {
+                internet: true,
+                relays: vec!["ftp://x".into()],
+            }),
+            Err(CoreError::InvalidRelay)
+        );
+        assert_eq!(store.network_settings().unwrap(), saved);
+        // Religar não fecha o fluxo; desligar de propósito fecha (e o app pode sair).
+        assert!(events.try_recv().is_err());
+        store.stop_network().unwrap();
+        assert_eq!(events.try_recv(), Ok(NodeEvent::Closed));
+    }
+
+    /// O caminho do teste de integração, pela API, com prazo: um travamento entre as
+    /// travas do banco e do nó apareceria aqui.
+    #[test]
+    fn two_stores_talk_through_the_api() {
+        let (tmp, _) = dir();
+        let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flag = done.clone();
+        let base = tmp.path().to_path_buf();
+        let worker = std::thread::spawn(move || {
+            let open = |name: &str| {
+                let store = ChirpStore::open_with_key(
+                    base.join(name).to_string_lossy().into(),
+                    vec![3; 32],
+                )
+                .unwrap();
+                store.create_profile(name.into()).unwrap();
+                store.start_network().unwrap();
+                store
+            };
+            let (alice, bob) = (open("Alice"), open("Bob"));
+            let link = alice.create_invite(false).unwrap();
+            let at_bob = bob.add_contact(link, false).unwrap();
+            let mut at_alice = None;
+            for _ in 0..100 {
+                if let Some(c) = alice.conversations().unwrap().first() {
+                    at_alice = Some(c.contact.id);
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(100));
+            }
+            let at_alice = at_alice.expect("Alice sees Bob");
+            bob.send_text(at_bob.id, "oi".into(), None).unwrap();
+            for _ in 0..100 {
+                let got = alice.messages(at_alice, None, 10).unwrap();
+                let _ = bob.contacts().unwrap();
+                if !got.is_empty() {
+                    flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                    return;
+                }
+                std::thread::sleep(Duration::from_millis(100));
+            }
+        });
+        for _ in 0..300 {
+            if done.load(std::sync::atomic::Ordering::SeqCst) || worker.is_finished() {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        assert!(
+            done.load(std::sync::atomic::Ordering::SeqCst),
+            "stuck or failed"
+        );
     }
 
     #[test]

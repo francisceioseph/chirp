@@ -1,6 +1,7 @@
 // lib/src/ui/pages/contact_page.dart
 //
-// Um contato: o avatar, o nome, o número de segurança e o "marcar como verificado".
+// Um contato: o avatar, o nome, o número de segurança, o "marcar como verificado"
+// e por onde ele foi alcançado.
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
@@ -8,6 +9,7 @@ import '../../application/contacts_controller.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../molecules/fingerprint_text.dart';
+import '../reach_text.dart';
 import '../templates/centered_panel.dart';
 
 class ContactPage extends StatefulWidget {
@@ -102,6 +104,12 @@ class _ContactPageState extends State<ContactPage> {
               onChanged: (value) =>
                   widget.controller.setVerified(contact.id, verified: value),
             ),
+            if (contact.established)
+              ListTile(
+                leading: Icon(reachIcon(contact.reach)),
+                title: Text(l10n.reachTitle),
+                subtitle: Text(reachText(l10n, contact.reach)),
+              ),
           ],
         );
       },

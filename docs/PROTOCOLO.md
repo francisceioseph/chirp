@@ -31,11 +31,13 @@ Vetor: para a chave `0x05` seguida de 32 zeros, a impressão é `00474 20068 940
 ```
 versão (1, = 1) || identidade (33) || nó (32) || token (32) ||
 n (1, até 8) || n × [ 4 || IPv4 (4) || porta (2)  |  6 || IPv6 (16) || porta (2) ]
+[ || m (1, de 1 a 200) || retransmissor (m, URL em UTF-8) ]      (fase 5, opcional)
 ```
 
 - O link é `chirp://invite#` e os bytes em base64url sem preenchimento. O QR é o mesmo link. Fica em torno de 180 caracteres.
 - O token tem 32 bytes aleatórios, vale uma vez, por 24 horas, e o banco guarda só o SHA-256 dele.
-- Os endereços são só os da rede local (IPv4 privado e IPv6 `fc00::/7`): o link mandado por outro canal não leva IP público.
+- Com a internet desligada (o padrão), os endereços são só os da rede local (IPv4 privado e IPv6 `fc00::/7`): o link mandado por outro canal não leva IP público. Com ela ligada, vêm também os públicos (os da interface e o que o retransmissor viu), os locais primeiro.
+- O retransmissor de quem convida, se houver, vai no fim (`https://`, ou `http://` para uma rede própria, sem usuário, senha, consulta nem fragmento). Sem ele, os bytes são os de antes; uma versão anterior recusa um convite com retransmissor como "convite inválido".
 - As prekeys **não** vão no convite: a Kyber1024 sozinha tem 1568 bytes, e o QR ficaria ilegível. Quem lê pede pela rede e confere as assinaturas com a identidade do convite, o que dá a mesma garantia.
 - Qualquer byte a mais, a menos ou fora do formato recusa o convite inteiro (`invite::tests`).
 
@@ -68,7 +70,7 @@ Content { bytes message_id = 1 (16 aleatórios);
           oneof body { Hello hello = 2; Welcome welcome = 3; Text text = 4;
                        Receipt receipt = 5; Edit edit = 6; Delete delete = 7;
                        Reaction reaction = 8; Typing typing = 9; Nudge nudge = 10;
-                       PeerProfile profile = 11; };
+                       PeerProfile profile = 11; Peer addrs = 12; };
           uint64 sent_at = 13 (ms, relógio de quem manda, só para mostrar);
           uint64 lamport = 14 (a ordem na conversa);
           bytes padding = 15; }
@@ -76,6 +78,9 @@ Hello    { bytes token = 1; PeerProfile profile = 2; Peer peer = 3; }
 Welcome  { PeerProfile profile = 1; Peer peer = 2; }
 PeerProfile { string display_name = 1; uint32 version = 2; }
 Peer     { bytes endpoint_id = 1; repeated string addrs = 2; bytes discovery_key = 3; }
+         // addrs: "IP:porta" (até 8) e URLs de retransmissor (até 3), conferidos por
+         // quem recebe (`network::clean_addrs`); o resto é descartado.
+         // No `addrs = 12` (os endereços mudaram), só o addrs vale.
 Text     { string text = 1; bytes reply_to = 2 (o message_id citado, ou vazio); }
 Receipt  { repeated bytes read = 1 (até 256 message_ids lidos); }
 Edit     { bytes target = 1; string text = 2; }
@@ -138,7 +143,15 @@ Um contato que conecta mostra também de onde fala: o endereço vai para a frent
 
 - A porta UDP fica guardada no banco e é a mesma na próxima abertura (se estiver ocupada, vai outra, que fica guardada). Assim, o endereço que os contatos têm continua valendo.
 - Ao ligar, o nó abre uma conexão vazia com cada contato: quem recebe aprende o endereço de agora e entrega o que esperava.
-- Se os dois aparelhos mudam de IP ao mesmo tempo, quem os junta de novo é a descoberta por mDNS (a seguir).
+- Se os dois aparelhos mudam de IP ao mesmo tempo, quem os junta de novo é a descoberta por mDNS (a seguir) e, com a internet ligada, o `Addrs`.
+
+## A internet e os retransmissores (fase 5)
+
+- Os dois começam desligados (`network`, migração 5). Desligada, o nó não usa IP público nem retransmissor de contato nenhum, e não manda os seus.
+- Ligada, o nó confere os endereços a cada 15 segundos; o que mudou e ficou igual por duas conferências vai a todos os contatos num `Content.addrs`, pela sessão (cifrado, só para eles). Os últimos mandados ficam no banco, para não repetir a cada abertura.
+- Com um retransmissor escolhido, o endpoint do iroh fica com ele (`RelayMode::Custom`): é por ele que o iroh descobre o próprio endereço público, combina o furo do NAT e, se o furo falhar, repassa os pacotes, já cifrados pelo QUIC e pela sessão. A descoberta por DNS/pkarr continua desligada.
+- Sem retransmissor, só conecta se um dos dois aceitar conexões de fora (um IPv6 público sem bloqueio, uma porta aberta). Um NAT simétrico, comum em redes móveis, não deixa: a conversa mostra por quê.
+- O nó guarda, em memória, por onde alcançou cada contato da última vez (rede local, internet direta, retransmissor, ou não alcançou), pelo caminho que a conexão do iroh escolheu.
 
 ## A descoberta na rede local (mDNS)
 
@@ -172,6 +185,8 @@ Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._
   - dados do `Peer` fora do formato.
 - `node::tests`: o mesmo sobre QUIC de verdade, entre nós no mesmo processo. O convite não serve a um terceiro, e ninguém respondendo não deixa nada no banco.
 - `messages::tests`: o texto, o entregue e o lido; sem recibos; o reenvio depois de um `ack` perdido; 30 mensagens na fila com os dois escrevendo ao mesmo tempo, na mesma ordem nos dois aparelhos; responder, editar, reagir e apagar para todos (que tira da busca); os prazos, conferidos por quem recebe; o limite do chamar atenção nos dois sentidos; o digitando; o perfil novo; textos inválidos; um estranho que não injeta mensagem; a busca sem acento nem sintaxe do FTS; as páginas do histórico; nenhum texto em claro no arquivo do banco.
+- `network::tests`: os ajustes, os retransmissores recusados (sem `https`, com usuário, consulta, fragmento, controle, compridos, mais de três) e os endereços de contato conferidos.
+- `node::tests` (fase 5): com um retransmissor de verdade (o do `iroh::test_utils`), dois nós que não sabem nenhum IP um do outro viram contatos pelo convite só com o retransmissor, e uma mensagem só pelo retransmissor chega e volta o "entregue". Com a internet desligada, um contato só com IP público e retransmissor nem é tentado, e fica "fora de alcance"; e o nó não anuncia nada público.
 - `node::tests`: mensagens nos dois sentidos com os recibos, sobre QUIC de verdade, e a fila de quem estava desligado, entregue na ordem quando ele volta. E um contato que "mudou de endereço" (porta nova, e os dois com o endereço errado um do outro), achado só pelo mDNS: com o mDNS desligado, o mesmo teste falha.
 - `discovery::tests`: o token muda com a época e com a chave, os vetores, as épocas vizinhas, um estranho que não casa com ninguém e os endereços que servem.
 - `wire::tests` e `invite::tests`: frames grandes demais, versões e lixo recusados; o convite truncado em cada posição é recusado; 20 mil entradas aleatórias não derrubam o leitor.

@@ -479,4 +479,80 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get themeSystem => 'Цвет системы';
+
+  @override
+  String get networkTitle => 'Сеть';
+
+  @override
+  String get networkLocalAlways =>
+      'Локальная сеть всегда включена: кто в одной сети Wi-Fi, переписывается, и ничего не выходит наружу.';
+
+  @override
+  String get internetToggle => 'Интернет';
+
+  @override
+  String get internetHelp =>
+      'Чтобы переписываться с теми, кто в другой сети. Ваши контакты получают ваш публичный адрес (IP), по которому видно провайдера и примерно город.';
+
+  @override
+  String get relaysTitle => 'Серверы-ретрансляторы';
+
+  @override
+  String get relaysHelp =>
+      'Без него работают только прямые соединения, а многие сети (мобильные почти всегда) их не пропускают. Ретранслятор видит ваш IP, IP контактов и когда вы общаетесь, и пересылает уже зашифрованные сообщения, не читая и не храня их. Используйте свой или того, кому доверяете.';
+
+  @override
+  String get relayAddress => 'Адрес ретранслятора';
+
+  @override
+  String get relayAddressHelp => 'Начинается с https://';
+
+  @override
+  String get relayAdd => 'Добавить';
+
+  @override
+  String get relayRemove => 'Удалить';
+
+  @override
+  String get relayInvalid =>
+      'Этот адрес не подходит. Используйте адрес, начинающийся с https://, без имени и пароля, не больше трёх.';
+
+  @override
+  String get relayStatusNone => 'Без ретранслятора: только прямые соединения.';
+
+  @override
+  String get relayStatusConnected => 'Подключено к ретранслятору.';
+
+  @override
+  String get relayStatusWaiting => 'Ретранслятор пока не ответил.';
+
+  @override
+  String get reachTitle => 'Соединение';
+
+  @override
+  String get reachLan => 'В локальной сети';
+
+  @override
+  String get reachDirect => 'Через интернет, напрямую';
+
+  @override
+  String get reachRelay => 'Через ретранслятор';
+
+  @override
+  String get reachUnreachable => 'Сейчас недоступен';
+
+  @override
+  String get reachUnknown => 'Ещё не пробовали';
+
+  @override
+  String get unreachableLocalOnly =>
+      'Недоступен в локальной сети. Если он в другой сети, включите интернет в разделе Ваш профиль, Сеть. Сообщения ждут здесь.';
+
+  @override
+  String get unreachableNoRelay =>
+      'Не удалось подключиться напрямую. Без ретранслятора это работает, только если один из вас принимает входящие соединения, а многие сети (например, мобильные) этого не позволяют. Сообщения ждут здесь.';
+
+  @override
+  String get unreachableOffline =>
+      'Похоже, контакт не в сети. Сообщения ждут здесь и уйдут, когда он появится.';
 }

@@ -702,6 +702,40 @@ pub fn send_profile(store: &mut Store) -> CoreResult<Vec<i64>> {
     Ok(sent)
 }
 
+/// Manda os endereços de agora (os IPs e os retransmissores) a todos os contatos,
+/// pela sessão. Devolve a quem.
+pub fn send_addrs(store: &mut Store, addrs: &[String]) -> CoreResult<Vec<i64>> {
+    let me = session::me(store)?;
+    let tx = store.conn_mut().transaction()?;
+    let mut sent = Vec::new();
+    for contact in contacts::list(&tx)? {
+        if contact.state != ContactState::Established {
+            continue;
+        }
+        let lamport: i64 = tx.query_row(
+            "SELECT lamport FROM contacts WHERE id = ?1",
+            [contact.id],
+            |r| r.get(0),
+        )?;
+        enqueue(
+            &tx,
+            &me,
+            &contact,
+            ContentBody::Addrs(wire::Peer {
+                addrs: addrs.to_vec(),
+                ..Default::default()
+            }),
+            lamport,
+            now_ms(),
+            false,
+        )?;
+        sent.push(contact.id);
+    }
+    crate::network::set_announced(&tx, addrs)?;
+    tx.commit()?;
+    Ok(sent)
+}
+
 // ---------------------------------------------------------------- a caixa de saída
 
 /// Um envelope esperando entrega.
@@ -946,6 +980,14 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
                     Effect::Contact(id)
                 }
                 _ => Effect::Nothing,
+            }
+        }
+        ContentBody::Addrs(peer) => {
+            let addrs = crate::network::clean_addrs(peer.addrs);
+            if !addrs.is_empty() && contacts::set_addrs(conn, id, &addrs)? {
+                Effect::Contact(id)
+            } else {
+                Effect::Nothing
             }
         }
         // O aperto de mão já passou.

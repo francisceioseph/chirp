@@ -20,6 +20,7 @@ import '../molecules/conversation_tile.dart';
 import '../molecules/message_bubble.dart';
 import '../organisms/composer.dart';
 import '../organisms/message_actions.dart';
+import '../reach_text.dart';
 import 'contact_page.dart';
 
 class ConversationPage extends StatefulWidget {
@@ -279,6 +280,15 @@ class _ConversationPageState extends State<ConversationPage>
             body: Column(
               children: [
                 Expanded(child: body),
+                // Só com algo meu esperando: um contato desligado sem nada na
+                // fila não precisa de aviso.
+                if (contact.reach == ContactReach.unreachable &&
+                    messages.any(
+                      (m) => m.outgoing && m.status == MessageStatus.pending,
+                    ))
+                  _ReachNotice(
+                    text: unreachableText(l10n, widget.contacts.network),
+                  ),
                 Composer(
                   text: _text,
                   focusNode: _focus,
@@ -299,6 +309,50 @@ class _ConversationPageState extends State<ConversationPage>
           ),
         );
       },
+    );
+  }
+}
+
+/// Por que o contato não foi alcançado, logo acima do campo: as mensagens esperam.
+class _ReachNotice extends StatelessWidget {
+  const _ReachNotice({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Semantics(
+      liveRegion: true,
+      child: ColoredBox(
+        color: scheme.surfaceContainerHigh,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                reachIcon(ContactReach.unreachable),
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  // Numa janela baixa, uma linha: a conversa precisa do espaço.
+                  maxLines: MediaQuery.sizeOf(context).height < 360 ? 1 : 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

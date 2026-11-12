@@ -55,7 +55,14 @@ fn pair() -> (Device, Device) {
 
 fn pair_with(mut bob: Device) -> (Device, Device) {
     let mut alice = Device::new("Alice", 1);
-    let invite = create_invite(&mut alice.store, InviteKind::Qr, alice.endpoint, vec![]).unwrap();
+    let invite = create_invite(
+        &mut alice.store,
+        InviteKind::Qr,
+        alice.endpoint,
+        vec![],
+        None,
+    )
+    .unwrap();
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
     let bob_peer = bob.peer();
     let (pending, hello) = join(&mut bob.store, &invite, &bundle, bob_peer, true).unwrap();
@@ -323,6 +330,38 @@ fn a_profile_change_reaches_the_contacts() {
     // Uma versão velha não volta o nome.
     send_profile(&mut alice.store).unwrap();
     assert_eq!(post(&mut alice, &mut bob), vec![Effect::Nothing]);
+}
+
+#[test]
+fn new_addresses_reach_the_contact() {
+    let (mut alice, mut bob) = pair();
+    let addrs = vec![
+        "192.168.1.20:4000".to_owned(),
+        "203.0.113.7:4000".to_owned(),
+        "https://relay.example.org/".to_owned(),
+    ];
+    assert_eq!(
+        send_addrs(&mut alice.store, &addrs).unwrap(),
+        vec![alice.other]
+    );
+    assert_eq!(
+        crate::network::announced(alice.store.conn()).unwrap(),
+        addrs
+    );
+    assert_eq!(post(&mut alice, &mut bob), vec![Effect::Contact(bob.other)]);
+    assert_eq!(
+        contacts::by_id(bob.store.conn(), bob.other).unwrap().addrs,
+        addrs
+    );
+    // O mesmo de novo não muda nada, e lixo não apaga o que havia.
+    send_addrs(&mut alice.store, &addrs).unwrap();
+    assert_eq!(post(&mut alice, &mut bob), vec![Effect::Nothing]);
+    send_addrs(&mut alice.store, &["nada".to_owned()]).unwrap();
+    assert_eq!(post(&mut alice, &mut bob), vec![Effect::Nothing]);
+    assert_eq!(
+        contacts::by_id(bob.store.conn(), bob.other).unwrap().addrs,
+        addrs
+    );
 }
 
 #[test]

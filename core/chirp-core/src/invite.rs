@@ -10,6 +10,9 @@
 //! n (1) || n × [4 || IPv4 (4) || porta (2) | 6 || IPv6 (16) || porta (2)]`. O link é
 //! `chirp://invite#` e os bytes em base64url sem preenchimento; o que vem depois do
 //! `#` não vai a servidor nenhum se alguém abrir o link num navegador.
+//!
+//! Com um retransmissor (fase 5), vem depois dos endereços `m (1) || URL (m)`, com
+//! 1 ≤ m ≤ 200. Sem ele, o convite é o mesmo de antes.
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
@@ -28,6 +31,8 @@ pub struct Invite {
     pub endpoint_id: [u8; 32],
     pub token: [u8; 32],
     pub addrs: Vec<SocketAddr>,
+    /// O retransmissor de quem convida, se houver.
+    pub relay: Option<String>,
 }
 
 impl Invite {
@@ -51,6 +56,14 @@ impl Invite {
                 }
             }
             out.extend_from_slice(&addr.port().to_be_bytes());
+        }
+        if let Some(relay) = self
+            .relay
+            .as_deref()
+            .filter(|r| (1..=200).contains(&r.len()))
+        {
+            out.push(relay.len() as u8);
+            out.extend_from_slice(relay.as_bytes());
         }
         out
     }
@@ -80,14 +93,24 @@ impl Invite {
             let port = u16::from_be_bytes(r.array()?);
             addrs.push(SocketAddr::new(ip, port));
         }
-        if !r.0.is_empty() {
-            return Err(CoreError::InvalidInvite);
-        }
+        let relay = if r.0.is_empty() {
+            None
+        } else {
+            let len = usize::from(r.take(1)?[0]);
+            let text = std::str::from_utf8(r.take(len)?)
+                .map_err(|_| CoreError::InvalidInvite)?
+                .to_owned();
+            if len == 0 || !r.0.is_empty() {
+                return Err(CoreError::InvalidInvite);
+            }
+            Some(crate::network::relay_url(&text).map_err(|_| CoreError::InvalidInvite)?)
+        };
         Ok(Self {
             identity_key,
             endpoint_id,
             token,
             addrs,
+            relay,
         })
     }
 
@@ -143,6 +166,40 @@ mod tests {
                 "192.168.0.12:41641".parse().unwrap(),
                 "[fe80::1]:41641".parse().unwrap(),
             ],
+            relay: None,
+        }
+    }
+
+    fn with_relay() -> Invite {
+        Invite {
+            relay: Some("https://relay.example.org/".into()),
+            ..sample()
+        }
+    }
+
+    #[test]
+    fn the_relay_rides_at_the_end() {
+        let invite = with_relay();
+        assert_eq!(Invite::from_link(&invite.to_link()).unwrap(), invite);
+        assert!(invite.to_link().len() < 300);
+        // Sem retransmissor, os bytes são os de sempre.
+        let plain = sample().to_bytes();
+        assert_eq!(&invite.to_bytes()[..plain.len()], plain.as_slice());
+    }
+
+    #[test]
+    fn a_bad_relay_spoils_the_invite() {
+        let mut bytes = sample().to_bytes();
+        bytes.push(3);
+        bytes.extend_from_slice(b"ftp");
+        assert_eq!(Invite::from_bytes(&bytes), Err(CoreError::InvalidInvite));
+        let bytes = with_relay().to_bytes();
+        for cut in sample().to_bytes().len() + 1..bytes.len() {
+            assert_eq!(
+                Invite::from_bytes(&bytes[..cut]),
+                Err(CoreError::InvalidInvite),
+                "{cut}"
+            );
         }
     }
 

@@ -453,4 +453,77 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get themeSystem => '系统颜色';
+
+  @override
+  String get networkTitle => '网络';
+
+  @override
+  String get networkLocalAlways => '本地网络始终开启：同一 Wi-Fi 下的人聊天时，数据不会离开这个网络。';
+
+  @override
+  String get internetToggle => '互联网';
+
+  @override
+  String get internetHelp =>
+      '用于和其他网络中的人聊天。你的联系人会收到你的公网地址（IP），它会显示你的运营商和大致所在城市。';
+
+  @override
+  String get relaysTitle => '中继服务器';
+
+  @override
+  String get relaysHelp =>
+      '没有中继时只能直连，而很多网络（移动网络几乎总是）不允许直连。中继能看到你和联系人的 IP 以及你们何时聊天，它转发已加密的消息，不读取也不保存。请使用你自己的，或你信任的人运行的中继。';
+
+  @override
+  String get relayAddress => '中继地址';
+
+  @override
+  String get relayAddressHelp => '以 https:// 开头';
+
+  @override
+  String get relayAdd => '添加';
+
+  @override
+  String get relayRemove => '移除';
+
+  @override
+  String get relayInvalid => '这个地址不可用。请使用以 https:// 开头、不含用户名和密码的地址，最多三个。';
+
+  @override
+  String get relayStatusNone => '没有中继：只能直连。';
+
+  @override
+  String get relayStatusConnected => '已连接到中继。';
+
+  @override
+  String get relayStatusWaiting => '中继还没有响应。';
+
+  @override
+  String get reachTitle => '连接';
+
+  @override
+  String get reachLan => '在本地网络';
+
+  @override
+  String get reachDirect => '通过互联网直连';
+
+  @override
+  String get reachRelay => '通过中继';
+
+  @override
+  String get reachUnreachable => '当前无法连接';
+
+  @override
+  String get reachUnknown => '尚未尝试';
+
+  @override
+  String get unreachableLocalOnly =>
+      '在本地网络中无法连接。如果对方在其他网络，请在“你的资料”的“网络”中打开互联网。消息会在这里等待。';
+
+  @override
+  String get unreachableNoRelay =>
+      '无法直接连接。没有中继服务器时，只有一方能接受外部连接才行，而很多网络（比如移动网络）不允许。消息会在这里等待。';
+
+  @override
+  String get unreachableOffline => '联系人似乎不在线。消息会在这里等待，对方上线后发出。';
 }

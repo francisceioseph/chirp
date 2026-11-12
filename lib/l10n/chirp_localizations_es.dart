@@ -475,4 +475,80 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
 
   @override
   String get themeSystem => 'Color del sistema';
+
+  @override
+  String get networkTitle => 'Red';
+
+  @override
+  String get networkLocalAlways =>
+      'La red local está siempre activa: quienes están en el mismo Wi-Fi hablan sin que nada salga de ella.';
+
+  @override
+  String get internetToggle => 'Internet';
+
+  @override
+  String get internetHelp =>
+      'Para hablar con quienes están en otra red. Tus contactos reciben tu dirección pública (la IP), que muestra tu proveedor y más o menos tu ciudad.';
+
+  @override
+  String get relaysTitle => 'Servidores de retransmisión';
+
+  @override
+  String get relaysHelp =>
+      'Sin uno, solo funcionan las conexiones directas, y muchas redes (las móviles, casi siempre) no las permiten. El servidor ve tu IP, la de tus contactos y cuándo hablan, y reenvía los mensajes ya cifrados, sin leerlos ni guardarlos. Usa el tuyo o el de alguien de confianza.';
+
+  @override
+  String get relayAddress => 'Dirección del servidor';
+
+  @override
+  String get relayAddressHelp => 'Empieza con https://';
+
+  @override
+  String get relayAdd => 'Añadir';
+
+  @override
+  String get relayRemove => 'Quitar';
+
+  @override
+  String get relayInvalid =>
+      'Esa dirección no sirve. Usa una que empiece con https://, sin usuario ni contraseña, hasta tres.';
+
+  @override
+  String get relayStatusNone => 'Sin servidor: solo conexiones directas.';
+
+  @override
+  String get relayStatusConnected => 'Conectado al servidor.';
+
+  @override
+  String get relayStatusWaiting => 'El servidor aún no ha respondido.';
+
+  @override
+  String get reachTitle => 'Conexión';
+
+  @override
+  String get reachLan => 'En la red local';
+
+  @override
+  String get reachDirect => 'Por internet, directo';
+
+  @override
+  String get reachRelay => 'Por el servidor de retransmisión';
+
+  @override
+  String get reachUnreachable => 'Fuera de alcance ahora';
+
+  @override
+  String get reachUnknown => 'Aún no se intentó';
+
+  @override
+  String get unreachableLocalOnly =>
+      'Fuera de alcance en la red local. Si está en otra red, activa internet en Tu perfil, Red. Los mensajes esperan aquí.';
+
+  @override
+  String get unreachableNoRelay =>
+      'No se pudo conectar directamente. Sin un servidor de retransmisión, solo funciona si uno de los dos acepta conexiones de fuera, y muchas redes (como las móviles) no lo permiten. Los mensajes esperan aquí.';
+
+  @override
+  String get unreachableOffline =>
+      'El contacto parece desconectado. Los mensajes esperan aquí y salen cuando aparezca.';
 }

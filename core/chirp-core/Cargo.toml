@@ -34,4 +34,6 @@ unsafe_code = "deny"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
 
 [dev-dependencies]
+# O retransmissor dos testes e a confiança no certificado dele; só nos testes.
+iroh = { version = "1.4.1", default-features = false, features = ["tls-ring", "test-utils"] }
 tempfile = "3.27.0"

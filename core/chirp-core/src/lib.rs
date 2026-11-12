@@ -12,6 +12,7 @@ mod error;
 mod identity;
 mod invite;
 mod messages;
+mod network;
 mod node;
 mod passphrase;
 mod profile;

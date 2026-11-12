@@ -101,6 +101,13 @@ class FakeStore implements ProfileStore {
   int typingCalls = 0;
   ChatSettings settings = const ChatSettings(readReceipts: true, typing: true);
   Appearance savedAppearance = const Appearance();
+  NetworkSettings network = const NetworkSettings();
+
+  /// Quantas vezes a rede foi religada por mudar os ajustes.
+  int networkRestarts = 0;
+
+  /// Algum retransmissor respondeu (no falso, quem testa diz).
+  bool relayConnected = false;
 
   /// Se gravar a aparência falha (o disco cheio).
   bool appearanceFails = false;
@@ -345,6 +352,52 @@ class FakeStore implements ProfileStore {
   Future<Appearance> appearance() async => savedAppearance;
 
   @override
+  Future<NetworkSettings> networkSettings() async => network;
+
+  @override
+  Future<NetworkSettings> setNetworkSettings(NetworkSettings settings) async {
+    final relays = <String>[];
+    for (final relay in settings.relays) {
+      final clean = relay.trim();
+      if (!RegExp(r'^https?://[^\s/@?#]+(/.*)?$').hasMatch(clean)) {
+        throw const CoreException(CoreFailure.invalidRelay);
+      }
+      if (!relays.contains(clean)) relays.add(clean);
+    }
+    if (relays.length > maxRelays) {
+      throw const CoreException(CoreFailure.invalidRelay);
+    }
+    network = NetworkSettings(internet: settings.internet, relays: relays);
+    networkRestarts++;
+    // Como o núcleo: religar a rede faz a UI reler tudo.
+    _events.add(const CoreEvent(CoreEventKind.contact, 0));
+    return network;
+  }
+
+  @override
+  Future<NetworkStatus> networkStatus() async => NetworkStatus(
+    running: true,
+    internet: network.internet,
+    relays: network.internet ? network.relays.length : 0,
+    relayConnected: network.internet && relayConnected,
+  );
+
+  /// Muda por onde o contato foi alcançado, como o nó faria.
+  void reached(int contactId, ContactReach reach) {
+    final i = people.indexWhere((c) => c.id == contactId);
+    final c = people[i];
+    people[i] = Contact(
+      id: c.id,
+      displayName: c.displayName,
+      avatarSeed: c.avatarSeed,
+      verified: c.verified,
+      established: c.established,
+      reach: reach,
+    );
+    _events.add(CoreEvent(CoreEventKind.contact, contactId));
+  }
+
+  @override
   Future<void> setAppearance(Appearance appearance) async {
     if (appearanceFails) throw const CoreException(CoreFailure.storage);
     savedAppearance = appearance;
@@ -396,6 +449,7 @@ class FakeStore implements ProfileStore {
         avatarSeed: c.avatarSeed,
         verified: _verified[c.id] ?? c.verified,
         established: c.established,
+        reach: c.reach,
       ),
   ];
 

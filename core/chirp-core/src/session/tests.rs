@@ -29,7 +29,7 @@ impl Device {
 
     fn invite(&mut self, kind: InviteKind) -> Invite {
         let endpoint = self.endpoint;
-        create_invite(&mut self.store, kind, endpoint, vec![]).unwrap()
+        create_invite(&mut self.store, kind, endpoint, vec![], None).unwrap()
     }
 
     fn identity_key(&self) -> Vec<u8> {
@@ -286,7 +286,7 @@ fn reading_your_own_invite_or_a_known_contact_is_refused() {
 fn without_a_profile_there_is_no_invite() {
     let mut store = Store::memory();
     assert_eq!(
-        create_invite(&mut store, InviteKind::Qr, [1; 32], vec![]).err(),
+        create_invite(&mut store, InviteKind::Qr, [1; 32], vec![], None).err(),
         Some(CoreError::NoProfile)
     );
 }

@@ -112,18 +112,13 @@ pub fn identity_pair(store: &Store) -> CoreResult<IdentityKeyPair> {
     Ok(IdentityKeyPair::new(IdentityKey::new(public), private))
 }
 
-/// O que veio do outro lado sobre como achá-lo, conferido: até 8 endereços que se
-/// leem como IP e porta, e a chave de descoberta com 32 bytes.
+/// O que veio do outro lado sobre como achá-lo, conferido: os endereços pelo
+/// `network::clean_addrs` e a chave de descoberta com 32 bytes.
 fn sanitize(peer: Peer) -> CoreResult<Peer> {
     if peer.endpoint_id.len() != 32 || peer.discovery_key.len() != 32 {
         return Err(CoreError::Protocol);
     }
-    let addrs = peer
-        .addrs
-        .into_iter()
-        .filter(|a| a.len() <= 64 && a.parse::<std::net::SocketAddr>().is_ok())
-        .take(8)
-        .collect();
+    let addrs = crate::network::clean_addrs(peer.addrs);
     Ok(Peer { addrs, ..peer })
 }
 
@@ -175,6 +170,7 @@ pub fn create_invite(
     kind: InviteKind,
     endpoint_id: [u8; 32],
     addrs: Vec<std::net::SocketAddr>,
+    relay: Option<String>,
 ) -> CoreResult<Invite> {
     let identity = identity_pair(store)?;
     local_keys(store.conn())?;
@@ -236,6 +232,7 @@ pub fn create_invite(
         endpoint_id,
         token: *token,
         addrs,
+        relay,
     })
 }
 

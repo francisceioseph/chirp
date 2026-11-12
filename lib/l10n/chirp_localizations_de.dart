@@ -478,4 +478,80 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
 
   @override
   String get themeSystem => 'Systemfarbe';
+
+  @override
+  String get networkTitle => 'Netzwerk';
+
+  @override
+  String get networkLocalAlways =>
+      'Das lokale Netzwerk ist immer an: Wer im selben WLAN ist, schreibt, ohne dass etwas hinausgeht.';
+
+  @override
+  String get internetToggle => 'Internet';
+
+  @override
+  String get internetHelp =>
+      'Um mit Leuten in anderen Netzen zu schreiben. Deine Kontakte erhalten deine öffentliche Adresse (die IP), die deinen Anbieter und ungefähr deine Stadt zeigt.';
+
+  @override
+  String get relaysTitle => 'Relay-Server';
+
+  @override
+  String get relaysHelp =>
+      'Ohne einen gehen nur direkte Verbindungen, und viele Netze (Mobilfunk fast immer) lassen sie nicht zu. Der Relay sieht deine IP, die deiner Kontakte und wann ihr schreibt, und leitet die schon verschlüsselten Nachrichten weiter, ohne sie zu lesen oder zu speichern. Nimm deinen eigenen oder einen von jemandem, dem du vertraust.';
+
+  @override
+  String get relayAddress => 'Relay-Adresse';
+
+  @override
+  String get relayAddressHelp => 'Beginnt mit https://';
+
+  @override
+  String get relayAdd => 'Hinzufügen';
+
+  @override
+  String get relayRemove => 'Entfernen';
+
+  @override
+  String get relayInvalid =>
+      'Diese Adresse geht nicht. Nimm eine, die mit https:// beginnt, ohne Benutzer oder Passwort, höchstens drei.';
+
+  @override
+  String get relayStatusNone => 'Kein Relay: nur direkte Verbindungen.';
+
+  @override
+  String get relayStatusConnected => 'Mit dem Relay verbunden.';
+
+  @override
+  String get relayStatusWaiting => 'Der Relay hat noch nicht geantwortet.';
+
+  @override
+  String get reachTitle => 'Verbindung';
+
+  @override
+  String get reachLan => 'Im lokalen Netzwerk';
+
+  @override
+  String get reachDirect => 'Über das Internet, direkt';
+
+  @override
+  String get reachRelay => 'Über den Relay';
+
+  @override
+  String get reachUnreachable => 'Gerade nicht erreichbar';
+
+  @override
+  String get reachUnknown => 'Noch nicht versucht';
+
+  @override
+  String get unreachableLocalOnly =>
+      'Im lokalen Netzwerk nicht erreichbar. Ist die Person in einem anderen Netz, schalte das Internet unter Dein Profil, Netzwerk ein. Die Nachrichten warten hier.';
+
+  @override
+  String get unreachableNoRelay =>
+      'Keine direkte Verbindung möglich. Ohne Relay-Server geht das nur, wenn einer von euch Verbindungen von außen annimmt, und viele Netze (etwa Mobilfunk) lassen das nicht zu. Die Nachrichten warten hier.';
+
+  @override
+  String get unreachableOffline =>
+      'Der Kontakt scheint offline zu sein. Die Nachrichten warten hier und gehen raus, sobald er auftaucht.';
 }

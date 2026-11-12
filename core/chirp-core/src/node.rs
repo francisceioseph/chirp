@@ -1,9 +1,13 @@
-//! O nó da rede: um endpoint do iroh (QUIC, TLS 1.3 com a chave do nó) só para a rede
-//! local nesta fase (docs/PLANO.md, 7.2).
+//! O nó da rede: um endpoint do iroh (QUIC, TLS 1.3 com a chave do nó), na rede local
+//! (docs/PLANO.md, 7.2) e, se ligada, na internet (7.3, o `network`).
 //!
-//! Sem relay, sem descoberta por servidor e sem UPnP (o preset `Minimal`, com o relay
-//! desligado e as features padrão do iroh fora): o nó só fala com os endereços que um
-//! convite ou um contato deram. Nenhum pacote vai para terceiros.
+//! Sem descoberta por servidor e sem UPnP (o preset `Minimal`, com as features padrão
+//! do iroh fora): o nó só fala com os endereços que um convite ou um contato deram.
+//! Com a internet desligada (o padrão), só os da rede local, e nenhum pacote vai para
+//! terceiros. Ligada, os endereços públicos também valem, e os contatos os recebem
+//! pela sessão (`Addrs`) quando mudam. Com um retransmissor escolhido, o iroh o usa
+//! para furar o NAT, e para repassar quando o furo não dá; sem nenhum, só conecta se
+//! um dos dois aceitar conexões de fora.
 //!
 //! Uma conexão que chega é de um de dois tipos, pelo nó de quem conecta:
 //!
@@ -24,7 +28,7 @@ use std::time::{Duration, Instant};
 
 use iroh::address_lookup::MemoryLookup;
 use iroh::endpoint::{presets, Connection, IncomingAddr, RecvStream, RelayMode, SendStream};
-use iroh::{Endpoint, EndpointAddr, EndpointId, SecretKey};
+use iroh::{Endpoint, EndpointAddr, EndpointId, RelayMap, RelayUrl, SecretKey, TransportAddr};
 use tokio::sync::{broadcast, mpsc};
 
 use crate::contacts::{self, Contact, ContactState};
@@ -32,6 +36,7 @@ use crate::discovery;
 use crate::error::{CoreError, CoreResult};
 use crate::invite::Invite;
 use crate::messages::{self, Effect};
+use crate::network;
 use crate::session::{self, InviteKind};
 use crate::store::Store;
 use crate::wire::{self, Body, Peer};
@@ -41,8 +46,12 @@ const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(20);
 const MAX_FRAMES: usize = 4;
 /// Quantas conexões que chegam ao mesmo tempo; as de além esperam.
 const MAX_INCOMING: usize = 16;
-/// Para conectar a um contato.
+/// Para conectar a um contato na rede local, e pela internet (o furo pelo
+/// retransmissor leva mais).
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
+const INTERNET_CONNECT_TIMEOUT: Duration = Duration::from_secs(12);
+/// De quanto em quanto tempo os endereços são conferidos, para avisar os contatos.
+const ADDRS_CHECK: Duration = Duration::from_secs(15);
 /// Uma conexão de mensagens sem nada por esse tempo é fechada.
 const IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 /// Quantas mensagens numa conexão; o resto vai na próxima.
@@ -63,6 +72,25 @@ pub enum NodeEvent {
     MessagesChanged(i64),
     /// O contato está digitando.
     Typing(i64),
+    /// A rede foi desligada de propósito: quem escuta os eventos para (o processo
+    /// pode sair). Religar por causa dos ajustes não manda isto.
+    Closed,
+}
+
+/// Por onde o contato foi alcançado da última vez.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Reach {
+    /// Ainda não tentou.
+    #[default]
+    Unknown,
+    /// Direto, na rede local.
+    Lan,
+    /// Direto, pela internet.
+    Direct,
+    /// Pelo retransmissor.
+    Relay,
+    /// Não alcançou.
+    Unreachable,
 }
 
 pub type SharedStore = Arc<Mutex<Store>>;
@@ -82,6 +110,10 @@ pub struct Node {
     mdns: Option<mdns_sd::ServiceDaemon>,
     /// O anúncio de agora: o nome completo, o token e os endereços.
     announced: Mutex<Option<(String, String, Vec<SocketAddr>)>>,
+    /// A internet e os retransmissores, como estavam ao ligar.
+    settings: network::Settings,
+    /// Por onde cada contato foi alcançado da última vez.
+    reach: Mutex<HashMap<i64, Reach>>,
 }
 
 /// Um endereço da rede local: IPv4 privado (RFC 1918) ou IPv6 local único (fc00::/7).
@@ -90,6 +122,16 @@ pub(crate) fn is_local(addr: &SocketAddr) -> bool {
     match addr.ip() {
         std::net::IpAddr::V4(ip) => ip.is_private(),
         std::net::IpAddr::V6(ip) => (ip.segments()[0] & 0xfe00) == 0xfc00,
+    }
+}
+
+/// Um endereço que não serve fora do aparelho ou do enlace.
+fn is_unroutable(addr: &SocketAddr) -> bool {
+    match addr.ip() {
+        std::net::IpAddr::V4(ip) => ip.is_loopback() || ip.is_link_local() || ip.is_unspecified(),
+        std::net::IpAddr::V6(ip) => {
+            ip.is_loopback() || ip.is_unspecified() || (ip.segments()[0] & 0xffc0) == 0xfe80
+        }
     }
 }
 
@@ -112,23 +154,35 @@ impl Node {
     /// Liga o nó, com a chave guardada no banco, em todas as interfaces. A porta é a da
     /// última vez, para os contatos acharem o aparelho onde ele estava; se ela estiver
     /// ocupada, vai outra, que fica guardada.
-    pub async fn start(store: SharedStore) -> CoreResult<Arc<Node>> {
-        let (keys, port) = with_store(&store, |s| {
+    pub async fn start(
+        store: SharedStore,
+        events: broadcast::Sender<NodeEvent>,
+    ) -> CoreResult<Arc<Node>> {
+        let (keys, port, settings) = with_store(&store, |s| {
             let keys = session::local_keys(s.conn())?;
             let port: u16 =
                 s.conn()
                     .query_row("SELECT port FROM local_keys WHERE id = 1", [], |r| r.get(0))?;
-            Ok((keys, port))
+            Ok((keys, port, network::get(s.conn())?))
         })
         .await?;
         let lookup = MemoryLookup::new();
+        let relays = settings.relay_urls();
         let builder = |port: u16| -> CoreResult<iroh::endpoint::Builder> {
+            let relay_mode = if relays.is_empty() {
+                RelayMode::Disabled
+            } else {
+                RelayMode::Custom(relays.iter().cloned().collect::<RelayMap>())
+            };
             let builder = Endpoint::builder(presets::Minimal)
-                .relay_mode(RelayMode::Disabled)
+                .relay_mode(relay_mode)
                 .clear_address_lookup()
                 .address_lookup(lookup.clone())
                 .secret_key(SecretKey::from_bytes(&keys.endpoint_secret))
                 .alpns(vec![ALPN.to_vec()]);
+            // Os retransmissores dos testes têm certificado próprio.
+            #[cfg(test)]
+            let builder = builder.ca_tls_config(iroh::tls::CaTlsConfig::insecure_skip_verify());
             if port == 0 {
                 return Ok(builder);
             }
@@ -161,7 +215,6 @@ impl Node {
                 .await;
             }
         }
-        let (events, _) = broadcast::channel(256);
         let (wake, woken) = mpsc::unbounded_channel();
         let node = Arc::new(Node {
             endpoint,
@@ -174,11 +227,14 @@ impl Node {
             seen: Mutex::new(HashMap::new()),
             mdns: mdns_sd::ServiceDaemon::new().ok(),
             announced: Mutex::new(None),
+            settings,
+            reach: Mutex::new(HashMap::new()),
         });
         tokio::spawn(node.clone().accept_loop());
         tokio::spawn(node.clone().delivery_loop(woken));
         tokio::spawn(node.clone().announce());
         tokio::spawn(node.clone().discovery_loop());
+        tokio::spawn(node.clone().addrs_loop());
         Ok(node)
     }
 
@@ -225,7 +281,12 @@ impl Node {
             return;
         };
         let token = discovery::token(&self.discovery_key, discovery::epoch(Self::now_secs()));
-        let addrs = self.addrs();
+        // O mDNS só leva os da rede local, mesmo com a internet ligada.
+        let addrs: Vec<SocketAddr> = self
+            .addrs()
+            .into_iter()
+            .filter(|a| is_local(a) || a.ip().is_loopback())
+            .collect();
         let Ok(mut announced) = self.announced.lock() else {
             return;
         };
@@ -428,17 +489,93 @@ impl Node {
                 .map_err(|_| CoreError::Storage)?,
         )
         .map_err(|_| CoreError::Storage)?;
-        let addrs: Vec<SocketAddr> = contact
-            .addrs
-            .iter()
-            .filter_map(|a| a.parse().ok())
-            .collect();
-        let addr = EndpointAddr::from_parts(remote, addrs.into_iter().map(iroh::TransportAddr::Ip));
+        let addr = EndpointAddr::from_parts(remote, self.usable(&contact.addrs));
         self.lookup.add_endpoint_info(addr.clone());
-        tokio::time::timeout(CONNECT_TIMEOUT, self.endpoint.connect(addr, ALPN))
-            .await
-            .map_err(|_| CoreError::Unreachable)?
-            .map_err(|_| CoreError::Unreachable)
+        let result =
+            tokio::time::timeout(self.connect_timeout(), self.endpoint.connect(addr, ALPN))
+                .await
+                .map_err(|_| CoreError::Unreachable)
+                .and_then(|r| r.map_err(|_| CoreError::Unreachable));
+        match &result {
+            Ok(conn) => self.reached(contact.id, Self::path_of(conn)),
+            Err(_) => self.reached(contact.id, Reach::Unreachable),
+        }
+        result
+    }
+
+    fn connect_timeout(&self) -> Duration {
+        if self.settings.internet {
+            INTERNET_CONNECT_TIMEOUT
+        } else {
+            CONNECT_TIMEOUT
+        }
+    }
+
+    /// Os endereços de um contato que este nó pode usar agora: com a internet
+    /// desligada, só os da rede local (nada de IP público nem retransmissor).
+    fn usable(&self, addrs: &[String]) -> Vec<TransportAddr> {
+        let internet = self.settings.internet;
+        addrs
+            .iter()
+            .filter_map(|a| {
+                if let Ok(ip) = a.parse::<SocketAddr>() {
+                    (internet || is_local(&ip) || ip.ip().is_loopback())
+                        .then_some(TransportAddr::Ip(ip))
+                } else if internet {
+                    a.parse::<RelayUrl>().ok().map(TransportAddr::Relay)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    /// O caminho que a conexão usa agora.
+    fn path_of(conn: &Connection) -> Reach {
+        let paths = conn.paths();
+        let Some(path) = paths
+            .iter()
+            .find(|p| p.is_selected())
+            .or_else(|| paths.iter().next())
+        else {
+            return Reach::Unknown;
+        };
+        if path.is_relay() {
+            return Reach::Relay;
+        }
+        match path.remote_addr() {
+            TransportAddr::Ip(ip) if is_local(ip) || ip.ip().is_loopback() => Reach::Lan,
+            _ => Reach::Direct,
+        }
+    }
+
+    /// Guarda por onde o contato foi alcançado; avisa a UI quando muda.
+    fn reached(&self, contact_id: i64, reach: Reach) {
+        let changed = self
+            .reach
+            .lock()
+            .map(|mut all| all.insert(contact_id, reach) != Some(reach))
+            .unwrap_or(false);
+        if changed {
+            self.emit(NodeEvent::ContactChanged(contact_id));
+        }
+    }
+
+    /// Por onde o contato foi alcançado da última vez.
+    pub fn reach(&self, contact_id: i64) -> Reach {
+        self.reach
+            .lock()
+            .ok()
+            .and_then(|all| all.get(&contact_id).copied())
+            .unwrap_or_default()
+    }
+
+    /// A internet ligada, e se algum retransmissor respondeu (o nó tem um).
+    pub fn internet(&self) -> (bool, bool) {
+        (
+            self.settings.internet,
+            self.endpoint.addr().relay_urls().next().is_some(),
+        )
     }
 
     async fn send_all(&self, conn: &Connection, contact_id: i64) -> CoreResult<()> {
@@ -479,38 +616,94 @@ impl Node {
         *self.endpoint.id().as_bytes()
     }
 
+    /// Os eventos (a UI assina o canal do `ChirpStore`, que sobrevive ao nó).
+    #[cfg(test)]
     pub fn subscribe(&self) -> broadcast::Receiver<NodeEvent> {
         self.events.subscribe()
     }
 
-    /// Os endereços de agora na rede local, para o convite e para os contatos. Só os
-    /// privados: um link mandado por outro canal não leva o IP público de ninguém (a
-    /// internet é a fase 5). Sem nenhum, o loopback, que só serve no mesmo aparelho.
+    /// Os endereços de agora, para o convite e para os contatos: os da rede local
+    /// primeiro e, com a internet ligada, os públicos (os da interface e o que o
+    /// retransmissor viu). Com ela desligada, um link mandado por outro canal não leva
+    /// o IP público de ninguém. Sem nenhum, o loopback, que só serve no mesmo aparelho.
     pub fn addrs(&self) -> Vec<SocketAddr> {
         let all: Vec<SocketAddr> = self.endpoint.addr().ip_addrs().copied().collect();
-        let mut addrs: Vec<SocketAddr> = all.iter().copied().filter(is_local).collect();
+        let internet = self.settings.internet;
+        let mut addrs: Vec<SocketAddr> = all
+            .iter()
+            .copied()
+            .filter(|a| is_local(a) || (internet && !is_unroutable(a)))
+            .collect();
         if addrs.is_empty() {
             addrs = all.into_iter().filter(|a| a.ip().is_loopback()).collect();
         }
-        addrs.sort_by_key(|a| a.is_ipv6());
+        addrs.sort_by_key(|a| (!is_local(a), a.is_ipv6()));
+        addrs.dedup();
         addrs.truncate(8);
+        addrs
+    }
+
+    /// O retransmissor deste nó (o que respondeu primeiro), se houver.
+    pub fn relay(&self) -> Option<String> {
+        self.endpoint
+            .addr()
+            .relay_urls()
+            .next()
+            .map(|u| u.to_string())
+    }
+
+    /// Os endereços que os contatos recebem: os IPs e o retransmissor.
+    fn advertised(&self) -> Vec<String> {
+        let mut addrs: Vec<String> = self.addrs().iter().map(|a| a.to_string()).collect();
+        addrs.extend(self.relay());
         addrs
     }
 
     fn me(&self) -> Peer {
         Peer {
             endpoint_id: self.id().to_vec(),
-            addrs: self.addrs().iter().map(|a| a.to_string()).collect(),
+            addrs: self.advertised(),
             discovery_key: self.discovery_key.clone(),
         }
     }
 
     pub async fn create_invite(&self, kind: InviteKind) -> CoreResult<Invite> {
-        let (id, addrs) = (self.id(), self.addrs());
+        let (id, addrs, relay) = (self.id(), self.addrs(), self.relay());
         with_store(&self.store, move |s| {
-            session::create_invite(s, kind, id, addrs)
+            session::create_invite(s, kind, id, addrs, relay)
         })
         .await
+    }
+
+    /// Avisa os contatos, pela sessão, quando os endereços mudam (a rede trocou, o
+    /// retransmissor respondeu). Só manda o que ficou igual por duas conferências
+    /// seguidas, para uma rede que pisca não gastar mensagens.
+    async fn addrs_loop(self: Arc<Self>) {
+        let mut tick = tokio::time::interval(ADDRS_CHECK);
+        let mut candidate: Option<Vec<String>> = None;
+        loop {
+            tick.tick().await;
+            if self.endpoint.is_closed() {
+                return;
+            }
+            let now = self.advertised();
+            let Ok(sent) = with_store(&self.store, |s| network::announced(s.conn())).await else {
+                continue;
+            };
+            if now.is_empty() || now == sent {
+                candidate = None;
+                continue;
+            }
+            if candidate.as_ref() != Some(&now) {
+                candidate = Some(now);
+                continue;
+            }
+            candidate = None;
+            let to = with_store(&self.store, move |s| messages::send_addrs(s, &now)).await;
+            for id in to.unwrap_or_default() {
+                self.flush(id);
+            }
+        }
     }
 
     /// Lê um convite: conecta a quem convidou e faz o aperto de mão inteiro.
@@ -527,10 +720,9 @@ impl Node {
         {
             return Err(CoreError::AlreadyExists);
         }
-        let addr = EndpointAddr::from_parts(
-            remote,
-            invite.addrs.iter().map(|a| iroh::TransportAddr::Ip(*a)),
-        );
+        let mut addrs: Vec<String> = invite.addrs.iter().map(|a| a.to_string()).collect();
+        addrs.extend(invite.relay.clone());
+        let addr = EndpointAddr::from_parts(remote, self.usable(&addrs));
         self.lookup.add_endpoint_info(addr.clone());
         let conn = tokio::time::timeout(HANDSHAKE_TIMEOUT, self.endpoint.connect(addr, ALPN))
             .await
@@ -622,8 +814,13 @@ impl Node {
         match contact {
             Some(contact) => {
                 self.saw(contact.id);
-                // O contato falou daqui: é o endereço mais provável dele agora.
-                if let Some(addr) = from.filter(|a| is_local(a) || a.ip().is_loopback()) {
+                self.reached(contact.id, Self::path_of(conn));
+                // O contato falou daqui: é o endereço mais provável dele agora (um
+                // público, só com a internet ligada).
+                let internet = self.settings.internet;
+                if let Some(addr) = from.filter(|a| {
+                    is_local(a) || a.ip().is_loopback() || (internet && !is_unroutable(a))
+                }) {
                     let id = contact.id;
                     let _ = with_store(&self.store, move |s| {
                         contacts::learn_addr(s.conn(), id, &addr.to_string())
@@ -739,6 +936,12 @@ impl Node {
 mod tests {
     use super::*;
 
+    impl Node {
+        async fn start_test(store: SharedStore) -> CoreResult<Arc<Node>> {
+            Node::start(store, broadcast::channel(256).0).await
+        }
+    }
+
     fn device(name: &str) -> SharedStore {
         let mut store = Store::memory();
         store.create_profile(name).unwrap();
@@ -752,8 +955,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn two_nodes_become_contacts_over_the_network() {
         let (alice_store, bob_store) = (device("Alice"), device("Bob"));
-        let alice = Node::start(alice_store.clone()).await.unwrap();
-        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
         let mut alice_events = alice.subscribe();
 
         let invite = alice.create_invite(InviteKind::Qr).await.unwrap();
@@ -778,7 +981,7 @@ mod tests {
         assert_eq!(at_alice.endpoint_id, bob.id().to_vec());
 
         // O mesmo convite não serve para mais ninguém.
-        let carol = Node::start(device("Carol")).await.unwrap();
+        let carol = Node::start_test(device("Carol")).await.unwrap();
         assert_eq!(
             carol.join(invite, true).await.err(),
             Some(CoreError::InviteRefused)
@@ -827,8 +1030,8 @@ mod tests {
     async fn messages_go_both_ways_with_receipts() {
         use crate::messages::{self, Status};
         let (alice_store, bob_store) = (device("Alice"), device("Bob"));
-        let alice = Node::start(alice_store.clone()).await.unwrap();
-        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
         let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
         let mut bob_events = bob.subscribe();
 
@@ -873,12 +1076,128 @@ mod tests {
         bob.close().await;
     }
 
+    /// Um aparelho com a internet ligada e o retransmissor dado.
+    fn online_device(name: &str, relay: &str) -> SharedStore {
+        let store = device(name);
+        network::set(
+            store.lock().unwrap().conn(),
+            &network::Settings {
+                internet: true,
+                relays: vec![relay.to_owned()],
+            },
+        )
+        .unwrap();
+        store
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn the_relay_joins_two_nodes_that_know_no_address() {
+        use crate::messages::{self, Status};
+        let (_map, url, _server) = iroh::test_utils::run_relay_server().await.unwrap();
+        let relay = url.to_string();
+        let (alice_store, bob_store) =
+            (online_device("Alice", &relay), online_device("Bob", &relay));
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        tokio::time::timeout(Duration::from_secs(10), alice.endpoint.online())
+            .await
+            .unwrap();
+        assert_eq!(alice.internet(), (true, true));
+        assert_eq!(alice.relay().as_deref(), Some(relay.as_str()));
+
+        // O convite só com o retransmissor, como entre duas casas atrás de NAT.
+        let mut events = alice.subscribe();
+        let mut invite = alice.create_invite(InviteKind::Link).await.unwrap();
+        assert_eq!(invite.relay.as_deref(), Some(relay.as_str()));
+        invite.addrs.clear();
+        let invite = Invite::from_link(&invite.to_link()).unwrap();
+        let at_bob = bob.join(invite, false).await.unwrap();
+        let bob_at_alice = loop {
+            if let Ok(Ok(NodeEvent::ContactChanged(id))) =
+                tokio::time::timeout(Duration::from_secs(5), events.recv()).await
+            {
+                break id;
+            }
+        };
+        // Os dois ficaram com o retransmissor do outro.
+        assert!(
+            crate::contacts::by_id(bob_store.lock().unwrap().conn(), at_bob.id)
+                .unwrap()
+                .addrs
+                .contains(&relay)
+        );
+
+        // Só pelo retransmissor, a mensagem chega e volta o "entregue".
+        crate::contacts::set_addrs(
+            bob_store.lock().unwrap().conn(),
+            at_bob.id,
+            std::slice::from_ref(&relay),
+        )
+        .unwrap();
+        messages::send_text(
+            &mut bob_store.lock().unwrap(),
+            at_bob.id,
+            "oi pela rede",
+            None,
+        )
+        .unwrap();
+        bob.flush(at_bob.id);
+        until("Bob's message is delivered", || {
+            texts(&bob_store, at_bob.id) == [("oi pela rede".to_owned(), Status::Delivered)]
+        })
+        .await;
+        assert_eq!(texts(&alice_store, bob_at_alice).len(), 1);
+        assert_ne!(bob.reach(at_bob.id), Reach::Unreachable);
+        assert_ne!(bob.reach(at_bob.id), Reach::Unknown);
+        alice.close().await;
+        bob.close().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn with_the_internet_off_a_public_address_is_not_tried() {
+        use crate::messages;
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        let (_, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
+        alice.close().await;
+        // Alice "foi para outra rede": só um IP público e um retransmissor.
+        crate::contacts::set_addrs(
+            bob_store.lock().unwrap().conn(),
+            alice_at_bob,
+            &[
+                "203.0.113.9:4000".to_owned(),
+                "https://relay.example.org/".to_owned(),
+            ],
+        )
+        .unwrap();
+        assert!(bob
+            .usable(&[
+                "203.0.113.9:4000".into(),
+                "https://relay.example.org/".into()
+            ])
+            .is_empty());
+        messages::send_text(&mut bob_store.lock().unwrap(), alice_at_bob, "oi", None).unwrap();
+        bob.flush(alice_at_bob);
+        until("Bob gives up on Alice", || {
+            bob.reach(alice_at_bob) == Reach::Unreachable
+        })
+        .await;
+        // A internet desligada não manda os endereços públicos a ninguém.
+        assert!(bob
+            .addrs()
+            .iter()
+            .all(|a| is_local(a) || a.ip().is_loopback()));
+        assert_eq!(bob.relay(), None);
+        bob.close().await;
+    }
+
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn messages_wait_for_a_contact_that_was_off() {
         use crate::messages::{self, Status};
         let (alice_store, bob_store) = (device("Alice"), device("Bob"));
-        let alice = Node::start(alice_store.clone()).await.unwrap();
-        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
         let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
         bob.close().await;
 
@@ -893,7 +1212,7 @@ mod tests {
             .all(|(_, s)| *s == Status::Pending));
 
         // Bob volta (na mesma porta, ou avisando onde está): tudo chega, na ordem.
-        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
         until("Bob gets the queue", || {
             texts(&bob_store, alice_at_bob)
                 .iter()
@@ -916,8 +1235,8 @@ mod tests {
     async fn discovery_finds_a_contact_that_moved() {
         use crate::messages::{self, Status};
         let (alice_store, bob_store) = (device("Alice"), device("Bob"));
-        let alice = Node::start(alice_store.clone()).await.unwrap();
-        let bob = Node::start(bob_store.clone()).await.unwrap();
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
         let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
         if alice.addrs().iter().all(|a| !is_local(a)) {
             // Sem rede local (só o loopback), não há o que anunciar.
@@ -942,7 +1261,7 @@ mod tests {
             .conn()
             .execute("UPDATE local_keys SET port = 0", [])
             .unwrap();
-        let alice = Node::start(alice_store.clone()).await.unwrap();
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
         alice.announce_mdns();
 
         // Bob escreve: só o mDNS diz a ele onde Alice está agora.
@@ -963,8 +1282,8 @@ mod tests {
         // aperto de mão fecha com a identidade dela, não com a de Bob. Ninguém se passa
         // por ninguém: Alice fica com "Mallory", e Bob não ganha contato nenhum.
         let alice_store = device("Alice");
-        let alice = Node::start(alice_store.clone()).await.unwrap();
-        let mallory = Node::start(device("Mallory")).await.unwrap();
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let mallory = Node::start_test(device("Mallory")).await.unwrap();
         let invite = alice.create_invite(InviteKind::Link).await.unwrap();
         let at_mallory = mallory.join(invite, false).await.unwrap();
         assert_eq!(at_mallory.display_name, "Alice");
@@ -978,8 +1297,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn nobody_listening_is_unreachable_and_leaves_nothing() {
         let bob_store = device("Bob");
-        let bob = Node::start(bob_store.clone()).await.unwrap();
-        let alice = Node::start(device("Alice")).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        let alice = Node::start_test(device("Alice")).await.unwrap();
         let invite = alice.create_invite(InviteKind::Qr).await.unwrap();
         alice.close().await;
         assert!(bob.join(invite, true).await.is_err());

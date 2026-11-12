@@ -59,6 +59,9 @@ pub enum CoreError {
     /// Tarde demais para editar ou apagar para todos.
     #[error("too late")]
     TooLate,
+    /// O endereço do servidor de retransmissão não serve (ou são mais de três).
+    #[error("the relay address is not valid")]
+    InvalidRelay,
     /// Falha de disco ou do SQLite que não é nenhuma das acima.
     #[error("storage failure")]
     Storage,

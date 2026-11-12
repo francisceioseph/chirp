@@ -160,6 +160,19 @@ pub fn learn_addr(conn: &Connection, id: i64, addr: &str) -> CoreResult<()> {
     Ok(())
 }
 
+/// Os endereços que o contato mandou (já conferidos), no lugar dos guardados.
+pub fn set_addrs(conn: &Connection, id: i64, addrs: &[String]) -> CoreResult<bool> {
+    let contact = by_id(conn, id)?;
+    if contact.addrs == addrs {
+        return Ok(false);
+    }
+    conn.execute(
+        "UPDATE contacts SET addrs = ?2 WHERE id = ?1",
+        (id, addrs.join("\n")),
+    )?;
+    Ok(true)
+}
+
 /// O perfil novo que o contato mandou, se for mais novo que o guardado.
 pub fn update_profile(
     conn: &Connection,

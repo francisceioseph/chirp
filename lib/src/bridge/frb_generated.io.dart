@@ -73,10 +73,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MessageView dco_decode_box_autoadd_message_view(dynamic raw);
 
   @protected
+  NetworkSettings dco_decode_box_autoadd_network_settings(dynamic raw);
+
+  @protected
   Profile dco_decode_box_autoadd_profile(dynamic raw);
 
   @protected
   ChatSettings dco_decode_chat_settings(dynamic raw);
+
+  @protected
+  ContactReach dco_decode_contact_reach(dynamic raw);
 
   @protected
   ContactView dco_decode_contact_view(dynamic raw);
@@ -103,6 +109,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
   List<ContactView> dco_decode_list_contact_view(dynamic raw);
 
   @protected
@@ -125,6 +134,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   MessageView dco_decode_message_view(dynamic raw);
+
+  @protected
+  NetworkSettings dco_decode_network_settings(dynamic raw);
+
+  @protected
+  NetworkStatus dco_decode_network_status(dynamic raw);
 
   @protected
   PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
@@ -208,10 +223,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MessageView sse_decode_box_autoadd_message_view(SseDeserializer deserializer);
 
   @protected
+  NetworkSettings sse_decode_box_autoadd_network_settings(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   Profile sse_decode_box_autoadd_profile(SseDeserializer deserializer);
 
   @protected
   ChatSettings sse_decode_chat_settings(SseDeserializer deserializer);
+
+  @protected
+  ContactReach sse_decode_contact_reach(SseDeserializer deserializer);
 
   @protected
   ContactView sse_decode_contact_view(SseDeserializer deserializer);
@@ -238,6 +261,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
   List<ContactView> sse_decode_list_contact_view(SseDeserializer deserializer);
 
   @protected
@@ -262,6 +288,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   MessageView sse_decode_message_view(SseDeserializer deserializer);
+
+  @protected
+  NetworkSettings sse_decode_network_settings(SseDeserializer deserializer);
+
+  @protected
+  NetworkStatus sse_decode_network_status(SseDeserializer deserializer);
 
   @protected
   PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
@@ -365,10 +397,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_network_settings(
+    NetworkSettings self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_profile(Profile self, SseSerializer serializer);
 
   @protected
   void sse_encode_chat_settings(ChatSettings self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_contact_reach(ContactReach self, SseSerializer serializer);
 
   @protected
   void sse_encode_contact_view(ContactView self, SseSerializer serializer);
@@ -396,6 +437,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_contact_view(
@@ -432,6 +476,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_message_view(MessageView self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_network_settings(
+    NetworkSettings self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_network_status(NetworkStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_i_64(

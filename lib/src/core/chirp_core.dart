@@ -53,6 +53,9 @@ enum CoreFailure {
   invalidMessage,
   tooSoon,
   tooLate,
+
+  /// O endereço do retransmissor não serve (ou são mais de três).
+  invalidRelay,
   storage,
 }
 
@@ -94,6 +97,7 @@ class Contact {
     required this.avatarSeed,
     required this.verified,
     required this.established,
+    this.reach = ContactReach.unknown,
   });
 
   final int id;
@@ -105,6 +109,68 @@ class Contact {
 
   /// O aperto de mão fechou dos dois lados.
   final bool established;
+
+  /// Por onde foi alcançado da última vez, com a rede ligada.
+  final ContactReach reach;
+}
+
+/// Por onde um contato foi alcançado da última vez.
+enum ContactReach {
+  /// Ainda não tentou (ou a rede está desligada).
+  unknown,
+
+  /// Direto, na rede local.
+  lan,
+
+  /// Direto, pela internet.
+  direct,
+
+  /// Pelo servidor de retransmissão.
+  relay,
+
+  /// Não alcançou.
+  unreachable,
+}
+
+/// A internet e os servidores de retransmissão (os dois desligados no começo).
+@immutable
+class NetworkSettings {
+  const NetworkSettings({this.internet = false, this.relays = const []});
+
+  final bool internet;
+
+  /// Os endereços dos retransmissores (`https://...`), até três.
+  final List<String> relays;
+
+  NetworkSettings copyWith({bool? internet, List<String>? relays}) =>
+      NetworkSettings(
+        internet: internet ?? this.internet,
+        relays: relays ?? this.relays,
+      );
+}
+
+/// Quantos retransmissores, no máximo (o núcleo recusa mais).
+const maxRelays = 3;
+
+/// Como a rede está agora.
+@immutable
+class NetworkStatus {
+  const NetworkStatus({
+    this.running = false,
+    this.internet = false,
+    this.relays = 0,
+    this.relayConnected = false,
+  });
+
+  /// O nó está ligado.
+  final bool running;
+  final bool internet;
+
+  /// Quantos retransmissores valem (com a internet ligada).
+  final int relays;
+
+  /// Algum retransmissor respondeu.
+  final bool relayConnected;
 }
 
 enum MessageKind {
@@ -329,6 +395,14 @@ abstract interface class ProfileStore {
   Future<void> setChatSettings(ChatSettings settings);
 
   Future<Appearance> appearance();
+
+  Future<NetworkSettings> networkSettings();
+
+  /// Grava (o núcleo confere os retransmissores) e religa a rede com eles. Devolve
+  /// o que ficou gravado.
+  Future<NetworkSettings> setNetworkSettings(NetworkSettings settings);
+
+  Future<NetworkStatus> networkStatus();
 
   Future<void> setAppearance(Appearance appearance);
 }
@@ -566,6 +640,35 @@ class _BridgeStore implements ProfileStore {
   );
 
   @override
+  Future<NetworkSettings> networkSettings() => _guardAsync(() async {
+    final n = await _store.networkSettings();
+    return NetworkSettings(internet: n.internet, relays: n.relays);
+  });
+
+  @override
+  Future<NetworkSettings> setNetworkSettings(NetworkSettings settings) =>
+      _guardAsync(() async {
+        final n = await _store.setNetworkSettings(
+          settings: bridge.NetworkSettings(
+            internet: settings.internet,
+            relays: settings.relays,
+          ),
+        );
+        return NetworkSettings(internet: n.internet, relays: n.relays);
+      });
+
+  @override
+  Future<NetworkStatus> networkStatus() => _guardAsync(() async {
+    final n = await _store.networkStatus();
+    return NetworkStatus(
+      running: n.running,
+      internet: n.internet,
+      relays: n.relays,
+      relayConnected: n.relayConnected,
+    );
+  });
+
+  @override
   Future<Appearance> appearance() => _guardAsync(() async {
     final a = await _store.appearance();
     return Appearance(
@@ -618,6 +721,7 @@ Contact _contact(bridge.ContactView c) => Contact(
   avatarSeed: c.avatarSeed,
   verified: c.verified,
   established: c.established,
+  reach: ContactReach.values[c.reach.index],
 );
 
 Profile? _profile(bridge.Profile? p) => p == null
@@ -648,6 +752,7 @@ CoreFailure _failure(bridge.CoreError error) => switch (error) {
   bridge.CoreError.invalidMessage => CoreFailure.invalidMessage,
   bridge.CoreError.tooSoon => CoreFailure.tooSoon,
   bridge.CoreError.tooLate => CoreFailure.tooLate,
+  bridge.CoreError.invalidRelay => CoreFailure.invalidRelay,
   bridge.CoreError.storage => CoreFailure.storage,
 };
 

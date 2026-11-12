@@ -21,5 +21,6 @@ String failureText(
   CoreFailure.tooSoon => l10n.messageTooSoon,
   CoreFailure.tooLate => l10n.messageTooLate,
   CoreFailure.invalidMessage => l10n.messageInvalid,
+  CoreFailure.invalidRelay => l10n.relayInvalid,
   _ => l10n.somethingWentWrong,
 };

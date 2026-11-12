@@ -131,6 +131,14 @@ const MIGRATIONS: &[&str] = &[
          glass      INTEGER NOT NULL
      );
      INSERT INTO appearance (id, theme, brightness, glass) VALUES (1, 'lutino', 0, 0);",
+    // 5: a internet e os retransmissores (fase 5).
+    "CREATE TABLE network (
+         id        INTEGER PRIMARY KEY CHECK (id = 1),
+         internet  INTEGER NOT NULL,
+         relays    TEXT NOT NULL,
+         announced TEXT NOT NULL
+     );
+     INSERT INTO network (id, internet, relays, announced) VALUES (1, 0, '', '');",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

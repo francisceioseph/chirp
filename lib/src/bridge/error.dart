@@ -62,6 +62,9 @@ enum CoreError {
   /// Tarde demais para editar ou apagar para todos.
   tooLate,
 
+  /// O endereço do servidor de retransmissão não serve (ou são mais de três).
+  invalidRelay,
+
   /// Falha de disco ou do SQLite que não é nenhuma das acima.
   storage,
 }

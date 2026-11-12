@@ -85,7 +85,7 @@ pub struct Ack {}
 pub struct Content {
     #[prost(bytes = "vec", tag = "1")]
     pub message_id: Vec<u8>,
-    #[prost(oneof = "ContentBody", tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11")]
+    #[prost(oneof = "ContentBody", tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12")]
     pub body: Option<ContentBody>,
     /// O relógio de quem manda, em milissegundos: só para mostrar.
     #[prost(uint64, tag = "13")]
@@ -127,6 +127,9 @@ pub enum ContentBody {
     /// O perfil mudou.
     #[prost(message, tag = "11")]
     Profile(PeerProfile),
+    /// Os endereços mudaram (fase 5): só o `addrs` do `Peer` vale.
+    #[prost(message, tag = "12")]
+    Addrs(Peer),
 }
 
 #[derive(Clone, PartialEq, Message)]

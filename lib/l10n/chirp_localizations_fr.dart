@@ -476,4 +476,81 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
 
   @override
   String get themeSystem => 'Couleur du système';
+
+  @override
+  String get networkTitle => 'Réseau';
+
+  @override
+  String get networkLocalAlways =>
+      'Le réseau local reste toujours actif : les personnes sur le même Wi-Fi discutent sans que rien n’en sorte.';
+
+  @override
+  String get internetToggle => 'Internet';
+
+  @override
+  String get internetHelp =>
+      'Pour discuter avec des personnes sur d’autres réseaux. Vos contacts reçoivent votre adresse publique (l’IP), qui révèle votre opérateur et à peu près votre ville.';
+
+  @override
+  String get relaysTitle => 'Serveurs relais';
+
+  @override
+  String get relaysHelp =>
+      'Sans relais, seules les connexions directes marchent, et beaucoup de réseaux (les réseaux mobiles, presque toujours) les bloquent. Le relais voit votre IP, celle de vos contacts et quand vous discutez, et transmet les messages déjà chiffrés, sans les lire ni les garder. Utilisez le vôtre ou celui d’une personne de confiance.';
+
+  @override
+  String get relayAddress => 'Adresse du relais';
+
+  @override
+  String get relayAddressHelp => 'Commence par https://';
+
+  @override
+  String get relayAdd => 'Ajouter';
+
+  @override
+  String get relayRemove => 'Retirer';
+
+  @override
+  String get relayInvalid =>
+      'Cette adresse ne convient pas. Utilisez-en une qui commence par https://, sans utilisateur ni mot de passe, trois au plus.';
+
+  @override
+  String get relayStatusNone =>
+      'Pas de relais : connexions directes uniquement.';
+
+  @override
+  String get relayStatusConnected => 'Connecté au relais.';
+
+  @override
+  String get relayStatusWaiting => 'Le relais n’a pas encore répondu.';
+
+  @override
+  String get reachTitle => 'Connexion';
+
+  @override
+  String get reachLan => 'Sur le réseau local';
+
+  @override
+  String get reachDirect => 'Par internet, en direct';
+
+  @override
+  String get reachRelay => 'Par le relais';
+
+  @override
+  String get reachUnreachable => 'Hors de portée pour l’instant';
+
+  @override
+  String get reachUnknown => 'Pas encore essayé';
+
+  @override
+  String get unreachableLocalOnly =>
+      'Hors de portée sur le réseau local. S’il est sur un autre réseau, activez internet dans Votre profil, Réseau. Les messages attendent ici.';
+
+  @override
+  String get unreachableNoRelay =>
+      'Connexion directe impossible. Sans serveur relais, cela ne marche que si l’un de vous accepte les connexions de l’extérieur, et beaucoup de réseaux (comme les réseaux mobiles) ne le permettent pas. Les messages attendent ici.';
+
+  @override
+  String get unreachableOffline =>
+      'Le contact semble hors ligne. Les messages attendent ici et partiront quand il reviendra.';
 }
