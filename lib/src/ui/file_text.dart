@@ -17,3 +17,9 @@ String fileSize(BuildContext context, int bytes) {
   if (bytes < k * k * k) return l10n.sizeMb(number(bytes / (k * k)));
   return l10n.sizeGb(number(bytes / (k * k * k)));
 }
+
+/// Um tempo de nota de voz: 0:07, 1:23.
+String voiceTime(Duration duration) {
+  final seconds = duration.inSeconds;
+  return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+}

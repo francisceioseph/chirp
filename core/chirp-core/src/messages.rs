@@ -1118,7 +1118,9 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
                     thumbnail: (!offer.thumbnail.is_empty()).then_some(offer.thumbnail),
                     chunks: crate::files::chunks_for(offer.size),
                     received: 0,
-                    state: if offer.size <= crate::files::AUTO_DOWNLOAD {
+                    state: if crate::downloads::get(conn)?
+                        .allows(offer.size, contacts::by_id(conn, id)?.verified)
+                    {
                         crate::files::State::Downloading
                     } else {
                         crate::files::State::Waiting

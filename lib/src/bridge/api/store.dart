@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `running`, `runtime`, `started`, `stop_node`, `view`, `with_file`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -39,6 +39,9 @@ abstract class ChirpStore implements RustOpaqueInterface {
 
   Future<AppearanceView> appearance();
 
+  /// Para de gravar e joga fora.
+  Future<void> cancelVoice();
+
   Future<ChatSettings> chatSettings();
 
   Future<List<ContactView>> contacts();
@@ -67,6 +70,8 @@ abstract class ChirpStore implements RustOpaqueInterface {
 
   /// Baixa (ou volta a baixar) o arquivo de uma mensagem do contato.
   Future<void> downloadFile({required PlatformInt64 messageId});
+
+  Future<DownloadPolicy> downloadPolicy();
 
   Future<MessageView> editMessage({
     required PlatformInt64 id,
@@ -114,6 +119,10 @@ abstract class ChirpStore implements RustOpaqueInterface {
     passphrase: passphrase,
   );
 
+  /// Toca a nota de voz de uma mensagem; a que tocava para. O fluxo recebe a
+  /// posição a cada décimo de segundo, e fecha no fim.
+  Stream<VoiceProgress> playVoice({required PlatformInt64 messageId});
+
   Future<Profile?> profile();
 
   /// Reage a uma mensagem ([kind] 0 tira a reação).
@@ -151,9 +160,15 @@ abstract class ChirpStore implements RustOpaqueInterface {
     PlatformInt64? replyTo,
   });
 
+  /// Para de gravar e manda a nota ao contato, como um arquivo. Curta demais (menos
+  /// de meio segundo), não sai.
+  Future<MessageView> sendVoice({required PlatformInt64 contactId});
+
   Future<void> setAppearance({required AppearanceView appearance});
 
   Future<void> setChatSettings({required ChatSettings settings});
+
+  Future<void> setDownloadPolicy({required DownloadPolicy policy});
 
   Future<void> setKeepRunning({required bool on_});
 
@@ -174,12 +189,21 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// nada.
   Future<void> startNetwork();
 
+  /// Liga o microfone para uma nota de voz. Uma gravação que já estava em
+  /// andamento é jogada fora.
+  Future<void> startVoice();
+
   /// Desliga o nó (antes de apagar tudo, por exemplo) e fecha o fluxo de eventos.
   Future<void> stopNetwork();
+
+  Future<void> stopVoice();
 
   /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
   /// Só sai se o contato está online agora.
   Future<void> typing({required PlatformInt64 contactId});
+
+  /// Quanto dura a nota de voz de uma mensagem (já baixada).
+  Future<BigInt> voiceDuration({required PlatformInt64 messageId});
 
   /// Avisa a UI do que muda sem ela pedir: alguém leu um convite nosso, chegou
   /// mensagem, o contato está digitando.
@@ -210,6 +234,9 @@ class AppearanceView {
           brightness == other.brightness &&
           glass == other.glass;
 }
+
+/// Até que tamanho o arquivo de um contato baixa sozinho: nunca, 4, 32 ou 256 MiB.
+enum AutoDownload { never, small, medium, large }
 
 /// Os recibos de leitura e o "digitando": desligar vale para os dois lados.
 class ChatSettings {
@@ -337,6 +364,25 @@ class CoreEvent {
           contactId == other.contactId;
 }
 
+/// O baixar sozinho: o limite e se só dos contatos verificados.
+class DownloadPolicy {
+  final AutoDownload limit;
+  final bool onlyVerified;
+
+  const DownloadPolicy({required this.limit, required this.onlyVerified});
+
+  @override
+  int get hashCode => limit.hashCode ^ onlyVerified.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DownloadPolicy &&
+          runtimeType == other.runtimeType &&
+          limit == other.limit &&
+          onlyVerified == other.onlyVerified;
+}
+
 /// O que muda sem a UI pedir.
 enum EventKind {
   /// Um contato novo ou mudado. Com o id 0, a UI relê tudo (perdeu eventos).
@@ -378,6 +424,9 @@ class FileView {
   final int chunks;
   final FileState state;
 
+  /// Uma nota de voz (Ogg Opus), que a conversa toca ali mesmo.
+  final bool voice;
+
   const FileView({
     required this.name,
     required this.size,
@@ -386,6 +435,7 @@ class FileView {
     required this.received,
     required this.chunks,
     required this.state,
+    required this.voice,
   });
 
   @override
@@ -396,7 +446,8 @@ class FileView {
       thumbnail.hashCode ^
       received.hashCode ^
       chunks.hashCode ^
-      state.hashCode;
+      state.hashCode ^
+      voice.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -409,7 +460,8 @@ class FileView {
           thumbnail == other.thumbnail &&
           received == other.received &&
           chunks == other.chunks &&
-          state == other.state;
+          state == other.state &&
+          voice == other.voice;
 }
 
 enum MessageKind {
@@ -629,3 +681,28 @@ enum StoreState {
 
 /// Claro, escuro ou o que o sistema disser.
 enum ThemeBrightness { system, light, dark }
+
+/// Onde está a nota de voz que toca, em milissegundos, e se acabou.
+class VoiceProgress {
+  final PlatformInt64 messageId;
+  final BigInt positionMs;
+  final bool done;
+
+  const VoiceProgress({
+    required this.messageId,
+    required this.positionMs,
+    required this.done,
+  });
+
+  @override
+  int get hashCode => messageId.hashCode ^ positionMs.hashCode ^ done.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VoiceProgress &&
+          runtimeType == other.runtimeType &&
+          messageId == other.messageId &&
+          positionMs == other.positionMs &&
+          done == other.done;
+}

@@ -3,6 +3,7 @@
 // Uma conversa: as mensagens (as mais novas embaixo, carregando as antigas ao subir),
 // o campo de escrever, o "digitando…" no título e o chamar atenção, que treme a tela
 // de quem recebe. O título abre os detalhes do contato (o número de segurança).
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ import '../molecules/message_bubble.dart';
 import '../organisms/composer.dart';
 import '../organisms/message_actions.dart';
 import '../../platform/file_picker.dart';
+import '../../platform/microphone.dart';
 import '../reach_text.dart';
 import 'contact_page.dart';
 
@@ -56,6 +58,9 @@ class _ConversationPageState extends State<ConversationPage>
     duration: const Duration(milliseconds: 600),
   );
 
+  /// Atualiza o tempo da gravação, de segundo em segundo.
+  Timer? _recordingTick;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +71,7 @@ class _ConversationPageState extends State<ConversationPage>
 
   @override
   void dispose() {
+    _recordingTick?.cancel();
     _conversation.nudges.removeListener(_nudged);
     _conversation.dispose();
     _text.dispose();
@@ -142,6 +148,47 @@ class _ConversationPageState extends State<ConversationPage>
         await _run(() => _conversation.deleteForEveryone(message));
       case null:
         break;
+    }
+  }
+
+  Future<void> _record() async {
+    final l10n = context.l10n;
+    if (!await askMicrophone()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.microphoneDenied)));
+      }
+      return;
+    }
+    await _run(() async {
+      await _conversation.startVoice();
+      _recordingTick?.cancel();
+      _recordingTick = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    });
+  }
+
+  Future<void> _discardRecording() async {
+    _recordingTick?.cancel();
+    await _run(_conversation.cancelVoice);
+  }
+
+  Future<void> _sendRecording() async {
+    _recordingTick?.cancel();
+    final l10n = context.l10n;
+    try {
+      await _conversation.sendVoice();
+    } on CoreException catch (error) {
+      if (error.failure != CoreFailure.invalidMessage) {
+        return _show(error.failure);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.voiceTooShort)));
+      }
     }
   }
 
@@ -275,6 +322,12 @@ class _ConversationPageState extends State<ConversationPage>
                         ? () => _save(message)
                         : null,
                     onView: () => _view(message),
+                    voiceDuration: _conversation.voiceDuration(message),
+                    voicePosition: _conversation.playingId == message.id
+                        ? _conversation.playingPosition
+                        : null,
+                    onPlay: () => _run(() => _conversation.playVoice(message)),
+                    onStop: _conversation.stopVoice,
                   );
                 },
               );
@@ -372,6 +425,13 @@ class _ConversationPageState extends State<ConversationPage>
                   onCancel: _cancelComposer,
                   onChanged: (_) => _conversation.typed(),
                   onAttach: _attach,
+                  onRecord: _record,
+                  recording: switch (_conversation.recordingSince) {
+                    null => null,
+                    final since => DateTime.now().difference(since),
+                  },
+                  onDiscardRecording: _discardRecording,
+                  onSendRecording: _sendRecording,
                   onSend: _send,
                 ),
               ],

@@ -660,4 +660,61 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get batteryAllow => '不受限制';
+
+  @override
+  String get downloadsTitle => '下载';
+
+  @override
+  String get downloadsHelp => '不超过此大小的文件一到就会下载。更大的文件会等你点“下载”。';
+
+  @override
+  String get autoDownloadNever => '从不自动';
+
+  @override
+  String get autoDownloadSmall => '最多 4 MB';
+
+  @override
+  String get autoDownloadMedium => '最多 32 MB';
+
+  @override
+  String get autoDownloadLarge => '最多 256 MB';
+
+  @override
+  String get onlyVerified => '仅限已验证的联系人';
+
+  @override
+  String get onlyVerifiedHelp => '来自未核对安全码的联系人的文件都会等待。';
+
+  @override
+  String get voiceRecord => '录制语音消息';
+
+  @override
+  String get voiceRecording => '正在录音';
+
+  @override
+  String get voiceDiscard => '放弃';
+
+  @override
+  String get voiceSend => '发送语音消息';
+
+  @override
+  String get voiceNote => '语音消息';
+
+  @override
+  String get voicePlay => '播放语音消息';
+
+  @override
+  String get voiceStop => '停止';
+
+  @override
+  String get voicePreview => '语音消息';
+
+  @override
+  String get voiceTooShort => '太短了：请再多录一会儿。';
+
+  @override
+  String get audioUnavailable => '没有麦克风或扬声器，或系统不允许使用。';
+
+  @override
+  String get microphoneDenied => 'Psito Chirp 需要麦克风才能录音。你可以在系统设置中允许。';
 }

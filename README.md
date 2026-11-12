@@ -10,7 +10,7 @@ A private messenger with no servers in the middle: conversations go straight fro
 - The local network with no internet at all, and the internet when you turn it on, with an optional relay you can host yourself. No server is a default.
 - Adding a contact by QR code or by an invite link that works once, with a safety code to compare in person.
 - Delivery and read receipts, typing, replies, edits, deletes for everyone, reactions, nudges and search, with an outbox that survives restarts.
-- Photos (without EXIF) and files, in encrypted 60 KiB pieces.
+- Photos (without EXIF), files and voice notes (Opus), in encrypted 60 KiB pieces, with a choice of what downloads on its own.
 - Notifications that can hide the name and the text, the tray and start at login on the desktop, and a foreground service on Android to keep receiving with the app closed.
 - An encrypted database (SQLCipher), with its key in the system keychain or derived from a passphrase.
 - Material 3 themes, in seven languages: English, Portuguese, Spanish, French, German, Russian and Chinese.
@@ -35,7 +35,7 @@ You need Flutter 3.47.4 and a stable Rust toolchain. The Rust core is built auto
 flutter run -d linux
 ```
 
-Building the core needs `protoc` (`protobuf-compiler`). On Linux you also need `libgtk-3-dev`, `libsecret-1-dev`, `ninja-build`, `cmake`, `clang` and `pkg-config`.
+Building the core needs `protoc` (`protobuf-compiler`). On Linux you also need `libgtk-3-dev`, `libsecret-1-dev`, `libasound2-dev`, `ninja-build`, `cmake`, `clang` and `pkg-config`.
 
 ## License
 

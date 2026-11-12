@@ -419,7 +419,7 @@ fn file_offers_are_checked_on_arrival() {
     assert_eq!(row.state, crate::files::State::Downloading);
     // A mesma oferta de novo não vira outra mensagem; uma grande espera quem usa.
     offer(&mut alice, 3, 32, 10);
-    offer(&mut alice, 4, 32, crate::files::AUTO_DOWNLOAD + 1);
+    offer(&mut alice, 4, 32, (32 << 20) + 1);
     post(&mut alice, &mut bob);
     let list = bob.list();
     assert_eq!(list.len(), 2);
@@ -427,6 +427,35 @@ fn file_offers_are_checked_on_arrival() {
         .unwrap()
         .unwrap();
     assert_eq!(big.state, crate::files::State::Waiting);
+}
+
+#[test]
+fn the_download_policy_decides_what_starts_alone() {
+    let (mut alice, mut bob) = pair();
+    let strict = crate::downloads::Policy {
+        limit: crate::downloads::Limit::Small,
+        only_verified: true,
+    };
+    crate::downloads::set(bob.store.conn(), strict).unwrap();
+    crate::contacts::set_verified(bob.store.conn(), bob.other, false).unwrap();
+    // De um contato não verificado, nem o pequeno baixa sozinho.
+    offer(&mut alice, 1, 32, 10);
+    post(&mut alice, &mut bob);
+    let state = |bob: &Device, index: usize| {
+        let id = bob.list()[index].id;
+        crate::files::by_message(bob.store.conn(), id)
+            .unwrap()
+            .unwrap()
+            .state
+    };
+    assert_eq!(state(&bob, 0), crate::files::State::Waiting);
+    // Verificado, o pequeno baixa e o acima do limite espera.
+    crate::contacts::set_verified(bob.store.conn(), bob.other, true).unwrap();
+    offer(&mut alice, 2, 32, 10);
+    offer(&mut alice, 3, 32, (4 << 20) + 1);
+    post(&mut alice, &mut bob);
+    assert_eq!(state(&bob, 1), crate::files::State::Downloading);
+    assert_eq!(state(&bob, 2), crate::files::State::Waiting);
 }
 
 #[test]

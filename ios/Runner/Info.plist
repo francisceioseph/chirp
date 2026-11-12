@@ -45,6 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Psito Chirp uses the microphone only to record the voice notes you ask for, and sends them encrypted to the contact you choose.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Psito Chirp talks to your contacts directly on the local network, without servers.</string>
 

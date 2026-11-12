@@ -18,6 +18,9 @@ mkdir -p "$ROOT/usr/bin" "$ROOT/usr/lib/$NAME" \
     "$ROOT/usr/share/doc/$NAME"
 
 cp -r "$BUNDLE/." "$ROOT/usr/lib/$NAME/"
+# O jni (do path_provider no Android) compila a ponte para a JVM onde houver um JDK,
+# como no CI. No Linux ninguém a abre, e ela apontaria para o JDK de lá.
+rm -f "$ROOT/usr/lib/$NAME/lib/libdartjni.so"
 ln -s "../lib/$NAME/psito_chirp" "$ROOT/usr/bin/$NAME"
 cp "linux/packaging/$ID.desktop" "$ROOT/usr/share/applications/"
 cp "linux/packaging/$ID.metainfo.xml" "$ROOT/usr/share/metainfo/"

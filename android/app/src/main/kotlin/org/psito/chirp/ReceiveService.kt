@@ -60,7 +60,7 @@ class ReceiveService : Service() {
             Notification.Builder(this).setPriority(Notification.PRIORITY_MIN)
         }
         return builder
-            .setSmallIcon(R.mipmap.launcher_icon)
+            .setSmallIcon(R.drawable.ic_stat_chirp)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(open)

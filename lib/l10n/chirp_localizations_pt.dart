@@ -691,4 +691,65 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
 
   @override
   String get batteryAllow => 'Deixar fora';
+
+  @override
+  String get downloadsTitle => 'Downloads';
+
+  @override
+  String get downloadsHelp =>
+      'Arquivos até este tamanho baixam assim que chegam. Os maiores esperam você tocar em Baixar.';
+
+  @override
+  String get autoDownloadNever => 'Nunca sozinhos';
+
+  @override
+  String get autoDownloadSmall => 'Até 4 MB';
+
+  @override
+  String get autoDownloadMedium => 'Até 32 MB';
+
+  @override
+  String get autoDownloadLarge => 'Até 256 MB';
+
+  @override
+  String get onlyVerified => 'Só de contatos verificados';
+
+  @override
+  String get onlyVerifiedHelp =>
+      'Dos contatos cujo código de segurança você não conferiu, todo arquivo espera.';
+
+  @override
+  String get voiceRecord => 'Gravar nota de voz';
+
+  @override
+  String get voiceRecording => 'Gravando';
+
+  @override
+  String get voiceDiscard => 'Descartar';
+
+  @override
+  String get voiceSend => 'Enviar a nota de voz';
+
+  @override
+  String get voiceNote => 'Nota de voz';
+
+  @override
+  String get voicePlay => 'Tocar a nota de voz';
+
+  @override
+  String get voiceStop => 'Parar';
+
+  @override
+  String get voicePreview => 'Nota de voz';
+
+  @override
+  String get voiceTooShort => 'Curta demais: grave um pouco mais.';
+
+  @override
+  String get audioUnavailable =>
+      'Sem microfone ou alto-falante, ou o sistema não deixou usar.';
+
+  @override
+  String get microphoneDenied =>
+      'O Psito Chirp precisa do microfone para gravar. Dá para permitir nos ajustes do sistema.';
 }

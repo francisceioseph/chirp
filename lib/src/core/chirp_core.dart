@@ -60,6 +60,9 @@ enum CoreFailure {
   /// O arquivo não serve (grande demais, ilegível, ou uma foto que não deu para
   /// limpar).
   invalidFile,
+
+  /// Sem microfone ou alto-falante, ou o sistema não deixou usar.
+  noAudio,
   storage,
 }
 
@@ -213,6 +216,7 @@ class ChatFile {
     this.received = 0,
     this.chunks = 1,
     this.state = FileState.done,
+    this.voice = false,
   });
 
   final String name;
@@ -225,10 +229,27 @@ class ChatFile {
   final int chunks;
   final FileState state;
 
+  /// Uma nota de voz, que a conversa toca ali mesmo.
+  final bool voice;
+
   bool get isImage => mime.startsWith('image/');
 
   /// Quanto já chegou, de 0 a 1.
   double get progress => chunks == 0 ? 1 : received / chunks;
+}
+
+/// Onde está a nota de voz que toca.
+@immutable
+class VoiceProgress {
+  const VoiceProgress({
+    required this.messageId,
+    required this.position,
+    this.done = false,
+  });
+
+  final int messageId;
+  final Duration position;
+  final bool done;
 }
 
 /// Para as minhas: na fila, entregue, lida. Para as do contato, `pending` é não lida.
@@ -309,6 +330,37 @@ class ChatSettings {
 /// O que as notificações mostram: nada, só "Nova mensagem", o nome de quem mandou,
 /// ou o nome e o texto. O padrão é o nome.
 enum NotificationMode { off, hidden, sender, full }
+
+/// Até que tamanho o arquivo de um contato baixa sozinho: nunca, 4, 32 ou 256 MiB.
+enum AutoDownload { never, small, medium, large }
+
+/// O baixar sozinho: o limite e se só dos contatos verificados. O padrão é até
+/// 32 MiB, de qualquer contato.
+@immutable
+class DownloadPolicy {
+  const DownloadPolicy({
+    this.limit = AutoDownload.medium,
+    this.onlyVerified = false,
+  });
+
+  final AutoDownload limit;
+  final bool onlyVerified;
+
+  DownloadPolicy copyWith({AutoDownload? limit, bool? onlyVerified}) =>
+      DownloadPolicy(
+        limit: limit ?? this.limit,
+        onlyVerified: onlyVerified ?? this.onlyVerified,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is DownloadPolicy &&
+      other.limit == limit &&
+      other.onlyVerified == onlyVerified;
+
+  @override
+  int get hashCode => Object.hash(limit, onlyVerified);
+}
 
 /// Claro, escuro ou o que o sistema disser.
 enum AppearanceMode { system, light, dark }
@@ -444,6 +496,24 @@ abstract interface class ProfileStore {
   /// O arquivo em claro, para mostrar uma foto (até 32 MiB).
   Future<Uint8List> fileBytes(int messageId);
 
+  /// Liga o microfone para uma nota de voz (`CoreFailure.noAudio` sem ele).
+  Future<void> startVoice();
+
+  /// Para de gravar e joga fora.
+  Future<void> cancelVoice();
+
+  /// Para de gravar e manda a nota. Com menos de meio segundo, não sai
+  /// (`CoreFailure.invalidMessage`).
+  Future<ChatMessage> sendVoice(int contactId);
+
+  /// Quanto dura a nota de voz de uma mensagem já baixada.
+  Future<Duration> voiceDuration(int messageId);
+
+  /// Toca a nota de voz de uma mensagem (a que tocava para). O fluxo fecha no fim.
+  Stream<VoiceProgress> playVoice(int messageId);
+
+  Future<void> stopVoice();
+
   Future<ChatMessage> editMessage(int id, String text);
 
   Future<ChatMessage> deleteForEveryone(int id);
@@ -481,6 +551,10 @@ abstract interface class ProfileStore {
   Future<NotificationMode> notificationMode();
 
   Future<void> setNotificationMode(NotificationMode mode);
+
+  Future<DownloadPolicy> downloadPolicy();
+
+  Future<void> setDownloadPolicy(DownloadPolicy policy);
 
   /// Continuar recebendo com a janela fechada (no desktop, na bandeja).
   Future<bool> keepRunning();
@@ -686,6 +760,42 @@ class _BridgeStore implements ProfileStore {
       _guardAsync(() => _store.fileBytes(messageId: messageId));
 
   @override
+  Future<void> startVoice() => _guardAsync(_store.startVoice);
+
+  @override
+  Future<void> cancelVoice() => _guardAsync(_store.cancelVoice);
+
+  @override
+  Future<ChatMessage> sendVoice(int contactId) => _guardAsync(
+    () async => _message(await _store.sendVoice(contactId: contactId)),
+  );
+
+  @override
+  Future<Duration> voiceDuration(int messageId) => _guardAsync(
+    () async => Duration(
+      milliseconds: (await _store.voiceDuration(messageId: messageId)).toInt(),
+    ),
+  );
+
+  @override
+  Stream<VoiceProgress> playVoice(int messageId) => _store
+      .playVoice(messageId: messageId)
+      .map(
+        (p) => VoiceProgress(
+          messageId: p.messageId,
+          position: Duration(milliseconds: p.positionMs.toInt()),
+          done: p.done,
+        ),
+      )
+      .handleError(
+        (Object error) => throw CoreException(_failure(error as bridge.CoreError)),
+        test: (error) => error is bridge.CoreError,
+      );
+
+  @override
+  Future<void> stopVoice() => _guardAsync(_store.stopVoice);
+
+  @override
   Future<ChatMessage> sendNudge(int contactId) => _guardAsync(
     () async => _message(await _store.sendNudge(contactId: contactId)),
   );
@@ -781,6 +891,25 @@ class _BridgeStore implements ProfileStore {
   );
 
   @override
+  Future<DownloadPolicy> downloadPolicy() => _guardAsync(() async {
+    final p = await _store.downloadPolicy();
+    return DownloadPolicy(
+      limit: AutoDownload.values[p.limit.index],
+      onlyVerified: p.onlyVerified,
+    );
+  });
+
+  @override
+  Future<void> setDownloadPolicy(DownloadPolicy policy) => _guardAsync(
+    () => _store.setDownloadPolicy(
+      policy: bridge.DownloadPolicy(
+        limit: bridge.AutoDownload.values[policy.limit.index],
+        onlyVerified: policy.onlyVerified,
+      ),
+    ),
+  );
+
+  @override
   Future<bool> keepRunning() => _guardAsync(_store.keepRunning);
 
   @override
@@ -843,6 +972,7 @@ ChatMessage _message(bridge.MessageView m) => ChatMessage(
       received: f.received,
       chunks: f.chunks,
       state: FileState.values[f.state.index],
+      voice: f.voice,
     ),
   },
 );
@@ -886,6 +1016,7 @@ CoreFailure _failure(bridge.CoreError error) => switch (error) {
   bridge.CoreError.tooLate => CoreFailure.tooLate,
   bridge.CoreError.invalidRelay => CoreFailure.invalidRelay,
   bridge.CoreError.invalidFile => CoreFailure.invalidFile,
+  bridge.CoreError.noAudio => CoreFailure.noAudio,
   bridge.CoreError.storage => CoreFailure.storage,
 };
 

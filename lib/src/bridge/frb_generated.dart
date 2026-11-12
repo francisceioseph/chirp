@@ -71,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 747246730;
+  int get rustContentHash => -1081387934;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -92,6 +92,8 @@ abstract class RustLibApi extends BaseApi {
   Future<AppearanceView> crateApiStoreChirpStoreAppearance({
     required ChirpStore that,
   });
+
+  Future<void> crateApiStoreChirpStoreCancelVoice({required ChirpStore that});
 
   Future<ChatSettings> crateApiStoreChirpStoreChatSettings({
     required ChirpStore that,
@@ -133,6 +135,10 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiStoreChirpStoreDownloadFile({
     required ChirpStore that,
     required PlatformInt64 messageId,
+  });
+
+  Future<DownloadPolicy> crateApiStoreChirpStoreDownloadPolicy({
+    required ChirpStore that,
   });
 
   Future<MessageView> crateApiStoreChirpStoreEditMessage({
@@ -182,6 +188,11 @@ abstract class RustLibApi extends BaseApi {
     required String passphrase,
   });
 
+  Stream<VoiceProgress> crateApiStoreChirpStorePlayVoice({
+    required ChirpStore that,
+    required PlatformInt64 messageId,
+  });
+
   Future<Profile?> crateApiStoreChirpStoreProfile({required ChirpStore that});
 
   Future<MessageView> crateApiStoreChirpStoreReact({
@@ -229,6 +240,11 @@ abstract class RustLibApi extends BaseApi {
     PlatformInt64? replyTo,
   });
 
+  Future<MessageView> crateApiStoreChirpStoreSendVoice({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  });
+
   Future<void> crateApiStoreChirpStoreSetAppearance({
     required ChirpStore that,
     required AppearanceView appearance,
@@ -237,6 +253,11 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiStoreChirpStoreSetChatSettings({
     required ChirpStore that,
     required ChatSettings settings,
+  });
+
+  Future<void> crateApiStoreChirpStoreSetDownloadPolicy({
+    required ChirpStore that,
+    required DownloadPolicy policy,
   });
 
   Future<void> crateApiStoreChirpStoreSetKeepRunning({
@@ -262,11 +283,20 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiStoreChirpStoreStartNetwork({required ChirpStore that});
 
+  Future<void> crateApiStoreChirpStoreStartVoice({required ChirpStore that});
+
   Future<void> crateApiStoreChirpStoreStopNetwork({required ChirpStore that});
+
+  Future<void> crateApiStoreChirpStoreStopVoice({required ChirpStore that});
 
   Future<void> crateApiStoreChirpStoreTyping({
     required ChirpStore that,
     required PlatformInt64 contactId,
+  });
+
+  Future<BigInt> crateApiStoreChirpStoreVoiceDuration({
+    required ChirpStore that,
+    required PlatformInt64 messageId,
   });
 
   Stream<CoreEvent> crateApiStoreChirpStoreWatchEvents({
@@ -383,6 +413,40 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiStoreChirpStoreCancelVoice({required ChirpStore that}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 3,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreCancelVoiceConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreCancelVoiceConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_cancel_voice",
+        argNames: ["that"],
+      );
+
+  @override
   Future<ChatSettings> crateApiStoreChirpStoreChatSettings({
     required ChirpStore that,
   }) {
@@ -397,7 +461,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 4,
             port: port_,
           );
         },
@@ -433,7 +497,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 5,
             port: port_,
           );
         },
@@ -466,7 +530,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 6,
             port: port_,
           );
         },
@@ -504,7 +568,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 7,
             port: port_,
           );
         },
@@ -542,7 +606,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 8,
             port: port_,
           );
         },
@@ -577,7 +641,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 9,
             port: port_,
           );
         },
@@ -616,7 +680,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 10,
             port: port_,
           );
         },
@@ -654,7 +718,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 11,
             port: port_,
           );
         },
@@ -692,7 +756,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 12,
             port: port_,
           );
         },
@@ -714,6 +778,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<DownloadPolicy> crateApiStoreChirpStoreDownloadPolicy({
+    required ChirpStore that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_download_policy,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreDownloadPolicyConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreDownloadPolicyConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_download_policy",
+        argNames: ["that"],
+      );
+
+  @override
   Future<MessageView> crateApiStoreChirpStoreEditMessage({
     required ChirpStore that,
     required PlatformInt64 id,
@@ -732,7 +832,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 14,
             port: port_,
           );
         },
@@ -770,7 +870,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 15,
             port: port_,
           );
         },
@@ -804,7 +904,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 16,
             port: port_,
           );
         },
@@ -842,7 +942,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 15,
+            funcId: 17,
             port: port_,
           );
         },
@@ -884,7 +984,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 18,
             port: port_,
           );
         },
@@ -920,7 +1020,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 19,
             port: port_,
           );
         },
@@ -956,7 +1056,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 18,
+            funcId: 20,
             port: port_,
           );
         },
@@ -992,7 +1092,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 19,
+            funcId: 21,
             port: port_,
           );
         },
@@ -1027,7 +1127,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 22,
             port: port_,
           );
         },
@@ -1063,7 +1163,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 23,
             port: port_,
           );
         },
@@ -1086,6 +1186,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Stream<VoiceProgress> crateApiStoreChirpStorePlayVoice({
+    required ChirpStore that,
+    required PlatformInt64 messageId,
+  }) {
+    final sink = RustStreamSink<VoiceProgress>();
+    unawaited(
+      handler.executeNormal(
+        NormalTask(
+          callFfi: (port_) {
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+              that,
+              serializer,
+            );
+            sse_encode_i_64(messageId, serializer);
+            sse_encode_StreamSink_voice_progress_Sse(sink, serializer);
+            pdeCallFfi(
+              generalizedFrbRustBinding,
+              serializer,
+              funcId: 24,
+              port: port_,
+            );
+          },
+          codec: SseCodec(
+            decodeSuccessData: sse_decode_unit,
+            decodeErrorData: sse_decode_core_error,
+          ),
+          constMeta: kCrateApiStoreChirpStorePlayVoiceConstMeta,
+          argValues: [that, messageId, sink],
+          apiImpl: this,
+        ),
+      ),
+    );
+    return sink.stream;
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStorePlayVoiceConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_play_voice",
+        argNames: ["that", "messageId", "sink"],
+      );
+
+  @override
   Future<Profile?> crateApiStoreChirpStoreProfile({required ChirpStore that}) {
     return handler.executeNormal(
       NormalTask(
@@ -1098,7 +1241,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 25,
             port: port_,
           );
         },
@@ -1135,7 +1278,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 26,
             port: port_,
           );
         },
@@ -1173,7 +1316,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 27,
             port: port_,
           );
         },
@@ -1211,7 +1354,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 25,
+            funcId: 28,
             port: port_,
           );
         },
@@ -1251,7 +1394,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 26,
+            funcId: 29,
             port: port_,
           );
         },
@@ -1289,7 +1432,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 27,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1329,7 +1472,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 28,
+            funcId: 31,
             port: port_,
           );
         },
@@ -1367,7 +1510,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 32,
             port: port_,
           );
         },
@@ -1409,7 +1552,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 30,
+            funcId: 33,
             port: port_,
           );
         },
@@ -1431,6 +1574,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<MessageView> crateApiStoreChirpStoreSendVoice({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 34,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_message_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSendVoiceConstMeta,
+        argValues: [that, contactId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSendVoiceConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_send_voice",
+        argNames: ["that", "contactId"],
+      );
+
+  @override
   Future<void> crateApiStoreChirpStoreSetAppearance({
     required ChirpStore that,
     required AppearanceView appearance,
@@ -1447,7 +1628,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 35,
             port: port_,
           );
         },
@@ -1485,7 +1666,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 36,
             port: port_,
           );
         },
@@ -1507,6 +1688,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiStoreChirpStoreSetDownloadPolicy({
+    required ChirpStore that,
+    required DownloadPolicy policy,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_box_autoadd_download_policy(policy, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 37,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSetDownloadPolicyConstMeta,
+        argValues: [that, policy],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSetDownloadPolicyConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_set_download_policy",
+        argNames: ["that", "policy"],
+      );
+
+  @override
   Future<void> crateApiStoreChirpStoreSetKeepRunning({
     required ChirpStore that,
     required bool on_,
@@ -1523,7 +1742,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 33,
+            funcId: 38,
             port: port_,
           );
         },
@@ -1561,7 +1780,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 34,
+            funcId: 39,
             port: port_,
           );
         },
@@ -1599,7 +1818,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 35,
+            funcId: 40,
             port: port_,
           );
         },
@@ -1639,7 +1858,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 36,
+            funcId: 41,
             port: port_,
           );
         },
@@ -1673,7 +1892,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 37,
+            funcId: 42,
             port: port_,
           );
         },
@@ -1695,6 +1914,40 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiStoreChirpStoreStartVoice({required ChirpStore that}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 43,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreStartVoiceConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreStartVoiceConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_start_voice",
+        argNames: ["that"],
+      );
+
+  @override
   Future<void> crateApiStoreChirpStoreStopNetwork({required ChirpStore that}) {
     return handler.executeNormal(
       NormalTask(
@@ -1707,7 +1960,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 38,
+            funcId: 44,
             port: port_,
           );
         },
@@ -1729,6 +1982,40 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiStoreChirpStoreStopVoice({required ChirpStore that}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 45,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreStopVoiceConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreStopVoiceConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_stop_voice",
+        argNames: ["that"],
+      );
+
+  @override
   Future<void> crateApiStoreChirpStoreTyping({
     required ChirpStore that,
     required PlatformInt64 contactId,
@@ -1745,7 +2032,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 39,
+            funcId: 46,
             port: port_,
           );
         },
@@ -1767,6 +2054,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<BigInt> crateApiStoreChirpStoreVoiceDuration({
+    required ChirpStore that,
+    required PlatformInt64 messageId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(messageId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 47,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreVoiceDurationConstMeta,
+        argValues: [that, messageId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreVoiceDurationConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_voice_duration",
+        argNames: ["that", "messageId"],
+      );
+
+  @override
   Stream<CoreEvent> crateApiStoreChirpStoreWatchEvents({
     required ChirpStore that,
   }) {
@@ -1784,7 +2109,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 40,
+              funcId: 48,
               port: port_,
             );
           },
@@ -1813,7 +2138,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 41)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 49)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_core_info,
@@ -1838,7 +2163,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 42,
+            funcId: 50,
             port: port_,
           );
         },
@@ -1862,7 +2187,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 51)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -1884,7 +2209,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 44)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 52)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -1906,7 +2231,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 45)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 53)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_prim_u_8_strict,
@@ -1928,7 +2253,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 46)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 54)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -1951,7 +2276,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(dir, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 47)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 55)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_store_state,
@@ -1977,7 +2302,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 48,
+            funcId: 56,
             port: port_,
           );
         },
@@ -2043,6 +2368,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<VoiceProgress> dco_decode_StreamSink_voice_progress_Sse(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
@@ -2062,6 +2395,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AutoDownload dco_decode_auto_download(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return AutoDownload.values[raw as int];
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
@@ -2077,6 +2416,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ChatSettings dco_decode_box_autoadd_chat_settings(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_chat_settings(raw);
+  }
+
+  @protected
+  DownloadPolicy dco_decode_box_autoadd_download_policy(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_download_policy(raw);
   }
 
   @protected
@@ -2187,6 +2532,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  DownloadPolicy dco_decode_download_policy(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return DownloadPolicy(
+      limit: dco_decode_auto_download(arr[0]),
+      onlyVerified: dco_decode_bool(arr[1]),
+    );
+  }
+
+  @protected
   EventKind dco_decode_event_kind(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return EventKind.values[raw as int];
@@ -2202,8 +2559,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   FileView dco_decode_file_view(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
     return FileView(
       name: dco_decode_String(arr[0]),
       size: dco_decode_u_64(arr[1]),
@@ -2212,6 +2569,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       received: dco_decode_u_32(arr[4]),
       chunks: dco_decode_u_32(arr[5]),
       state: dco_decode_file_state(arr[6]),
+      voice: dco_decode_bool(arr[7]),
     );
   }
 
@@ -2414,6 +2772,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  VoiceProgress dco_decode_voice_progress(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return VoiceProgress(
+      messageId: dco_decode_i_64(arr[0]),
+      positionMs: dco_decode_u_64(arr[1]),
+      done: dco_decode_bool(arr[2]),
+    );
+  }
+
+  @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_String(deserializer);
@@ -2465,6 +2836,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<VoiceProgress> sse_decode_StreamSink_voice_progress_Sse(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -2482,6 +2861,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       brightness: var_brightness,
       glass: var_glass,
     );
+  }
+
+  @protected
+  AutoDownload sse_decode_auto_download(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return AutoDownload.values[inner];
   }
 
   @protected
@@ -2504,6 +2890,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_chat_settings(deserializer));
+  }
+
+  @protected
+  DownloadPolicy sse_decode_box_autoadd_download_policy(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_download_policy(deserializer));
   }
 
   @protected
@@ -2611,6 +3005,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  DownloadPolicy sse_decode_download_policy(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_limit = sse_decode_auto_download(deserializer);
+    var var_onlyVerified = sse_decode_bool(deserializer);
+    return DownloadPolicy(limit: var_limit, onlyVerified: var_onlyVerified);
+  }
+
+  @protected
   EventKind sse_decode_event_kind(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
@@ -2634,6 +3036,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_received = sse_decode_u_32(deserializer);
     var var_chunks = sse_decode_u_32(deserializer);
     var var_state = sse_decode_file_state(deserializer);
+    var var_voice = sse_decode_bool(deserializer);
     return FileView(
       name: var_name,
       size: var_size,
@@ -2642,6 +3045,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       received: var_received,
       chunks: var_chunks,
       state: var_state,
+      voice: var_voice,
     );
   }
 
@@ -2909,6 +3313,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  VoiceProgress sse_decode_voice_progress(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_messageId = sse_decode_i_64(deserializer);
+    var var_positionMs = sse_decode_u_64(deserializer);
+    var var_done = sse_decode_bool(deserializer);
+    return VoiceProgress(
+      messageId: var_messageId,
+      positionMs: var_positionMs,
+      done: var_done,
+    );
+  }
+
+  @protected
   void sse_encode_AnyhowException(
     AnyhowException self,
     SseSerializer serializer,
@@ -2974,6 +3391,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_StreamSink_voice_progress_Sse(
+    RustStreamSink<VoiceProgress> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+      self.setupAndSerialize(
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_voice_progress,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+      ),
+      serializer,
+    );
+  }
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
@@ -2988,6 +3422,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.theme, serializer);
     sse_encode_theme_brightness(self.brightness, serializer);
     sse_encode_bool(self.glass, serializer);
+  }
+
+  @protected
+  void sse_encode_auto_download(AutoDownload self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -3012,6 +3452,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_chat_settings(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_download_policy(
+    DownloadPolicy self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_download_policy(self, serializer);
   }
 
   @protected
@@ -3112,6 +3561,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_download_policy(
+    DownloadPolicy self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_auto_download(self.limit, serializer);
+    sse_encode_bool(self.onlyVerified, serializer);
+  }
+
+  @protected
   void sse_encode_event_kind(EventKind self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
@@ -3133,6 +3592,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_u_32(self.received, serializer);
     sse_encode_u_32(self.chunks, serializer);
     sse_encode_file_state(self.state, serializer);
+    sse_encode_bool(self.voice, serializer);
   }
 
   @protected
@@ -3379,6 +3839,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putBigUint64(self);
   }
+
+  @protected
+  void sse_encode_voice_progress(VoiceProgress self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_64(self.messageId, serializer);
+    sse_encode_u_64(self.positionMs, serializer);
+    sse_encode_bool(self.done, serializer);
+  }
 }
 
 @sealed
@@ -3414,6 +3882,10 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
   Future<AppearanceView> appearance() =>
       RustLib.instance.api.crateApiStoreChirpStoreAppearance(that: this);
 
+  /// Para de gravar e joga fora.
+  Future<void> cancelVoice() =>
+      RustLib.instance.api.crateApiStoreChirpStoreCancelVoice(that: this);
+
   Future<ChatSettings> chatSettings() =>
       RustLib.instance.api.crateApiStoreChirpStoreChatSettings(that: this);
 
@@ -3445,6 +3917,9 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
       .instance
       .api
       .crateApiStoreChirpStoreDownloadFile(that: this, messageId: messageId);
+
+  Future<DownloadPolicy> downloadPolicy() =>
+      RustLib.instance.api.crateApiStoreChirpStoreDownloadPolicy(that: this);
 
   Future<MessageView> editMessage({
     required PlatformInt64 id,
@@ -3492,6 +3967,13 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
 
   Future<NotificationMode> notificationMode() =>
       RustLib.instance.api.crateApiStoreChirpStoreNotificationMode(that: this);
+
+  /// Toca a nota de voz de uma mensagem; a que tocava para. O fluxo recebe a
+  /// posição a cada décimo de segundo, e fecha no fim.
+  Stream<VoiceProgress> playVoice({required PlatformInt64 messageId}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStorePlayVoice(that: this, messageId: messageId);
 
   Future<Profile?> profile() =>
       RustLib.instance.api.crateApiStoreChirpStoreProfile(that: this);
@@ -3559,6 +4041,13 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
     replyTo: replyTo,
   );
 
+  /// Para de gravar e manda a nota ao contato, como um arquivo. Curta demais (menos
+  /// de meio segundo), não sai.
+  Future<MessageView> sendVoice({required PlatformInt64 contactId}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreSendVoice(that: this, contactId: contactId);
+
   Future<void> setAppearance({required AppearanceView appearance}) => RustLib
       .instance
       .api
@@ -3568,6 +4057,11 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
       .instance
       .api
       .crateApiStoreChirpStoreSetChatSettings(that: this, settings: settings);
+
+  Future<void> setDownloadPolicy({required DownloadPolicy policy}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreSetDownloadPolicy(that: this, policy: policy);
 
   Future<void> setKeepRunning({required bool on_}) => RustLib.instance.api
       .crateApiStoreChirpStoreSetKeepRunning(that: this, on_: on_);
@@ -3600,9 +4094,17 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
   Future<void> startNetwork() =>
       RustLib.instance.api.crateApiStoreChirpStoreStartNetwork(that: this);
 
+  /// Liga o microfone para uma nota de voz. Uma gravação que já estava em
+  /// andamento é jogada fora.
+  Future<void> startVoice() =>
+      RustLib.instance.api.crateApiStoreChirpStoreStartVoice(that: this);
+
   /// Desliga o nó (antes de apagar tudo, por exemplo) e fecha o fluxo de eventos.
   Future<void> stopNetwork() =>
       RustLib.instance.api.crateApiStoreChirpStoreStopNetwork(that: this);
+
+  Future<void> stopVoice() =>
+      RustLib.instance.api.crateApiStoreChirpStoreStopVoice(that: this);
 
   /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
   /// Só sai se o contato está online agora.
@@ -3610,6 +4112,12 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
       .instance
       .api
       .crateApiStoreChirpStoreTyping(that: this, contactId: contactId);
+
+  /// Quanto dura a nota de voz de uma mensagem (já baixada).
+  Future<BigInt> voiceDuration({required PlatformInt64 messageId}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreVoiceDuration(that: this, messageId: messageId);
 
   /// Avisa a UI do que muda sem ela pedir: alguém leu um convite nosso, chegou
   /// mensagem, o contato está digitando.

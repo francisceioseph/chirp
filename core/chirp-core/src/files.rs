@@ -33,8 +33,8 @@ pub const CHUNK: usize = 60 * 1024;
 const TAG: usize = 16;
 /// O maior arquivo.
 pub const MAX_FILE: u64 = 1 << 30;
-/// Até esse tamanho, o arquivo de um contato baixa sozinho; acima, quem usa pede.
-pub const AUTO_DOWNLOAD: u64 = 32 << 20;
+/// O maior arquivo que o app pede em claro, na memória (para mostrar uma foto).
+pub const IN_MEMORY: u64 = 32 << 20;
 /// A maior miniatura que viaja na oferta.
 pub const MAX_THUMBNAIL: usize = 24 * 1024;
 /// Uma foto maior que isso não é processada (e não sai: os metadados ficariam).
@@ -559,6 +559,28 @@ pub fn prepare(dir: &Path, src: &Path) -> CoreResult<Prepared> {
         mime,
         hash: hash.to_vec(),
         thumbnail,
+    })
+}
+
+/// Cifra em `dir` um arquivo que já está na memória (uma nota de voz), com o nome e
+/// o tipo dados.
+pub fn prepare_bytes(dir: &Path, name: &str, mime: &str, bytes: &[u8]) -> CoreResult<Prepared> {
+    std::fs::create_dir_all(dir)?;
+    if bytes.len() as u64 > MAX_FILE {
+        return Err(CoreError::InvalidFile);
+    }
+    let file_id = secret_bytes::<16>()?.to_vec();
+    let key = Zeroizing::new(secret_bytes::<32>()?.to_vec());
+    let (size, hash) = seal(bytes, &blob_path(dir, &file_id), &key, &file_id)?;
+    Ok(Prepared {
+        chunks: chunks_for(size),
+        file_id,
+        key,
+        name: clean_name(name),
+        size,
+        mime: mime.to_owned(),
+        hash: hash.to_vec(),
+        thumbnail: None,
     })
 }
 

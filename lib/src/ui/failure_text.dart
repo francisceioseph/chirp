@@ -23,5 +23,6 @@ String failureText(
   CoreFailure.invalidMessage => l10n.messageInvalid,
   CoreFailure.invalidRelay => l10n.relayInvalid,
   CoreFailure.invalidFile => l10n.fileInvalid,
+  CoreFailure.noAudio => l10n.audioUnavailable,
   _ => l10n.somethingWentWrong,
 };

@@ -694,4 +694,65 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
 
   @override
   String get batteryAllow => 'Ausnehmen';
+
+  @override
+  String get downloadsTitle => 'Downloads';
+
+  @override
+  String get downloadsHelp =>
+      'Dateien bis zu dieser Größe werden sofort beim Eintreffen geladen. Größere warten, bis du auf Herunterladen tippst.';
+
+  @override
+  String get autoDownloadNever => 'Nie automatisch';
+
+  @override
+  String get autoDownloadSmall => 'Bis 4 MB';
+
+  @override
+  String get autoDownloadMedium => 'Bis 32 MB';
+
+  @override
+  String get autoDownloadLarge => 'Bis 256 MB';
+
+  @override
+  String get onlyVerified => 'Nur von verifizierten Kontakten';
+
+  @override
+  String get onlyVerifiedHelp =>
+      'Von Kontakten, deren Sicherheitscode du nicht geprüft hast, wartet jede Datei.';
+
+  @override
+  String get voiceRecord => 'Sprachnachricht aufnehmen';
+
+  @override
+  String get voiceRecording => 'Aufnahme läuft';
+
+  @override
+  String get voiceDiscard => 'Verwerfen';
+
+  @override
+  String get voiceSend => 'Sprachnachricht senden';
+
+  @override
+  String get voiceNote => 'Sprachnachricht';
+
+  @override
+  String get voicePlay => 'Sprachnachricht abspielen';
+
+  @override
+  String get voiceStop => 'Stoppen';
+
+  @override
+  String get voicePreview => 'Sprachnachricht';
+
+  @override
+  String get voiceTooShort => 'Zu kurz: nimm etwas länger auf.';
+
+  @override
+  String get audioUnavailable =>
+      'Kein Mikrofon oder Lautsprecher, oder das System hat die Nutzung nicht erlaubt.';
+
+  @override
+  String get microphoneDenied =>
+      'Psito Chirp braucht das Mikrofon zum Aufnehmen. Du kannst es in den Systemeinstellungen erlauben.';
 }

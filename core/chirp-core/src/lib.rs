@@ -8,6 +8,7 @@ pub mod api;
 mod appearance;
 mod contacts;
 mod discovery;
+mod downloads;
 mod error;
 mod files;
 mod identity;
@@ -21,6 +22,7 @@ mod profile;
 mod random;
 mod session;
 mod store;
+mod voice;
 mod wire;
 
 #[allow(unsafe_code)]

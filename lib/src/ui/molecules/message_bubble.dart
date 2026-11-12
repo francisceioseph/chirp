@@ -11,6 +11,7 @@ import '../atoms/message_status_icon.dart';
 import '../atoms/reaction_icon.dart';
 import '../time_format.dart';
 import 'file_card.dart';
+import 'voice_note.dart';
 import '../theme/chirp_style.dart';
 
 /// O foco do teclado numa mensagem: Enter ou espaço abrem as opções, e um contorno
@@ -66,6 +67,10 @@ class MessageBubble extends StatelessWidget {
     this.onDownload,
     this.onSave,
     this.onView,
+    this.voiceDuration,
+    this.voicePosition,
+    this.onPlay,
+    this.onStop,
   });
 
   final ChatMessage message;
@@ -81,6 +86,12 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onDownload;
   final VoidCallback? onSave;
   final VoidCallback? onView;
+
+  /// A nota de voz: quanto dura, onde está (se toca), tocar e parar.
+  final Duration? voiceDuration;
+  final Duration? voicePosition;
+  final VoidCallback? onPlay;
+  final VoidCallback? onStop;
 
   /// O "agora", para os testes.
   final DateTime? now;
@@ -129,13 +140,22 @@ class MessageBubble extends StatelessWidget {
               name: quoted == null || quoted!.outgoing ? l10n.you : contactName,
               color: foreground,
             ),
-          if (file != null)
+          if (file != null && file.voice && file.state == FileState.done)
+            VoiceNote(
+              color: foreground,
+              duration: voiceDuration,
+              position: voicePosition,
+              onPlay: onPlay,
+              onStop: onStop,
+            )
+          else if (file != null)
             FileCard(
               file: file,
               mine: mine,
               color: foreground,
+              title: file.voice ? l10n.voiceNote : null,
               onDownload: onDownload,
-              onSave: onSave,
+              onSave: file.voice ? null : onSave,
               onView: onView,
             )
           else

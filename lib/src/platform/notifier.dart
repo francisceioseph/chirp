@@ -50,7 +50,7 @@ class SystemNotifier implements Notifier {
     const darwin = DarwinInitializationSettings();
     final ok = await _plugin.initialize(
       settings: InitializationSettings(
-        android: const AndroidInitializationSettings('@mipmap/launcher_icon'),
+        android: const AndroidInitializationSettings('@drawable/ic_stat_chirp'),
         iOS: darwin,
         macOS: darwin,
         linux: LinuxInitializationSettings(defaultActionName: open),

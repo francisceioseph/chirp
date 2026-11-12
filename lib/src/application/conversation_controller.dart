@@ -209,6 +209,116 @@ class ConversationController extends ChangeNotifier {
     await contacts.reload();
   }
 
+  // As notas de voz: a gravação em andamento, a que toca, e quanto cada uma dura.
+
+  DateTime? _recordingSince;
+
+  /// Desde quando grava; `null` sem gravação.
+  DateTime? get recordingSince => _recordingSince;
+
+  int? _playingId;
+  Duration _position = Duration.zero;
+  StreamSubscription<VoiceProgress>? _playback;
+  final Map<int, Duration> _durations = {};
+  final Set<int> _askedDurations = {};
+
+  /// A nota que toca agora, e onde ela está.
+  int? get playingId => _playingId;
+  Duration get playingPosition => _position;
+
+  /// Quanto dura a nota de [message], se já se sabe; senão pergunta ao núcleo e
+  /// avisa quando souber.
+  Duration? voiceDuration(ChatMessage message) {
+    final known = _durations[message.id];
+    if (known != null) return known;
+    final file = message.file;
+    if (file == null || !file.voice || file.state != FileState.done) {
+      return null;
+    }
+    if (_askedDurations.add(message.id)) {
+      _store
+          .voiceDuration(message.id)
+          .then((duration) {
+            _durations[message.id] = duration;
+            _notify();
+          })
+          .catchError((Object _) {});
+    }
+    return null;
+  }
+
+  /// Liga o microfone. Lança CoreException (`noAudio`).
+  Future<void> startVoice() async {
+    await stopVoice();
+    await _store.startVoice();
+    _recordingSince = _now();
+    _notify();
+  }
+
+  Future<void> cancelVoice() async {
+    if (_recordingSince == null) return;
+    _recordingSince = null;
+    _notify();
+    await _store.cancelVoice();
+  }
+
+  /// Para de gravar e manda. Lança CoreException (`invalidMessage` se curta demais).
+  Future<void> sendVoice() async {
+    if (_recordingSince == null) return;
+    _recordingSince = null;
+    _notify();
+    await _store.sendVoice(contactId);
+    await reload();
+    await contacts.reload();
+  }
+
+  /// Toca a nota de [message] (a que tocava para). Volta quando o som começa;
+  /// lança CoreException se não der.
+  Future<void> playVoice(ChatMessage message) async {
+    await stopVoice();
+    final started = Completer<void>();
+    _playingId = message.id;
+    _position = Duration.zero;
+    _notify();
+    void finish() {
+      if (_playingId == message.id) {
+        _playingId = null;
+        _position = Duration.zero;
+        _notify();
+      }
+      if (!started.isCompleted) started.complete();
+    }
+
+    _playback = _store
+        .playVoice(message.id)
+        .listen(
+          (progress) {
+            if (!started.isCompleted) started.complete();
+            if (progress.done) return finish();
+            _position = progress.position;
+            _notify();
+          },
+          onError: (Object error) {
+            if (!started.isCompleted) started.completeError(error);
+            finish();
+          },
+          onDone: finish,
+        );
+    await started.future;
+  }
+
+  Future<void> stopVoice() async {
+    final playback = _playback;
+    _playback = null;
+    if (playback == null) return;
+    // Sem esperar: o fim do fluxo vem do núcleo, que para logo abaixo.
+    unawaited(playback.cancel());
+    _playingId = null;
+    _position = Duration.zero;
+    _notify();
+    await _store.stopVoice().catchError((Object _) {});
+  }
+
   Future<void> downloadFile(ChatMessage message) async {
     await _store.downloadFile(message.id);
     await reload();
@@ -248,6 +358,12 @@ class ConversationController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    // A nota não segue tocando, nem o microfone ligado, com a conversa fechada.
+    if (_playback != null) {
+      _playback?.cancel();
+      _store.stopVoice().catchError((Object _) {});
+    }
+    if (_recordingSince != null) _store.cancelVoice().catchError((Object _) {});
     if (_opened) contacts.viewing(contactId, open: false);
     _subscription?.cancel();
     contacts.removeListener(_contactsChanged);

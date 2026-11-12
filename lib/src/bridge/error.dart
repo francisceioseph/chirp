@@ -69,6 +69,9 @@ enum CoreError {
   /// limpar (e não sai com os metadados).
   invalidFile,
 
+  /// Sem microfone ou alto-falante, ou o sistema não deixou usar.
+  noAudio,
+
   /// Falha de disco ou do SQLite que não é nenhuma das acima.
   storage,
 }

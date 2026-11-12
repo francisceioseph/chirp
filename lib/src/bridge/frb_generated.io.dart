@@ -52,10 +52,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustStreamSink<CoreEvent> dco_decode_StreamSink_core_event_Sse(dynamic raw);
 
   @protected
+  RustStreamSink<VoiceProgress> dco_decode_StreamSink_voice_progress_Sse(
+    dynamic raw,
+  );
+
+  @protected
   String dco_decode_String(dynamic raw);
 
   @protected
   AppearanceView dco_decode_appearance_view(dynamic raw);
+
+  @protected
+  AutoDownload dco_decode_auto_download(dynamic raw);
 
   @protected
   bool dco_decode_bool(dynamic raw);
@@ -65,6 +73,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ChatSettings dco_decode_box_autoadd_chat_settings(dynamic raw);
+
+  @protected
+  DownloadPolicy dco_decode_box_autoadd_download_policy(dynamic raw);
 
   @protected
   FileView dco_decode_box_autoadd_file_view(dynamic raw);
@@ -101,6 +112,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CoreInfo dco_decode_core_info(dynamic raw);
+
+  @protected
+  DownloadPolicy dco_decode_download_policy(dynamic raw);
 
   @protected
   EventKind dco_decode_event_kind(dynamic raw);
@@ -190,6 +204,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt dco_decode_usize(dynamic raw);
 
   @protected
+  VoiceProgress dco_decode_voice_progress(dynamic raw);
+
+  @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
   @protected
@@ -216,10 +233,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  RustStreamSink<VoiceProgress> sse_decode_StreamSink_voice_progress_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
   AppearanceView sse_decode_appearance_view(SseDeserializer deserializer);
+
+  @protected
+  AutoDownload sse_decode_auto_download(SseDeserializer deserializer);
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
@@ -231,6 +256,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ChatSettings sse_decode_box_autoadd_chat_settings(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  DownloadPolicy sse_decode_box_autoadd_download_policy(
     SseDeserializer deserializer,
   );
 
@@ -271,6 +301,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CoreInfo sse_decode_core_info(SseDeserializer deserializer);
+
+  @protected
+  DownloadPolicy sse_decode_download_policy(SseDeserializer deserializer);
 
   @protected
   EventKind sse_decode_event_kind(SseDeserializer deserializer);
@@ -364,6 +397,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt sse_decode_usize(SseDeserializer deserializer);
 
   @protected
+  VoiceProgress sse_decode_voice_progress(SseDeserializer deserializer);
+
+  @protected
   void sse_encode_AnyhowException(
     AnyhowException self,
     SseSerializer serializer,
@@ -397,6 +433,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_StreamSink_voice_progress_Sse(
+    RustStreamSink<VoiceProgress> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
@@ -404,6 +446,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     AppearanceView self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_auto_download(AutoDownload self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
@@ -417,6 +462,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_chat_settings(
     ChatSettings self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_download_policy(
+    DownloadPolicy self,
     SseSerializer serializer,
   );
 
@@ -470,6 +521,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_core_info(CoreInfo self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_download_policy(
+    DownloadPolicy self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_event_kind(EventKind self, SseSerializer serializer);
@@ -590,6 +647,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_voice_progress(VoiceProgress self, SseSerializer serializer);
 }
 
 // Section: wire_class

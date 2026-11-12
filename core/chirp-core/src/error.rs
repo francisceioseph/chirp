@@ -66,6 +66,9 @@ pub enum CoreError {
     /// limpar (e não sai com os metadados).
     #[error("the file is not valid")]
     InvalidFile,
+    /// Sem microfone ou alto-falante, ou o sistema não deixou usar.
+    #[error("no audio device")]
+    NoAudio,
     /// Falha de disco ou do SQLite que não é nenhuma das acima.
     #[error("storage failure")]
     Storage,

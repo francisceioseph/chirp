@@ -690,4 +690,65 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
 
   @override
   String get batteryAllow => 'Dejar fuera';
+
+  @override
+  String get downloadsTitle => 'Descargas';
+
+  @override
+  String get downloadsHelp =>
+      'Los archivos hasta este tamaño se descargan en cuanto llegan. Los más grandes esperan a que toques Descargar.';
+
+  @override
+  String get autoDownloadNever => 'Nunca solos';
+
+  @override
+  String get autoDownloadSmall => 'Hasta 4 MB';
+
+  @override
+  String get autoDownloadMedium => 'Hasta 32 MB';
+
+  @override
+  String get autoDownloadLarge => 'Hasta 256 MB';
+
+  @override
+  String get onlyVerified => 'Solo de contactos verificados';
+
+  @override
+  String get onlyVerifiedHelp =>
+      'De los contactos cuyo código de seguridad no has comprobado, todos los archivos esperan.';
+
+  @override
+  String get voiceRecord => 'Grabar nota de voz';
+
+  @override
+  String get voiceRecording => 'Grabando';
+
+  @override
+  String get voiceDiscard => 'Descartar';
+
+  @override
+  String get voiceSend => 'Enviar la nota de voz';
+
+  @override
+  String get voiceNote => 'Nota de voz';
+
+  @override
+  String get voicePlay => 'Reproducir la nota de voz';
+
+  @override
+  String get voiceStop => 'Detener';
+
+  @override
+  String get voicePreview => 'Nota de voz';
+
+  @override
+  String get voiceTooShort => 'Demasiado corta: graba un poco más.';
+
+  @override
+  String get audioUnavailable =>
+      'No hay micrófono ni altavoz, o el sistema no permitió usarlos.';
+
+  @override
+  String get microphoneDenied =>
+      'Psito Chirp necesita el micrófono para grabar. Puedes permitirlo en los ajustes del sistema.';
 }

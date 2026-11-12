@@ -12,6 +12,7 @@ use zeroize::Zeroizing;
 
 use crate::appearance;
 use crate::contacts::{Contact, ContactState};
+use crate::downloads;
 pub use crate::error::CoreError;
 use crate::error::CoreResult;
 use crate::frb_generated::StreamSink;
@@ -233,11 +234,14 @@ pub struct FileView {
     pub received: u32,
     pub chunks: u32,
     pub state: FileState,
+    /// Uma nota de voz (Ogg Opus), que a conversa toca ali mesmo.
+    pub voice: bool,
 }
 
 impl From<crate::files::FileRow> for FileView {
     fn from(row: crate::files::FileRow) -> Self {
         Self {
+            voice: row.mime == crate::voice::VOICE_MIME,
             name: row.name,
             size: row.size,
             mime: row.mime,
@@ -252,6 +256,14 @@ impl From<crate::files::FileRow> for FileView {
             },
         }
     }
+}
+
+/// Onde está a nota de voz que toca, em milissegundos, e se acabou.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VoiceProgress {
+    pub message_id: i64,
+    pub position_ms: u64,
+    pub done: bool,
 }
 
 /// Para as minhas: na fila, entregue, lida. Para as do contato: `Pending` é não lida.
@@ -361,6 +373,22 @@ pub enum NotificationMode {
     Full,
 }
 
+/// Até que tamanho o arquivo de um contato baixa sozinho: nunca, 4, 32 ou 256 MiB.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AutoDownload {
+    Never,
+    Small,
+    Medium,
+    Large,
+}
+
+/// O baixar sozinho: o limite e se só dos contatos verificados.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DownloadPolicy {
+    pub limit: AutoDownload,
+    pub only_verified: bool,
+}
+
 /// Claro, escuro ou o que o sistema disser.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ThemeBrightness {
@@ -409,6 +437,9 @@ pub struct ChirpStore {
     node: Mutex<Option<Arc<Node>>>,
     /// Os eventos do nó; ficam aqui para a UI não perder o fio quando o nó reinicia.
     events: tokio::sync::broadcast::Sender<NodeEvent>,
+    /// A nota de voz sendo gravada, e a que está tocando (uma de cada vez).
+    recording: Mutex<Option<crate::voice::Recording>>,
+    playing: Mutex<Option<crate::voice::Playing>>,
 }
 
 impl ChirpStore {
@@ -454,6 +485,8 @@ impl ChirpStore {
             inner: Arc::new(Mutex::new(Store::open(&dir.join(DB_FILE), key)?)),
             node: Mutex::new(None),
             events: tokio::sync::broadcast::channel(256).0,
+            recording: Mutex::new(None),
+            playing: Mutex::new(None),
         })
     }
 
@@ -791,6 +824,103 @@ impl ChirpStore {
         Ok(view)
     }
 
+    /// Liga o microfone para uma nota de voz. Uma gravação que já estava em
+    /// andamento é jogada fora.
+    pub fn start_voice(&self) -> Result<(), CoreError> {
+        let mut slot = self.recording.lock().map_err(|_| CoreError::NoAudio)?;
+        *slot = None;
+        *slot = Some(crate::voice::Recording::start()?);
+        Ok(())
+    }
+
+    /// Para de gravar e joga fora.
+    pub fn cancel_voice(&self) -> Result<(), CoreError> {
+        self.recording
+            .lock()
+            .map_err(|_| CoreError::NoAudio)?
+            .take();
+        Ok(())
+    }
+
+    /// Para de gravar e manda a nota ao contato, como um arquivo. Curta demais (menos
+    /// de meio segundo), não sai.
+    pub fn send_voice(&self, contact_id: i64) -> Result<MessageView, CoreError> {
+        let recording = self
+            .recording
+            .lock()
+            .map_err(|_| CoreError::NoAudio)?
+            .take()
+            .ok_or(CoreError::NoAudio)?;
+        let pcm = recording.finish()?;
+        if (pcm.len() as u64) * 1000 / (crate::voice::RATE as u64) < crate::voice::MIN_MS {
+            return Err(CoreError::InvalidMessage);
+        }
+        let ogg = crate::voice::encode(&pcm)?;
+        let dir = self.lock()?.files_dir().to_path_buf();
+        let prepared =
+            crate::files::prepare_bytes(&dir, "voice.opus", crate::voice::VOICE_MIME, &ogg)?;
+        let blob = crate::files::blob_path(&dir, &prepared.file_id);
+        let mut store = self.lock()?;
+        let message = match messages::send_file(&mut store, contact_id, prepared) {
+            Ok(message) => message,
+            Err(error) => {
+                let _ = std::fs::remove_file(&blob);
+                return Err(error);
+            }
+        };
+        let view = with_file(store.conn(), message);
+        drop(store);
+        self.flush(contact_id);
+        Ok(view)
+    }
+
+    /// Quanto dura a nota de voz de uma mensagem (já baixada).
+    pub fn voice_duration(&self, message_id: i64) -> Result<u64, CoreError> {
+        let bytes = self.voice_bytes(message_id)?;
+        crate::voice::duration_ms(&bytes)
+    }
+
+    /// Toca a nota de voz de uma mensagem; a que tocava para. O fluxo recebe a
+    /// posição a cada décimo de segundo, e fecha no fim.
+    pub fn play_voice(
+        &self,
+        message_id: i64,
+        sink: StreamSink<VoiceProgress>,
+    ) -> Result<(), CoreError> {
+        let bytes = self.voice_bytes(message_id)?;
+        let pcm = crate::voice::decode(&bytes)?;
+        drop(bytes);
+        let mut slot = self.playing.lock().map_err(|_| CoreError::NoAudio)?;
+        *slot = None;
+        *slot = Some(crate::voice::Playing::start(
+            pcm,
+            move |position_ms, done| {
+                let _ = sink.add(VoiceProgress {
+                    message_id,
+                    position_ms,
+                    done,
+                });
+            },
+        )?);
+        Ok(())
+    }
+
+    pub fn stop_voice(&self) -> Result<(), CoreError> {
+        self.playing.lock().map_err(|_| CoreError::NoAudio)?.take();
+        Ok(())
+    }
+
+    /// A nota em claro, na memória: só de um arquivo de voz já baixado.
+    fn voice_bytes(&self, message_id: i64) -> CoreResult<Zeroizing<Vec<u8>>> {
+        let (row, blob) = self.done_file(message_id)?;
+        if row.mime != crate::voice::VOICE_MIME || row.size > crate::files::IN_MEMORY {
+            return Err(CoreError::InvalidFile);
+        }
+        let mut out = Zeroizing::new(Vec::with_capacity(row.size as usize));
+        crate::files::export(&blob, &row, &mut *out)?;
+        Ok(out)
+    }
+
     /// Baixa (ou volta a baixar) o arquivo de uma mensagem do contato.
     pub fn download_file(&self, message_id: i64) -> Result<(), CoreError> {
         {
@@ -834,7 +964,7 @@ impl ChirpStore {
     /// O arquivo em claro, na memória, para mostrar uma foto (até 32 MiB).
     pub fn file_bytes(&self, message_id: i64) -> Result<Vec<u8>, CoreError> {
         let (row, blob) = self.done_file(message_id)?;
-        if row.size > crate::files::AUTO_DOWNLOAD {
+        if row.size > crate::files::IN_MEMORY {
             return Err(CoreError::InvalidFile);
         }
         let mut out = Vec::with_capacity(row.size as usize);
@@ -889,6 +1019,34 @@ impl ChirpStore {
                 NotificationMode::Hidden => notifications::Mode::Hidden,
                 NotificationMode::Sender => notifications::Mode::Sender,
                 NotificationMode::Full => notifications::Mode::Full,
+            },
+        )
+    }
+
+    pub fn download_policy(&self) -> Result<DownloadPolicy, CoreError> {
+        let policy = downloads::get(self.lock()?.conn())?;
+        Ok(DownloadPolicy {
+            limit: match policy.limit {
+                downloads::Limit::Never => AutoDownload::Never,
+                downloads::Limit::Small => AutoDownload::Small,
+                downloads::Limit::Medium => AutoDownload::Medium,
+                downloads::Limit::Large => AutoDownload::Large,
+            },
+            only_verified: policy.only_verified,
+        })
+    }
+
+    pub fn set_download_policy(&self, policy: DownloadPolicy) -> Result<(), CoreError> {
+        downloads::set(
+            self.lock()?.conn(),
+            downloads::Policy {
+                limit: match policy.limit {
+                    AutoDownload::Never => downloads::Limit::Never,
+                    AutoDownload::Small => downloads::Limit::Small,
+                    AutoDownload::Medium => downloads::Limit::Medium,
+                    AutoDownload::Large => downloads::Limit::Large,
+                },
+                only_verified: policy.only_verified,
             },
         )
     }

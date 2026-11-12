@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
+import '../file_text.dart';
 
 /// O texto mais comprido de uma mensagem (o mesmo limite do núcleo).
 const maxMessageChars = 4000;
@@ -32,6 +33,10 @@ class Composer extends StatefulWidget {
     this.onCancel,
     this.onChanged,
     this.onAttach,
+    this.onRecord,
+    this.recording,
+    this.onDiscardRecording,
+    this.onSendRecording,
     this.enabled = true,
   });
 
@@ -48,6 +53,16 @@ class Composer extends StatefulWidget {
 
   /// Anexar um arquivo (sem isso, o botão não aparece).
   final VoidCallback? onAttach;
+
+  /// Gravar uma nota de voz: o microfone aparece no lugar do enviar, com o campo
+  /// vazio (sem isso, não aparece).
+  final VoidCallback? onRecord;
+
+  /// Há quanto tempo grava; `null` sem gravação. Gravando, a linha mostra o tempo,
+  /// o descartar e o enviar.
+  final Duration? recording;
+  final VoidCallback? onDiscardRecording;
+  final VoidCallback? onSendRecording;
   final bool enabled;
 
   @override
@@ -96,6 +111,12 @@ class _ComposerState extends State<Composer> {
   }
 
   bool get _canSend => widget.enabled && widget.text.text.trim().isNotEmpty;
+
+  bool get _canRecord =>
+      widget.enabled &&
+      widget.onRecord != null &&
+      widget.editing == null &&
+      widget.text.text.trim().isEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -158,68 +179,129 @@ class _ComposerState extends State<Composer> {
                     ],
                   ),
                 ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // Editando, só o texto muda: sem anexo.
-                  if (widget.onAttach != null && editing == null)
-                    IconButton(
-                      tooltip: l10n.attachFile,
-                      onPressed: widget.enabled ? widget.onAttach : null,
-                      icon: const Icon(Icons.attach_file),
-                    ),
-                  Expanded(
-                    child: TextField(
-                      controller: widget.text,
-                      focusNode: _focus,
-                      enabled: widget.enabled,
-                      minLines: 1,
-                      maxLines: 6,
-                      maxLength: maxMessageChars,
-                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                      buildCounter:
-                          (
-                            context, {
-                            required currentLength,
-                            required isFocused,
-                            required maxLength,
-                          }) => currentLength > maxMessageChars - 200
-                          ? Text('$currentLength / $maxLength')
-                          : null,
-                      keyboardType: TextInputType.multiline,
-                      textCapitalization: TextCapitalization.sentences,
-                      enableIMEPersonalizedLearning: false,
-                      enableSuggestions: false,
-                      autocorrect: false,
-                      onChanged: widget.onChanged,
-                      decoration: InputDecoration(
-                        hintText: l10n.messageHint,
-                        filled: true,
-                        fillColor: scheme.surfaceContainerHighest,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
+              if (widget.recording case final recording?)
+                _RecordingRow(
+                  elapsed: recording,
+                  onDiscard: widget.onDiscardRecording,
+                  onSend: widget.onSendRecording,
+                )
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Editando, só o texto muda: sem anexo.
+                    if (widget.onAttach != null && editing == null)
+                      IconButton(
+                        tooltip: l10n.attachFile,
+                        onPressed: widget.enabled ? widget.onAttach : null,
+                        icon: const Icon(Icons.attach_file),
+                      ),
+                    Expanded(
+                      child: TextField(
+                        controller: widget.text,
+                        focusNode: _focus,
+                        enabled: widget.enabled,
+                        minLines: 1,
+                        maxLines: 6,
+                        maxLength: maxMessageChars,
+                        maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                        buildCounter:
+                            (
+                              context, {
+                              required currentLength,
+                              required isFocused,
+                              required maxLength,
+                            }) => currentLength > maxMessageChars - 200
+                            ? Text('$currentLength / $maxLength')
+                            : null,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        enableIMEPersonalizedLearning: false,
+                        enableSuggestions: false,
+                        autocorrect: false,
+                        onChanged: widget.onChanged,
+                        decoration: InputDecoration(
+                          hintText: l10n.messageHint,
+                          filled: true,
+                          fillColor: scheme.surfaceContainerHighest,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  IconButton.filled(
-                    tooltip: editing != null ? l10n.save : l10n.send,
-                    onPressed: _canSend ? widget.onSend : null,
-                    icon: Icon(editing != null ? Icons.check : Icons.send),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 4),
+                    if (_canRecord)
+                      IconButton.filled(
+                        tooltip: l10n.voiceRecord,
+                        onPressed: widget.onRecord,
+                        icon: const Icon(Icons.mic),
+                      )
+                    else
+                      IconButton.filled(
+                        tooltip: editing != null ? l10n.save : l10n.send,
+                        onPressed: _canSend ? widget.onSend : null,
+                        icon: Icon(editing != null ? Icons.check : Icons.send),
+                      ),
+                  ],
+                ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Gravando: o ponto, "Gravando" e o tempo, o descartar e o enviar.
+class _RecordingRow extends StatelessWidget {
+  const _RecordingRow({required this.elapsed, this.onDiscard, this.onSend});
+
+  final Duration elapsed;
+  final VoidCallback? onDiscard;
+  final VoidCallback? onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Row(
+      children: [
+        IconButton(
+          tooltip: l10n.voiceDiscard,
+          onPressed: onDiscard,
+          icon: const Icon(Icons.delete_outline),
+        ),
+        Expanded(
+          child: Row(
+            children: [
+              Icon(Icons.fiber_manual_record, size: 14, color: scheme.error),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '${l10n.voiceRecording} ${voiceTime(elapsed)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 4),
+        IconButton.filled(
+          tooltip: l10n.voiceSend,
+          onPressed: onSend,
+          icon: const Icon(Icons.send),
+        ),
+      ],
     );
   }
 }

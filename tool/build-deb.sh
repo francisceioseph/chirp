@@ -4,6 +4,7 @@
 # chaveiro, onde fica a chave do banco) e o EGL e o GLES, que o Flutter abre na hora
 # de desenhar e o ldd não mostra. O binário usa um símbolo da GLib 2.80, que o Ubuntu
 # 24.04 do CI tem e o Debian 12 não.
+# O som das notas de voz é pelo ALSA (o PipeWire e o PulseAudio atendem por ele).
 # Uso: tool/build-deb.sh [pasta de saída, padrão build/deb] [--no-build]
 set -e
 
@@ -29,7 +30,7 @@ Architecture: amd64
 Maintainer: Francisco Souza <francisceioseph@users.noreply.github.com>
 Homepage: https://github.com/francisceioseph/chirp
 Installed-Size: $(du -sk "$ROOT/usr" | cut -f1)
-Depends: libc6 (>= 2.38), libgtk-3-0 | libgtk-3-0t64, libglib2.0-0t64 (>= 2.80) | libglib2.0-0 (>= 2.80), libsecret-1-0, libegl1, libgles2
+Depends: libc6 (>= 2.38), libgtk-3-0 | libgtk-3-0t64, libglib2.0-0t64 (>= 2.80) | libglib2.0-0 (>= 2.80), libsecret-1-0, libasound2t64 | libasound2, libegl1, libgles2
 Recommends: libgl1-mesa-dri, gnome-keyring | kwalletmanager | keepassxc
 Description: Private messenger with no servers in the middle
  Conversations go straight from one device to the other, over the local

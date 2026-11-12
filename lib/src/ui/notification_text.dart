@@ -10,6 +10,12 @@ import 'molecules/conversation_tile.dart';
 String messagePreview(ChirpLocalizations l10n, ChatMessage message) =>
     switch (message) {
       ChatMessage(kind: MessageKind.nudge) => l10n.nudgePreview,
+      ChatMessage(
+        kind: MessageKind.file,
+        deleted: false,
+        file: ChatFile(voice: true),
+      ) =>
+        l10n.voicePreview,
       ChatMessage(kind: MessageKind.file, deleted: false) => l10n.filePreview(
         message.text,
       ),

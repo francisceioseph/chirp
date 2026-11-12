@@ -689,4 +689,65 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
 
   @override
   String get batteryAllow => 'Keep it out';
+
+  @override
+  String get downloadsTitle => 'Downloads';
+
+  @override
+  String get downloadsHelp =>
+      'Files up to this size download as soon as they arrive. Bigger ones wait for you to tap Download.';
+
+  @override
+  String get autoDownloadNever => 'Never on their own';
+
+  @override
+  String get autoDownloadSmall => 'Up to 4 MB';
+
+  @override
+  String get autoDownloadMedium => 'Up to 32 MB';
+
+  @override
+  String get autoDownloadLarge => 'Up to 256 MB';
+
+  @override
+  String get onlyVerified => 'Only from verified contacts';
+
+  @override
+  String get onlyVerifiedHelp =>
+      'From contacts whose safety code you haven\'t checked, every file waits.';
+
+  @override
+  String get voiceRecord => 'Record a voice note';
+
+  @override
+  String get voiceRecording => 'Recording';
+
+  @override
+  String get voiceDiscard => 'Discard';
+
+  @override
+  String get voiceSend => 'Send the voice note';
+
+  @override
+  String get voiceNote => 'Voice note';
+
+  @override
+  String get voicePlay => 'Play the voice note';
+
+  @override
+  String get voiceStop => 'Stop';
+
+  @override
+  String get voicePreview => 'Voice note';
+
+  @override
+  String get voiceTooShort => 'Too short: hold on a little longer.';
+
+  @override
+  String get audioUnavailable =>
+      'No microphone or speaker, or the system didn\'t allow using it.';
+
+  @override
+  String get microphoneDenied =>
+      'Psito Chirp needs the microphone to record. You can allow it in the system settings.';
 }

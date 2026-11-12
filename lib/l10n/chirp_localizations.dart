@@ -1313,6 +1313,120 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Keep it out'**
   String get batteryAllow;
+
+  /// No description provided for @downloadsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get downloadsTitle;
+
+  /// No description provided for @downloadsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Files up to this size download as soon as they arrive. Bigger ones wait for you to tap Download.'**
+  String get downloadsHelp;
+
+  /// No description provided for @autoDownloadNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never on their own'**
+  String get autoDownloadNever;
+
+  /// No description provided for @autoDownloadSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 4 MB'**
+  String get autoDownloadSmall;
+
+  /// No description provided for @autoDownloadMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 32 MB'**
+  String get autoDownloadMedium;
+
+  /// No description provided for @autoDownloadLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 256 MB'**
+  String get autoDownloadLarge;
+
+  /// No description provided for @onlyVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Only from verified contacts'**
+  String get onlyVerified;
+
+  /// No description provided for @onlyVerifiedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'From contacts whose safety code you haven\'t checked, every file waits.'**
+  String get onlyVerifiedHelp;
+
+  /// No description provided for @voiceRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record a voice note'**
+  String get voiceRecord;
+
+  /// No description provided for @voiceRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording'**
+  String get voiceRecording;
+
+  /// No description provided for @voiceDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get voiceDiscard;
+
+  /// No description provided for @voiceSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the voice note'**
+  String get voiceSend;
+
+  /// No description provided for @voiceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice note'**
+  String get voiceNote;
+
+  /// No description provided for @voicePlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the voice note'**
+  String get voicePlay;
+
+  /// No description provided for @voiceStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get voiceStop;
+
+  /// No description provided for @voicePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice note'**
+  String get voicePreview;
+
+  /// No description provided for @voiceTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Too short: hold on a little longer.'**
+  String get voiceTooShort;
+
+  /// No description provided for @audioUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No microphone or speaker, or the system didn\'t allow using it.'**
+  String get audioUnavailable;
+
+  /// No description provided for @microphoneDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Psito Chirp needs the microphone to record. You can allow it in the system settings.'**
+  String get microphoneDenied;
 }
 
 class _ChirpLocalizationsDelegate

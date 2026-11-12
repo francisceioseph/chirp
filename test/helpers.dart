@@ -105,6 +105,7 @@ class FakeStore implements ProfileStore {
   ChatSettings settings = const ChatSettings(readReceipts: true, typing: true);
   Appearance savedAppearance = const Appearance();
   NotificationMode notifications = NotificationMode.sender;
+  DownloadPolicy autoDownload = const DownloadPolicy();
   bool running = true;
   NetworkSettings network = const NetworkSettings();
 
@@ -413,6 +414,71 @@ class FakeStore implements ProfileStore {
       fileContents[messageId] ??
       (throw const CoreException(CoreFailure.unknownMessage));
 
+  // As notas de voz: sem som de verdade. [audio] falso faz o microfone e o
+  // alto-falante faltarem; [recordedMs] é quanto a próxima gravação dura.
+
+  bool audio = true;
+  bool recordingVoice = false;
+  int recordedMs = 3000;
+  int voicesSent = 0;
+  StreamController<VoiceProgress>? playback;
+  int? playingVoice;
+
+  @override
+  Future<void> startVoice() async {
+    if (!audio) throw const CoreException(CoreFailure.noAudio);
+    recordingVoice = true;
+  }
+
+  @override
+  Future<void> cancelVoice() async => recordingVoice = false;
+
+  @override
+  Future<ChatMessage> sendVoice(int contactId) async {
+    _established(contactId);
+    if (!recordingVoice) throw const CoreException(CoreFailure.noAudio);
+    recordingVoice = false;
+    if (recordedMs < 500) throw const CoreException(CoreFailure.invalidMessage);
+    voicesSent++;
+    return _new(
+      contactId,
+      outgoing: true,
+      kind: MessageKind.file,
+      text: 'voice.opus',
+      file: const ChatFile(
+        name: 'voice.opus',
+        size: 9000,
+        mime: 'audio/ogg; codecs=opus',
+        voice: true,
+      ),
+    );
+  }
+
+  @override
+  Future<Duration> voiceDuration(int messageId) async =>
+      Duration(milliseconds: recordedMs);
+
+  @override
+  Stream<VoiceProgress> playVoice(int messageId) {
+    if (!audio) {
+      return Stream.error(const CoreException(CoreFailure.noAudio));
+    }
+    playback?.close();
+    playingVoice = messageId;
+    final controller = playback = StreamController<VoiceProgress>();
+    controller.add(
+      VoiceProgress(messageId: messageId, position: Duration.zero),
+    );
+    return controller.stream;
+  }
+
+  @override
+  Future<void> stopVoice() async {
+    playingVoice = null;
+    await playback?.close();
+    playback = null;
+  }
+
   @override
   Future<ChatMessage> editMessage(int id, String text) async {
     final m = _byId(id);
@@ -478,6 +544,13 @@ class FakeStore implements ProfileStore {
   @override
   Future<void> setNotificationMode(NotificationMode mode) async =>
       notifications = mode;
+
+  @override
+  Future<DownloadPolicy> downloadPolicy() async => autoDownload;
+
+  @override
+  Future<void> setDownloadPolicy(DownloadPolicy policy) async =>
+      autoDownload = policy;
 
   @override
   Future<bool> keepRunning() async => running;

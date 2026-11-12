@@ -15,6 +15,8 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
     - `files.rs`: os arquivos (fatias de 60 KiB em AES-256-GCM, o blob cifrado em `files/` ao lado do banco, a oferta conferida, as fotos sem EXIF e a miniatura) e a tabela deles; o nó serve e baixa as fatias.
     - `network.rs`: a internet e os retransmissores (desligados por padrão), a conferência dos endereços que um contato manda e os últimos anunciados.
     - `notifications.rs`: o que as notificações mostram (desligadas, sem conteúdo, o nome, ou o nome e o texto; o padrão é o nome) e o continuar recebendo com a janela fechada (ligado por padrão).
+    - `downloads.rs`: o baixar sozinho (o limite: nunca, 4, 32 ou 256 MiB, e se só dos contatos verificados).
+    - `voice.rs`: as notas de voz: gravar e tocar pelo `cpal`, sempre no aparelho padrão e numa thread dona do fluxo, e o Ogg Opus (`opus` e `ogg`, mono, 48 kHz, 24 kbit/s). A nota vai como um arquivo do tipo `audio/ogg; codecs=opus`, e só fica em claro na memória enquanto toca.
     - `appearance.rs`: a aparência (o id do tema, claro ou escuro, o vidro), no banco como o resto.
     - `messages.rs`: as mensagens, a caixa de saída (cifrada na mesma transação do ratchet, só sai com o `ack`) e a de entrada (idempotente), os recibos, o digitando, editar, apagar, reagir, chamar atenção e a busca (FTS5).
     - `api/store.rs`: o `ChirpStore` opaco, as funções do banco, a rede (`start_network`, `create_invite`, `add_contact`, `watch_events`), as mensagens (`conversations`, `messages`, `send_text` e o resto) e o runtime do tokio. Os arquivos ficam na pasta de suporte do app: `chirp.db` e, só com senha, `chirp.salt`.
@@ -45,7 +47,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 ## Comandos
 
 - `flutter run -d linux`: o app, com o núcleo compilado pelo cargokit.
-- No Linux, o `libsecret-1-dev` (o cofre) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
+- No Linux, o `libsecret-1-dev` (o cofre) e o `libasound2-dev` (o som das notas de voz, pelo `cpal`) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
 - `flutter_rust_bridge_codegen generate`: depois de mudar `core/chirp-core/src/api/`. Instalado com `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked` (a mesma versão do `flutter_rust_bridge` no `pubspec.yaml` e no `Cargo.toml`).
 - `cd core && cargo test && cargo clippy --all-targets -- -D warnings && cargo fmt --all --check`
 - `flutter analyze` e `flutter test -j 2` (o host tem pouca memória: não rode sem o `-j`). Mudou a UI de propósito: `flutter test test/golden_test.dart --update-goldens`, e olhe as imagens em `test/goldens/` antes de comitar.

@@ -12,6 +12,7 @@ import '../molecules/core_status_chip.dart';
 import '../organisms/appearance_card.dart';
 import '../organisms/background_card.dart';
 import '../organisms/chat_settings_card.dart';
+import '../organisms/downloads_card.dart';
 import '../organisms/network_card.dart';
 import '../organisms/notifications_card.dart';
 import '../organisms/profile_card.dart';
@@ -49,6 +50,8 @@ class ProfilePage extends StatelessWidget {
           ChatSettingsCard(store: store),
           const SizedBox(height: 16),
           NotificationsCard(store: store),
+          const SizedBox(height: 16),
+          DownloadsCard(store: store),
           const SizedBox(height: 16),
           if (BackgroundScope.of(context).supported) ...[
             BackgroundCard(store: store),

@@ -161,6 +161,13 @@ const MIGRATIONS: &[&str] = &[
      INSERT INTO notifications (id, mode) VALUES (1, 2);",
     // 8: continuar recebendo com a janela fechada (fase 6), ligado por padrão.
     "ALTER TABLE notifications ADD COLUMN keep_running INTEGER NOT NULL DEFAULT 1;",
+    // 9: o baixar sozinho (fase 6): até 32 MiB, de qualquer contato.
+    "CREATE TABLE downloads (
+         id            INTEGER PRIMARY KEY CHECK (id = 1),
+         auto_limit    INTEGER NOT NULL,
+         only_verified INTEGER NOT NULL
+     );
+     INSERT INTO downloads (id, auto_limit, only_verified) VALUES (1, 2, 0);",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

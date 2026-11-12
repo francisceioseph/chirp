@@ -39,6 +39,7 @@ Estes limites estão declarados também na página do projeto.
 - **Os horários e o volume.** Os tamanhos são preenchidos, mas os horários não. Ainda não há tráfego de cobertura.
 - **O que o contato faz com o que você manda**: guardar, encaminhar, capturar a tela.
 - **As notificações.** O sistema mostra e pode guardar o que estiver nelas. O modo "Sem conteúdo" mostra só "Nova mensagem".
+- **O microfone.** Ele só liga enquanto se grava uma nota de voz, e a nota vai cifrada como qualquer arquivo. Quem controla o sistema ouve o microfone de qualquer jeito.
 - **O que o teclado do sistema aprende.** Os campos pedem ao teclado para não aprender, mas a decisão é do teclado.
 
 ## Ainda não feito, e previsto

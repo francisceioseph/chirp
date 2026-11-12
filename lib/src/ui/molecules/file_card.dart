@@ -15,6 +15,7 @@ class FileCard extends StatelessWidget {
     required this.file,
     required this.mine,
     required this.color,
+    this.title,
     this.onDownload,
     this.onSave,
     this.onView,
@@ -27,6 +28,9 @@ class FileCard extends StatelessWidget {
 
   /// A cor do texto da bolha.
   final Color color;
+
+  /// O que aparece no lugar do nome (numa nota de voz, "Nota de voz").
+  final String? title;
   final VoidCallback? onDownload;
   final VoidCallback? onSave;
   final VoidCallback? onView;
@@ -105,7 +109,7 @@ class FileCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    file.name,
+                    title ?? file.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(

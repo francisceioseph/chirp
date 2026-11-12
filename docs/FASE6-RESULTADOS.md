@@ -35,8 +35,8 @@ O que a fase 6 do `docs/PLANO.md` (seção 13, com a 6.7 e a 9) pediu, o que foi
 
 ### Falta (dos arquivos)
 
-- Notas de voz (gravar e tocar Opus).
-- Escolher o limite do baixar sozinho, e "só de contatos verificados".
+- Notas de voz (gravar e tocar Opus): feito na parte 6.
+- Escolher o limite do baixar sozinho, e "só de contatos verificados": feito na parte 6.
 - Salvar no iOS (lá, o caminho é o "Compartilhar").
 - O transporte mais rápido para arquivos é o que o iroh escolhe; o Bluetooth (fase 8) não leva arquivos grandes.
 
@@ -121,7 +121,7 @@ Quando o Android fecha a tela do app, o motor do Flutter vai junto, e com ele o 
 ### Falta
 
 - Se o sistema matar o processo (falta de memória, reiniciar o celular), o serviço não volta sozinho (`START_NOT_STICKY`): sem a tela, o Dart não teria por onde fazer a abertura. Volta ao abrir o app. Abrir com o celular pediria a abertura sem tela.
-- O ícone da notificação fixa é o do app; o Android pede um monocromático para a barra.
+- O ícone da notificação fixa é o do app; o Android pede um monocromático para a barra. Feito na parte 6.
 
 ## Parte 5: instaladores, repositórios e os documentos da 1.0
 
@@ -161,3 +161,46 @@ Quando o Android fecha a tela do app, o motor do Flutter vai junto, e com ele o 
   - ligar o GitHub Pages com a origem "GitHub Actions";
   - ligar o relato privado de vulnerabilidades.
 - O F-Droid: pedir a inclusão no `fdroiddata`, com o build reprodutível. O AppImage e o Flatpak ficam para depois.
+
+## Parte 6: notas de voz, o baixar sozinho e o ícone do Android
+
+### Feito
+
+- **Notas de voz**:
+  - **Núcleo** (`voice.rs`):
+    - grava e toca pelo `cpal`, no aparelho padrão: ALSA, WASAPI, Core Audio e AAudio;
+    - codifica em Opus (mono, 48 kHz, 24 kbit/s) num Ogg, uns 180 KB por minuto, de meio segundo a cinco minutos;
+    - a nota sai como um arquivo do tipo `audio/ogg; codecs=opus`, pelas mesmas fatias cifradas. Só fica em claro na memória, enquanto toca;
+    - um erro novo, o `NoAudio`.
+  - **App**:
+    - com o campo vazio, o microfone fica no lugar do enviar;
+    - gravando, a linha mostra o tempo, o descartar e o enviar;
+    - na bolha, tocar e parar, o progresso e a duração, e "Nota de voz" na lista;
+    - curta demais, ou sem microfone, avisa;
+    - fechar a conversa para o som e o microfone.
+  - **Sistemas**: o `RECORD_AUDIO` pedido na hora no Android (pela `MainActivity`), o `NSMicrophoneUsageDescription` no iOS e no macOS e o `audio-input` no macOS. O Android mínimo passou a ser o 8 (API 26), por causa do AAudio.
+- **O baixar sozinho** (`downloads.rs`, migração 9): nunca, até 4, 32 (o padrão) ou 256 MiB, e "só de contatos verificados". Fica no cartão "Downloads" do perfil.
+- **O ícone da notificação**: monocromático (`ic_stat_chirp`, tirado do ícone do app), na notificação fixa e nas de mensagem.
+- **Linux**: o pacote depende também do ALSA. A ponte com a JVM, que o `jni` compila no CI e o Linux não usa, sai do pacote.
+
+### Conferido
+
+- Rust: 113 testes:
+  - o Opus ida e volta com a duração exata;
+  - o tamanho de um minuto;
+  - lixo recusado;
+  - a reamostragem;
+  - a política de download;
+  - a oferta que espera de um contato não verificado.
+
+  E mais um teste ignorado, com o som de verdade: grava meio segundo e toca um tom, e passou neste computador.
+- Dart: os testes das notas de voz e do cartão de downloads. Os dois cartões cabem em 240×160 e 320×568. Os goldens foram atualizados (o microfone no campo vazio).
+- Os repositórios de verdade:
+  - o APT, num contêiner Debian 13;
+  - o DNF, num contêiner Fedora 45, com a chave conferida.
+- O Opus no Android, no iOS, no macOS e no Windows só é compilado no CI. A gravação nesses sistemas só foi testada no Linux.
+
+### Falta
+
+- O serviço do Android voltar sozinho depois de ligar o celular: precisaria subir o Flutter sem tela, o que só dá para testar num celular. Fica para depois da 1.0.
+- Salvar no iOS pelo "Compartilhar": precisa de um plugin novo e de um iPhone para testar. Fica para depois da 1.0.

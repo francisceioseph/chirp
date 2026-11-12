@@ -25,7 +25,8 @@ android {
 
     defaultConfig {
         applicationId = "org.psito.chirp"
-        minSdk = flutter.minSdkVersion
+        // O AAudio (o som das notas de voz, pelo cpal) chegou no Android 8.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

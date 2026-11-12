@@ -696,4 +696,65 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get batteryAllow => 'Исключить';
+
+  @override
+  String get downloadsTitle => 'Загрузки';
+
+  @override
+  String get downloadsHelp =>
+      'Файлы до этого размера загружаются сразу, как приходят. Более крупные ждут, пока вы нажмёте «Скачать».';
+
+  @override
+  String get autoDownloadNever => 'Никогда сами';
+
+  @override
+  String get autoDownloadSmall => 'До 4 МБ';
+
+  @override
+  String get autoDownloadMedium => 'До 32 МБ';
+
+  @override
+  String get autoDownloadLarge => 'До 256 МБ';
+
+  @override
+  String get onlyVerified => 'Только от проверенных контактов';
+
+  @override
+  String get onlyVerifiedHelp =>
+      'От контактов, чей код безопасности вы не сверили, все файлы ждут.';
+
+  @override
+  String get voiceRecord => 'Записать голосовое сообщение';
+
+  @override
+  String get voiceRecording => 'Идёт запись';
+
+  @override
+  String get voiceDiscard => 'Отменить';
+
+  @override
+  String get voiceSend => 'Отправить голосовое сообщение';
+
+  @override
+  String get voiceNote => 'Голосовое сообщение';
+
+  @override
+  String get voicePlay => 'Прослушать голосовое сообщение';
+
+  @override
+  String get voiceStop => 'Остановить';
+
+  @override
+  String get voicePreview => 'Голосовое сообщение';
+
+  @override
+  String get voiceTooShort => 'Слишком коротко: запишите чуть дольше.';
+
+  @override
+  String get audioUnavailable =>
+      'Нет микрофона или динамика, или система не разрешила их использовать.';
+
+  @override
+  String get microphoneDenied =>
+      'Psito Chirp нужен микрофон для записи. Разрешить можно в настройках системы.';
 }

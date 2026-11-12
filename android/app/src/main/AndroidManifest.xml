@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- As notas de voz: o sistema pergunta na primeira gravação. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" 
                      android:usesPermissionFlags="neverForLocation" />
