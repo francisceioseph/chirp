@@ -45,6 +45,41 @@ class ContactsController extends ChangeNotifier {
   /// O contato está digitando agora.
   bool isTyping(int contactId) => _typing.containsKey(contactId);
 
+  /// A mensagem mais nova de cada contato, para saber o que acabou de chegar.
+  final Map<int, int> _newest = {};
+
+  final _arrivals = StreamController<Conversation>.broadcast();
+
+  /// As conversas que acabaram de receber uma mensagem não lida (para as
+  /// notificações). O que já estava no banco ao abrir não conta.
+  Stream<Conversation> get arrivals => _arrivals.stream;
+
+  bool _foreground = true;
+
+  /// O app está à frente (com foco, no desktop). Fora dele, nada conta como lido.
+  bool get foreground => _foreground;
+
+  set foreground(bool value) {
+    if (value == _foreground) return;
+    _foreground = value;
+    _notify();
+  }
+
+  final Map<int, int> _viewing = {};
+
+  /// A conversa está aberta numa tela agora.
+  bool isViewing(int contactId) => _viewing.containsKey(contactId);
+
+  /// A tela de uma conversa abriu ([open]) ou fechou.
+  void viewing(int contactId, {required bool open}) {
+    final count = (_viewing[contactId] ?? 0) + (open ? 1 : -1);
+    if (count > 0) {
+      _viewing[contactId] = count;
+    } else {
+      _viewing.remove(contactId);
+    }
+  }
+
   final _events = StreamController<CoreEvent>.broadcast();
 
   /// Os eventos do núcleo, para as telas abertas.
@@ -90,11 +125,31 @@ class ContactsController extends ChangeNotifier {
     try {
       _conversations = await store.conversations();
       _network = await store.networkSettings();
+      _findArrivals();
     } on CoreException {
       // A lista fica a de antes.
     }
     _loaded = true;
     _notify();
+  }
+
+  void _findArrivals() {
+    final first = !_loaded;
+    for (final conversation in _conversations) {
+      final last = conversation.last;
+      if (last == null) continue;
+      final id = conversation.contact.id;
+      final before = _newest[id];
+      if (before != null && last.id <= before) continue;
+      _newest[id] = last.id;
+      if (!first &&
+          !_disposed &&
+          !last.outgoing &&
+          !last.deleted &&
+          conversation.unread > 0) {
+        _arrivals.add(conversation);
+      }
+    }
   }
 
   Future<String> createInvite({required bool qr}) => store.createInvite(qr: qr);
@@ -132,6 +187,7 @@ class ContactsController extends ChangeNotifier {
       timer.cancel();
     }
     _events.close();
+    _arrivals.close();
     super.dispose();
   }
 }

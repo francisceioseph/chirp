@@ -176,5 +176,17 @@
   "sizeBytes": "{size} B",
   "sizeKb": "{size} KB",
   "sizeMb": "{size} MB",
-  "sizeGb": "{size} GB"
+  "sizeGb": "{size} GB",
+  "notificationsTitle": "Benachrichtigungen",
+  "notificationsHelp": "Was das System zeigt, wenn eine Nachricht eintrifft und die Unterhaltung nicht auf dem Bildschirm ist.",
+  "notifyOff": "Aus",
+  "notifyHidden": "Ohne Inhalt",
+  "notifyHiddenHelp": "Nur „Neue Nachricht“, ohne Namen und Text.",
+  "notifySender": "Nur der Name",
+  "notifySenderHelp": "Wer geschrieben hat, ohne den Text.",
+  "notifyFull": "Name und Nachricht",
+  "notifyFullHelp": "Der Text kann auch auf dem Sperrbildschirm erscheinen, wenn das System es erlaubt.",
+  "notificationNewMessage": "Neue Nachricht",
+  "notificationOpen": "Öffnen",
+  "notificationChannel": "Nachrichten"
 }

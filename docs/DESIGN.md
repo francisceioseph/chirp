@@ -33,7 +33,7 @@ O resumo do que a UI usa do Material 3, para quem mexe nas telas. O porquê est�
 - O texto vem do `textTheme`, sem `fontSize` à mão. O número de segurança usa a fonte monoespaçada do sistema.
 - Barra de cima: a `ChirpAppBar` nas telas que rolam por baixo dela (a lista e a conversa); a `AppBar` nas outras.
 - Adicionar contato: o `FloatingActionButton.extended` da lista.
-- Ajustes: cartões com `SwitchListTile`; claro e escuro num `SegmentedButton` (só os ícones abaixo de 300 px); os temas numa grade de `ThemeSwatch`.
+- Ajustes: cartões com `SwitchListTile` (e `RadioListTile` num `RadioGroup` para escolher um entre vários, como as notificações); claro e escuro num `SegmentedButton` (só os ícones abaixo de 300 px); os temas numa grade de `ThemeSwatch`.
 - Avisos: `SnackBar` para o que passou, `MaterialBanner` para o que continua (sem rede).
 
 ## Layout

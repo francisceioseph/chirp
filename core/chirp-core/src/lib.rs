@@ -15,6 +15,7 @@ mod invite;
 mod messages;
 mod network;
 mod node;
+mod notifications;
 mod passphrase;
 mod profile;
 mod random;

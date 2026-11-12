@@ -176,5 +176,17 @@
   "sizeBytes": "{size} o",
   "sizeKb": "{size} Ko",
   "sizeMb": "{size} Mo",
-  "sizeGb": "{size} Go"
+  "sizeGb": "{size} Go",
+  "notificationsTitle": "Notifications",
+  "notificationsHelp": "Ce que le système affiche quand un message arrive et que la conversation n'est pas à l'écran.",
+  "notifyOff": "Désactivées",
+  "notifyHidden": "Sans contenu",
+  "notifyHiddenHelp": "Seulement « Nouveau message », sans nom ni texte.",
+  "notifySender": "Nom seulement",
+  "notifySenderHelp": "Qui a écrit, sans le texte.",
+  "notifyFull": "Nom et message",
+  "notifyFullHelp": "Le texte peut aussi apparaître sur l'écran verrouillé, si le système le permet.",
+  "notificationNewMessage": "Nouveau message",
+  "notificationOpen": "Ouvrir",
+  "notificationChannel": "Messages"
 }

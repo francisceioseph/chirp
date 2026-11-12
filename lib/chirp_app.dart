@@ -11,6 +11,7 @@ import 'src/application/startup_controller.dart';
 import 'src/core/chirp_core.dart';
 import 'src/platform/file_picker.dart';
 import 'src/platform/key_vault.dart';
+import 'src/platform/notifier.dart';
 import 'src/ui/pages/startup_page.dart';
 import 'src/ui/theme/chirp_theme.dart';
 
@@ -21,6 +22,7 @@ class ChirpApp extends StatefulWidget {
     required this.vault,
     this.systemAccent,
     this.filePicker = const SystemFilePicker(),
+    this.notifier,
   });
 
   final ChirpCore core;
@@ -32,6 +34,9 @@ class ChirpApp extends StatefulWidget {
 
   /// O seletor de arquivos (os testes passam um falso).
   final FilePicker filePicker;
+
+  /// As notificações do sistema; sem ele (os testes de integração), nenhuma.
+  final Notifier? notifier;
 
   @override
   State<ChirpApp> createState() => _ChirpAppState();
@@ -98,8 +103,10 @@ class _ChirpAppState extends State<ChirpApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: ChirpLocalizations.supportedLocales,
-          builder: (context, child) =>
-              FilePickerScope(picker: widget.filePicker, child: child!),
+          builder: (context, child) => FilePickerScope(
+            picker: widget.filePicker,
+            child: NotifierScope(notifier: widget.notifier, child: child!),
+          ),
           home: StartupPage(controller: _startup, appearance: _appearance),
         );
       },

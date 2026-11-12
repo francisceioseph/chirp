@@ -8,6 +8,7 @@ import 'package:psito_chirp/chirp_app.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';
 import 'package:psito_chirp/src/platform/file_picker.dart';
 import 'package:psito_chirp/src/platform/key_vault.dart';
+import 'package:psito_chirp/src/platform/notifier.dart';
 
 const testFingerprint = '12345 67890 13579 24680 11223 34455';
 
@@ -102,6 +103,7 @@ class FakeStore implements ProfileStore {
   int typingCalls = 0;
   ChatSettings settings = const ChatSettings(readReceipts: true, typing: true);
   Appearance savedAppearance = const Appearance();
+  NotificationMode notifications = NotificationMode.sender;
   NetworkSettings network = const NetworkSettings();
 
   /// Quantas vezes a rede foi religada por mudar os ajustes.
@@ -469,6 +471,13 @@ class FakeStore implements ProfileStore {
   Future<Appearance> appearance() async => savedAppearance;
 
   @override
+  Future<NotificationMode> notificationMode() async => notifications;
+
+  @override
+  Future<void> setNotificationMode(NotificationMode mode) async =>
+      notifications = mode;
+
+  @override
   Future<NetworkSettings> networkSettings() async => network;
 
   @override
@@ -668,6 +677,7 @@ Future<void> pumpChirp(
   FakeVault? vault,
   Color? accent,
   FilePicker? filePicker,
+  Notifier? notifier,
 }) async {
   await tester.pumpWidget(
     ChirpApp(
@@ -675,9 +685,43 @@ Future<void> pumpChirp(
       vault: vault ?? FakeVault(),
       systemAccent: accent == null ? null : () async => accent,
       filePicker: filePicker ?? FakeFilePicker(),
+      notifier: notifier ?? FakeNotifier(),
     ),
   );
   await tester.pumpAndSettle();
+}
+
+/// As notificações, sem sistema: guarda as que estão na tela.
+class FakeNotifier implements Notifier {
+  /// Quantas vezes pediram para preparar (a permissão).
+  int inits = 0;
+
+  /// As notificações na tela, pelo contato.
+  final Map<int, ({String title, String body})> shown = {};
+
+  final _opened = StreamController<int>.broadcast();
+
+  /// Quem usa clica na notificação do contato.
+  void tap(int contactId) => _opened.add(contactId);
+
+  @override
+  Stream<int> get opened => _opened.stream;
+
+  @override
+  Future<bool> init({required String open, required String channel}) async {
+    inits++;
+    return true;
+  }
+
+  @override
+  Future<void> show({
+    required int contactId,
+    required String title,
+    required String body,
+  }) async => shown[contactId] = (title: title, body: body);
+
+  @override
+  Future<void> clear(int contactId) async => shown.remove(contactId);
 }
 
 /// O seletor de arquivos, sem janela: devolve o que o teste mandar.

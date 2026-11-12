@@ -1169,6 +1169,78 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'{size} GB'**
   String sizeGb(String size);
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'What the system shows when a message arrives and the conversation isn\'t on screen.'**
+  String get notificationsHelp;
+
+  /// No description provided for @notifyOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get notifyOff;
+
+  /// No description provided for @notifyHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'No content'**
+  String get notifyHidden;
+
+  /// No description provided for @notifyHiddenHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Only \"New message\", without name or text.'**
+  String get notifyHiddenHelp;
+
+  /// No description provided for @notifySender.
+  ///
+  /// In en, this message translates to:
+  /// **'Name only'**
+  String get notifySender;
+
+  /// No description provided for @notifySenderHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Who wrote, without the text.'**
+  String get notifySenderHelp;
+
+  /// No description provided for @notifyFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Name and message'**
+  String get notifyFull;
+
+  /// No description provided for @notifyFullHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The text can also show on the lock screen, if the system allows.'**
+  String get notifyFullHelp;
+
+  /// No description provided for @notificationNewMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get notificationNewMessage;
+
+  /// No description provided for @notificationOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get notificationOpen;
+
+  /// No description provided for @notificationChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notificationChannel;
 }
 
 class _ChirpLocalizationsDelegate

@@ -8,6 +8,7 @@ import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/message_status_icon.dart';
+import '../notification_text.dart';
 import '../time_format.dart';
 
 String contactName(ChirpLocalizations l10n, Contact contact) =>
@@ -49,14 +50,7 @@ class ConversationTile extends StatelessWidget {
         style: TextStyle(color: scheme.primary, fontStyle: FontStyle.italic),
       );
     } else if (last != null) {
-      final text = switch (last) {
-        ChatMessage(kind: MessageKind.nudge) => l10n.nudgePreview,
-        ChatMessage(kind: MessageKind.file, deleted: false) => l10n.filePreview(
-          last.text,
-        ),
-        ChatMessage(deleted: true) => l10n.messageDeleted,
-        _ => last.text.replaceAll('\n', ' '),
-      };
+      final text = messagePreview(l10n, last);
       subtitle = Row(
         children: [
           if (last.outgoing) ...[

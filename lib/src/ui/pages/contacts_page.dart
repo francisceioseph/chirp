@@ -7,17 +7,25 @@
 // Pela largura (o ShellTemplate): estreita, a conversa abre por cima; larga, ao lado,
 // e o contato num terceiro painel. Atalhos: Ctrl+N adicionar, Ctrl+K buscar,
 // Alt+setas trocar de conversa e Esc fechar o painel.
+//
+// As notificações também passam por aqui: uma mensagem que chega com a conversa fora
+// de vista (outra conversa aberta, ou o app sem foco) avisa pelo sistema, no modo
+// escolhido; o clique abre a conversa, e ler tira o aviso.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';
 import '../../core/chirp_core.dart';
+import '../../platform/notifier.dart';
 import '../atoms/chirp_app_bar.dart';
 import '../atoms/identity_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../failure_text.dart';
 import '../molecules/conversation_tile.dart';
+import '../notification_text.dart';
 import '../templates/centered_panel.dart';
 import '../templates/shell_template.dart';
 import 'add_contact_page.dart';
@@ -49,6 +57,101 @@ class _ContactsPageState extends State<ContactsPage> {
   bool _details = false;
 
   ContactsController get _controller => widget.controller;
+
+  Notifier? _notifier;
+  StreamSubscription<Conversation>? _arrivals;
+  StreamSubscription<int>? _taps;
+  late final AppLifecycleListener _lifecycle;
+
+  /// Os contatos com uma notificação na tela do sistema.
+  final Set<int> _shown = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _arrivals = _controller.arrivals.listen(_arrived);
+    _controller.addListener(_clearRead);
+    // Avisar os ouvintes no meio do build não pode: o estado de agora vai depois.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = WidgetsBinding.instance.lifecycleState;
+      if (mounted) {
+        _controller.foreground =
+            state == null || state == AppLifecycleState.resumed;
+      }
+    });
+    _lifecycle = AppLifecycleListener(
+      onStateChange: (state) =>
+          _controller.foreground = state == AppLifecycleState.resumed,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final notifier = NotifierScope.of(context);
+    if (notifier == _notifier) return;
+    _taps?.cancel();
+    _notifier = notifier;
+    if (notifier == null) return;
+    _taps = notifier.opened.listen(_openFromNotification);
+    final l10n = context.l10n;
+    _controller.store
+        .notificationMode()
+        .then((mode) async {
+          if (mode == NotificationMode.off) return;
+          await notifier.init(
+            open: l10n.notificationOpen,
+            channel: l10n.notificationChannel,
+          );
+        })
+        .catchError((Object _) {});
+  }
+
+  @override
+  void dispose() {
+    _arrivals?.cancel();
+    _taps?.cancel();
+    _lifecycle.dispose();
+    _controller.removeListener(_clearRead);
+    super.dispose();
+  }
+
+  Future<void> _arrived(Conversation conversation) async {
+    final notifier = _notifier;
+    final id = conversation.contact.id;
+    final inView = _controller.foreground && _controller.isViewing(id);
+    if (notifier == null || inView) return;
+    final NotificationMode mode;
+    try {
+      mode = await _controller.store.notificationMode();
+    } on CoreException {
+      return;
+    }
+    if (!mounted) return;
+    final text = notificationText(context.l10n, mode, conversation);
+    if (text == null) return;
+    _shown.add(id);
+    await notifier.show(contactId: id, title: text.title, body: text.body);
+  }
+
+  /// Uma conversa lida (aqui ou pela outra ponta) não precisa mais do aviso.
+  void _clearRead() {
+    for (final id in _shown.toList()) {
+      final conversation = _controller.conversations
+          .where((c) => c.contact.id == id)
+          .firstOrNull;
+      if (conversation == null || conversation.unread == 0) {
+        _shown.remove(id);
+        _notifier?.clear(id);
+      }
+    }
+  }
+
+  void _openFromNotification(int contactId) {
+    if (!mounted || _controller.byId(contactId) == null) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    _openConversation(contactId);
+  }
 
   int _columns(BuildContext context) =>
       ShellTemplate.columnsFor(MediaQuery.sizeOf(context).width);

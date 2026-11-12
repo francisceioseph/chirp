@@ -306,6 +306,10 @@ class ChatSettings {
   final bool typing;
 }
 
+/// O que as notificações mostram: nada, só "Nova mensagem", o nome de quem mandou,
+/// ou o nome e o texto. O padrão é o nome.
+enum NotificationMode { off, hidden, sender, full }
+
 /// Claro, escuro ou o que o sistema disser.
 enum AppearanceMode { system, light, dark }
 
@@ -473,6 +477,10 @@ abstract interface class ProfileStore {
   Future<NetworkStatus> networkStatus();
 
   Future<void> setAppearance(Appearance appearance);
+
+  Future<NotificationMode> notificationMode();
+
+  Future<void> setNotificationMode(NotificationMode mode);
 }
 
 /// O núcleo de verdade, pela ponte.
@@ -753,6 +761,19 @@ class _BridgeStore implements ProfileStore {
       relayConnected: n.relayConnected,
     );
   });
+
+  @override
+  Future<NotificationMode> notificationMode() => _guardAsync(
+    () async =>
+        NotificationMode.values[(await _store.notificationMode()).index],
+  );
+
+  @override
+  Future<void> setNotificationMode(NotificationMode mode) => _guardAsync(
+    () => _store.setNotificationMode(
+      mode: bridge.NotificationMode.values[mode.index],
+    ),
+  );
 
   @override
   Future<Appearance> appearance() => _guardAsync(() async {

@@ -176,5 +176,17 @@
   "sizeBytes": "{size} B",
   "sizeKb": "{size} KB",
   "sizeMb": "{size} MB",
-  "sizeGb": "{size} GB"
+  "sizeGb": "{size} GB",
+  "notificationsTitle": "Notificações",
+  "notificationsHelp": "O que o sistema mostra quando chega uma mensagem e a conversa não está na tela.",
+  "notifyOff": "Desligadas",
+  "notifyHidden": "Sem conteúdo",
+  "notifyHiddenHelp": "Só \"Nova mensagem\", sem nome nem texto.",
+  "notifySender": "Só o nome",
+  "notifySenderHelp": "Quem escreveu, sem o texto.",
+  "notifyFull": "Nome e mensagem",
+  "notifyFullHelp": "O texto pode aparecer também na tela bloqueada, se o sistema deixar.",
+  "notificationNewMessage": "Nova mensagem",
+  "notificationOpen": "Abrir",
+  "notificationChannel": "Mensagens"
 }

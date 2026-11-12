@@ -299,5 +299,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "notificationsTitle": "Notifications",
+  "notificationsHelp": "What the system shows when a message arrives and the conversation isn't on screen.",
+  "notifyOff": "Off",
+  "notifyHidden": "No content",
+  "notifyHiddenHelp": "Only \"New message\", without name or text.",
+  "notifySender": "Name only",
+  "notifySenderHelp": "Who wrote, without the text.",
+  "notifyFull": "Name and message",
+  "notifyFullHelp": "The text can also show on the lock screen, if the system allows.",
+  "notificationNewMessage": "New message",
+  "notificationOpen": "Open",
+  "notificationChannel": "Messages"
 }

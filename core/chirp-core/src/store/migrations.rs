@@ -153,6 +153,12 @@ const MIGRATIONS: &[&str] = &[
          received  INTEGER NOT NULL,
          state     INTEGER NOT NULL
      );",
+    // 7: o que as notificações mostram (fase 6); o padrão é o nome, sem o texto.
+    "CREATE TABLE notifications (
+         id   INTEGER PRIMARY KEY CHECK (id = 1),
+         mode INTEGER NOT NULL
+     );
+     INSERT INTO notifications (id, mode) VALUES (1, 2);",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

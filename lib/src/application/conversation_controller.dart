@@ -57,14 +57,29 @@ class ConversationController extends ChangeNotifier {
 
   bool get theyAreTyping => contacts.isTyping(contactId);
 
+  bool _opened = false;
+
   Future<void> open() async {
+    contacts.viewing(contactId, open: true);
+    _opened = true;
     _subscription = contacts.events.listen((event) {
       if (event.contactId == contactId || event.contactId == 0) {
         if (event.kind == CoreEventKind.messages) reload();
       }
     });
-    contacts.addListener(_notify);
+    _foreground = contacts.foreground;
+    contacts.addListener(_contactsChanged);
     await reload(first: true);
+  }
+
+  bool _foreground = true;
+
+  /// O app voltou à frente: o que chegou enquanto isso conta como lido agora.
+  void _contactsChanged() {
+    final back = contacts.foreground && !_foreground;
+    _foreground = contacts.foreground;
+    if (back && _messages.any((m) => m.unread)) reload();
+    _notify();
   }
 
   /// Relê as mensagens carregadas (e as novas), e marca como lidas.
@@ -91,7 +106,8 @@ class ConversationController extends ChangeNotifier {
       _messages = fresh;
       _loaded = true;
       _notify();
-      if (fresh.any((m) => m.unread)) {
+      // Com o app em segundo plano, ninguém leu: fica para quando ele voltar.
+      if (contacts.foreground && fresh.any((m) => m.unread)) {
         await _store.markRead(contactId);
         await contacts.reload();
       }
@@ -232,8 +248,9 @@ class ConversationController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (_opened) contacts.viewing(contactId, open: false);
     _subscription?.cancel();
-    contacts.removeListener(_notify);
+    contacts.removeListener(_contactsChanged);
     nudges.dispose();
     super.dispose();
   }

@@ -20,6 +20,7 @@ use crate::invite::Invite;
 use crate::messages::{self, Kind, Message, Status};
 use crate::network;
 use crate::node::{Node, NodeEvent, Reach};
+use crate::notifications;
 use crate::passphrase;
 use crate::profile::StoredProfile;
 use crate::random::secret_bytes;
@@ -348,6 +349,16 @@ pub struct ConversationView {
 pub struct ChatSettings {
     pub read_receipts: bool,
     pub typing: bool,
+}
+
+/// O que as notificações mostram: nada, só "Nova mensagem", o nome, ou o nome e o
+/// texto.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NotificationMode {
+    Off,
+    Hidden,
+    Sender,
+    Full,
 }
 
 /// Claro, escuro ou o que o sistema disser.
@@ -857,6 +868,27 @@ impl ChirpStore {
             messages::Settings {
                 read_receipts: settings.read_receipts,
                 typing: settings.typing,
+            },
+        )
+    }
+
+    pub fn notification_mode(&self) -> Result<NotificationMode, CoreError> {
+        Ok(match notifications::get(self.lock()?.conn())? {
+            notifications::Mode::Off => NotificationMode::Off,
+            notifications::Mode::Hidden => NotificationMode::Hidden,
+            notifications::Mode::Sender => NotificationMode::Sender,
+            notifications::Mode::Full => NotificationMode::Full,
+        })
+    }
+
+    pub fn set_notification_mode(&self, mode: NotificationMode) -> Result<(), CoreError> {
+        notifications::set(
+            self.lock()?.conn(),
+            match mode {
+                NotificationMode::Off => notifications::Mode::Off,
+                NotificationMode::Hidden => notifications::Mode::Hidden,
+                NotificationMode::Sender => notifications::Mode::Sender,
+                NotificationMode::Full => notifications::Mode::Full,
             },
         )
     }

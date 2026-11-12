@@ -11,6 +11,7 @@ import '../molecules/core_status_chip.dart';
 import '../organisms/appearance_card.dart';
 import '../organisms/chat_settings_card.dart';
 import '../organisms/network_card.dart';
+import '../organisms/notifications_card.dart';
 import '../organisms/profile_card.dart';
 import '../templates/centered_panel.dart';
 
@@ -44,6 +45,8 @@ class ProfilePage extends StatelessWidget {
         if (store case final store?) ...[
           const SizedBox(height: 16),
           ChatSettingsCard(store: store),
+          const SizedBox(height: 16),
+          NotificationsCard(store: store),
           const SizedBox(height: 16),
           NetworkCard(store: store),
         ],

@@ -585,4 +585,40 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String sizeGb(String size) {
     return '$size GB';
   }
+
+  @override
+  String get notificationsTitle => '通知';
+
+  @override
+  String get notificationsHelp => '当消息到达而对话不在屏幕上时，系统显示的内容。';
+
+  @override
+  String get notifyOff => '关闭';
+
+  @override
+  String get notifyHidden => '无内容';
+
+  @override
+  String get notifyHiddenHelp => '只显示“新消息”，不含名字和文字。';
+
+  @override
+  String get notifySender => '仅名字';
+
+  @override
+  String get notifySenderHelp => '谁发来的，不含文字。';
+
+  @override
+  String get notifyFull => '名字和消息';
+
+  @override
+  String get notifyFullHelp => '如果系统允许，文字也可能显示在锁屏上。';
+
+  @override
+  String get notificationNewMessage => '新消息';
+
+  @override
+  String get notificationOpen => '打开';
+
+  @override
+  String get notificationChannel => '消息';
 }

@@ -176,5 +176,17 @@
   "sizeBytes": "{size} Б",
   "sizeKb": "{size} КБ",
   "sizeMb": "{size} МБ",
-  "sizeGb": "{size} ГБ"
+  "sizeGb": "{size} ГБ",
+  "notificationsTitle": "Уведомления",
+  "notificationsHelp": "Что система показывает, когда приходит сообщение, а беседа не на экране.",
+  "notifyOff": "Выключены",
+  "notifyHidden": "Без содержания",
+  "notifyHiddenHelp": "Только «Новое сообщение», без имени и текста.",
+  "notifySender": "Только имя",
+  "notifySenderHelp": "Кто написал, без текста.",
+  "notifyFull": "Имя и сообщение",
+  "notifyFullHelp": "Текст может появиться и на экране блокировки, если система это позволяет.",
+  "notificationNewMessage": "Новое сообщение",
+  "notificationOpen": "Открыть",
+  "notificationChannel": "Сообщения"
 }

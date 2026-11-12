@@ -616,4 +616,43 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   String sizeGb(String size) {
     return '$size ГБ';
   }
+
+  @override
+  String get notificationsTitle => 'Уведомления';
+
+  @override
+  String get notificationsHelp =>
+      'Что система показывает, когда приходит сообщение, а беседа не на экране.';
+
+  @override
+  String get notifyOff => 'Выключены';
+
+  @override
+  String get notifyHidden => 'Без содержания';
+
+  @override
+  String get notifyHiddenHelp =>
+      'Только «Новое сообщение», без имени и текста.';
+
+  @override
+  String get notifySender => 'Только имя';
+
+  @override
+  String get notifySenderHelp => 'Кто написал, без текста.';
+
+  @override
+  String get notifyFull => 'Имя и сообщение';
+
+  @override
+  String get notifyFullHelp =>
+      'Текст может появиться и на экране блокировки, если система это позволяет.';
+
+  @override
+  String get notificationNewMessage => 'Новое сообщение';
+
+  @override
+  String get notificationOpen => 'Открыть';
+
+  @override
+  String get notificationChannel => 'Сообщения';
 }

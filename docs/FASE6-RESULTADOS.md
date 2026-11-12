@@ -39,3 +39,30 @@ O que a fase 6 do `docs/PLANO.md` (seção 13, com a 6.7 e a 9) pediu, o que foi
 - Escolher o limite do baixar sozinho, e "só de contatos verificados".
 - Salvar no iOS (lá, o caminho é o "Compartilhar").
 - O transporte mais rápido para arquivos é o que o iroh escolhe; o Bluetooth (fase 8) não leva arquivos grandes.
+
+## Parte 2: notificações
+
+### Feito
+
+- **Núcleo** (`notifications.rs`, migração 7): o que as notificações mostram, no banco como os outros ajustes. São quatro modos: desligadas, sem conteúdo (só "Nova mensagem"), só o nome e nome e mensagem. O padrão é só o nome: o texto só sai do app para a tela do sistema, e para a tela bloqueada, se quem usa pedir.
+- **App**:
+  - o `Notifier` (`platform/notifier.dart`, pelo `flutter_local_notifications`), no mesmo molde do seletor de arquivos: o D-Bus no Linux, o Windows, o macOS, o Android (canal "Mensagens", com o texto escondido na tela bloqueada) e o iOS. Pede a permissão só com as notificações ligadas;
+  - uma notificação por contato, a nova no lugar da anterior. Avisa o que chega com a conversa fora de vista, ou com o app sem foco. O clique abre a conversa, e ler, aqui ou em outro lugar, tira o aviso. O que já estava no banco ao abrir não avisa;
+  - com o app sem foco, a conversa aberta não marca mais como lido o que chega (antes marcava, e mandava o recibo de leitura sem ninguém olhando). Marca quando o app volta à frente;
+  - o cartão "Notificações" no perfil, com as quatro opções;
+  - 12 textos novos nos sete idiomas.
+
+### Conferido
+
+- Rust: 103 testes (os novos: o padrão, o que foi escolhido e um código estranho), `clippy` e `fmt`.
+- Dart: 217 testes. O `notifications_test` cobre os quatro modos, o que já estava no banco, a conversa aberta, o app sem foco e de volta, o clique e o ler, o cartão, e o tamanho em 240×160 e 320×568, com os rótulos.
+- `integration_test/notifier_test.dart`: uma notificação de verdade no Linux, mostrada e tirada.
+
+### Revisão
+
+- No Linux, o plugin não tem o "o app abriu por uma notificação", e o erro derrubava a preparação inteira: nenhuma notificação aparecia. O teste de integração passava mesmo assim, porque o erro era engolido. Agora o `init` diz se deu certo, e o teste confere.
+
+### Falta (das notificações e do segundo plano)
+
+- No desktop, o clique abre a conversa, mas não traz a janela para a frente.
+- A bandeja no desktop, iniciar com o sistema e o serviço em primeiro plano no Android, para receber com a janela fechada.

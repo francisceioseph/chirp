@@ -151,6 +151,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   NetworkStatus dco_decode_network_status(dynamic raw);
 
   @protected
+  NotificationMode dco_decode_notification_mode(dynamic raw);
+
+  @protected
   FileView? dco_decode_opt_box_autoadd_file_view(dynamic raw);
 
   @protected
@@ -318,6 +321,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   NetworkStatus sse_decode_network_status(SseDeserializer deserializer);
+
+  @protected
+  NotificationMode sse_decode_notification_mode(SseDeserializer deserializer);
 
   @protected
   FileView? sse_decode_opt_box_autoadd_file_view(SseDeserializer deserializer);
@@ -527,6 +533,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_network_status(NetworkStatus self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_notification_mode(
+    NotificationMode self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_file_view(

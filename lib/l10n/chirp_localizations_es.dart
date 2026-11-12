@@ -611,4 +611,42 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   String sizeGb(String size) {
     return '$size GB';
   }
+
+  @override
+  String get notificationsTitle => 'Notificaciones';
+
+  @override
+  String get notificationsHelp =>
+      'Lo que muestra el sistema cuando llega un mensaje y la conversación no está en pantalla.';
+
+  @override
+  String get notifyOff => 'Desactivadas';
+
+  @override
+  String get notifyHidden => 'Sin contenido';
+
+  @override
+  String get notifyHiddenHelp => 'Solo \"Nuevo mensaje\", sin nombre ni texto.';
+
+  @override
+  String get notifySender => 'Solo el nombre';
+
+  @override
+  String get notifySenderHelp => 'Quién escribió, sin el texto.';
+
+  @override
+  String get notifyFull => 'Nombre y mensaje';
+
+  @override
+  String get notifyFullHelp =>
+      'El texto también puede aparecer en la pantalla de bloqueo, si el sistema lo permite.';
+
+  @override
+  String get notificationNewMessage => 'Nuevo mensaje';
+
+  @override
+  String get notificationOpen => 'Abrir';
+
+  @override
+  String get notificationChannel => 'Mensajes';
 }

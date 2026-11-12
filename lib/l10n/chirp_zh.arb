@@ -176,5 +176,17 @@
   "sizeBytes": "{size} B",
   "sizeKb": "{size} KB",
   "sizeMb": "{size} MB",
-  "sizeGb": "{size} GB"
+  "sizeGb": "{size} GB",
+  "notificationsTitle": "通知",
+  "notificationsHelp": "当消息到达而对话不在屏幕上时，系统显示的内容。",
+  "notifyOff": "关闭",
+  "notifyHidden": "无内容",
+  "notifyHiddenHelp": "只显示“新消息”，不含名字和文字。",
+  "notifySender": "仅名字",
+  "notifySenderHelp": "谁发来的，不含文字。",
+  "notifyFull": "名字和消息",
+  "notifyFullHelp": "如果系统允许，文字也可能显示在锁屏上。",
+  "notificationNewMessage": "新消息",
+  "notificationOpen": "打开",
+  "notificationChannel": "消息"
 }
