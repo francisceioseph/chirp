@@ -14,16 +14,30 @@ Future<void> showRenameDialog(
   BuildContext context, {
   required String current,
   required Future<CoreFailure?> Function(String name) rename,
+  String? title,
+  String? label,
 }) => showDialog<void>(
   context: context,
-  builder: (context) => _RenameDialog(current: current, rename: rename),
+  builder: (context) => _RenameDialog(
+    current: current,
+    rename: rename,
+    title: title,
+    label: label,
+  ),
 );
 
 class _RenameDialog extends StatefulWidget {
-  const _RenameDialog({required this.current, required this.rename});
+  const _RenameDialog({
+    required this.current,
+    required this.rename,
+    this.title,
+    this.label,
+  });
 
   final String current;
   final Future<CoreFailure?> Function(String name) rename;
+  final String? title;
+  final String? label;
 
   @override
   State<_RenameDialog> createState() => _RenameDialogState();
@@ -60,12 +74,13 @@ class _RenameDialogState extends State<_RenameDialog> {
     final l10n = context.l10n;
     final failure = _failure;
     return AlertDialog(
-      title: Text(l10n.renameTitle),
+      title: Text(widget.title ?? l10n.renameTitle),
       content: SizedBox(
         width: 360,
         child: NameField(
           controller: _name,
           autofocus: true,
+          label: widget.label,
           errorText: failure == null ? null : failureText(l10n, failure),
           onSubmitted: (_) => _save(),
         ),

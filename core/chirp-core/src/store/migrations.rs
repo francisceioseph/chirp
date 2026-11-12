@@ -204,6 +204,23 @@ const MIGRATIONS: &[&str] = &[
      ALTER TABLE contacts ADD COLUMN photo_sent BLOB;",
     // 13: o Bluetooth (fase 8), desligado por padrão.
     "ALTER TABLE network ADD COLUMN bluetooth INTEGER NOT NULL DEFAULT 0;",
+    // 14: os grupos (fase 9). O grupo é uma linha de `contacts` (o estado 2, com o id
+    // do grupo no lugar da chave), para a conversa ser a mesma; os membros sem mim.
+    "CREATE TABLE groups (
+         contact_id INTEGER PRIMARY KEY REFERENCES contacts (id) ON DELETE CASCADE,
+         group_id   BLOB NOT NULL UNIQUE,
+         admin      BLOB NOT NULL,
+         version    INTEGER NOT NULL,
+         active     INTEGER NOT NULL
+     );
+     CREATE TABLE group_members (
+         group_ref    INTEGER NOT NULL REFERENCES groups (contact_id) ON DELETE CASCADE,
+         identity_key BLOB NOT NULL,
+         endpoint_id  BLOB NOT NULL,
+         name         TEXT NOT NULL,
+         PRIMARY KEY (group_ref, identity_key)
+     );
+     ALTER TABLE messages ADD COLUMN author BLOB;",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

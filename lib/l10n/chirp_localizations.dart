@@ -1757,6 +1757,126 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Turning this off removes your photo from their Chirp.'**
   String get photoAllowedHelp;
+
+  /// No description provided for @groupNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get groupNew;
+
+  /// No description provided for @groupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get groupName;
+
+  /// No description provided for @groupPickMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Who is in it'**
+  String get groupPickMembers;
+
+  /// No description provided for @groupCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get groupCreate;
+
+  /// No description provided for @groupAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get groupAdd;
+
+  /// No description provided for @groupNoOneToAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts to add yet. Add someone first, then bring them into the group.'**
+  String get groupNoOneToAdd;
+
+  /// No description provided for @groupHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Each member gets your messages encrypted, straight from your device, with no server. For now they reach only members who are also your contacts.'**
+  String get groupHelp;
+
+  /// No description provided for @groupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get groupLabel;
+
+  /// No description provided for @groupClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'You are no longer in this group.'**
+  String get groupClosed;
+
+  /// No description provided for @groupMemberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Only you} one{You and {count} other} other{You and {count} others}}'**
+  String groupMemberCount(int count);
+
+  /// No description provided for @groupAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get groupAdmin;
+
+  /// No description provided for @groupNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not your contact: your messages do not reach them yet'**
+  String get groupNotConnected;
+
+  /// No description provided for @groupAddMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add members'**
+  String get groupAddMembers;
+
+  /// No description provided for @groupRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from the group'**
+  String get groupRemove;
+
+  /// No description provided for @groupRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename group'**
+  String get groupRename;
+
+  /// No description provided for @groupLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get groupLeave;
+
+  /// No description provided for @groupLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}?'**
+  String groupLeaveTitle(String name);
+
+  /// No description provided for @groupLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The members are told you left. The messages stay here, but you can no longer write or receive in this group.'**
+  String get groupLeaveBody;
+
+  /// No description provided for @groupNotAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the group admin can do that.'**
+  String get groupNotAdmin;
+
+  /// No description provided for @groupTooMany.
+  ///
+  /// In en, this message translates to:
+  /// **'A group has at most 64 members.'**
+  String get groupTooMany;
 }
 
 class _ChirpLocalizationsDelegate

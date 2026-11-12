@@ -77,10 +77,12 @@ Content { bytes message_id = 1 (16 aleatórios);
                        Reaction reaction = 8; Typing typing = 9; Nudge nudge = 10;
                        PeerProfile profile = 11; Peer addrs = 12;
                        FileOffer file = 16; MailboxInfo mailbox = 17;
-                       PeerPhoto photo = 18; };
+                       PeerPhoto photo = 18; GroupUpdate group_update = 20;
+                       GroupLeave group_leave = 21; };
           uint64 sent_at = 13 (ms, relógio de quem manda, só para mostrar);
           uint64 lamport = 14 (a ordem na conversa);
-          bytes padding = 15; }
+          bytes padding = 15;
+          bytes group = 19 (fase 9: o id do grupo, 16 bytes; vazio na conversa a dois); }
 Hello    { bytes token = 1; PeerProfile profile = 2; Peer peer = 3;
            MailboxInfo mailbox = 4 (fase 7: a caixa de quem leu, com a ficha de quem convidou); }
 Welcome  { PeerProfile profile = 1; Peer peer = 2; }
@@ -267,6 +269,22 @@ token = hex(HMAC-SHA256(chave de descoberta, "chirp-discovery-v1" || época (u64
 Vetores: `token(32 zeros, 0) = a9b1226a9e540fb5b7bb` e `token(32 × 0x07, 1888888) = 1583b99009cc653054cc` (`discovery::tests`).
 
 Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._udp` no `NSBonjourServices`; no iOS, o multicast de verdade ainda pede à Apple o entitlement `com.apple.developer.networking.multicast`. No Android, falta pegar o `MulticastLock` (a permissão já está no manifesto). Sem mDNS, o resto funciona: só não se reencontra quem mudou de IP.
+
+## Os grupos (fase 9)
+
+```
+GroupUpdate { bytes group_id = 1 (16); string name = 2; uint64 version = 3;
+              bytes admin = 4 (a chave de identidade do admin);
+              repeated GroupMember members = 5 (todos, o admin e quem recebe também); }
+GroupMember { bytes identity_key = 1 (33); bytes endpoint_id = 2 (32); string name = 3; }
+GroupLeave  { bytes group_id = 1; }
+```
+
+- **Sem Sender Keys**: cada mensagem do grupo vai a cada membro pela sessão a dois, com o mesmo `message_id` e o `Content.group` preenchido. Sem servidor, cada membro recebe a sua cópia de qualquer jeito; as Sender Keys só economizariam a cifra, e perderiam a recuperação do Double Ratchet depois de um vazamento. Quem sai deixa de receber, sem rotação de chaves.
+- **Quem muda o grupo é o admin**: o `GroupUpdate` vai a cada membro pela sessão a dois (com o `Content.group` vazio). Quem recebe aceita se quem manda é o `admin` do update e, para um grupo conhecido, também o admin guardado, com `version` maior. Um grupo novo só entra se quem recebe está nos membros. Um update sem quem recebe é a remoção: a conversa fica só para ler. Nome e membros passam pela regra dos nomes do perfil; no máximo 64 membros, sem repetidos, e o admin entre eles.
+- **Sair**: o `GroupLeave` vai a cada membro, que tira quem mandou. Se era o admin, o novo é o membro de menor `identity_key` (comparação de bytes), a mesma conta em todos os aparelhos.
+- **No grupo, por enquanto**: `Text`, `Edit` e `Delete` (só do autor, conferido pela chave de quem mandou). Reações, arquivos, chamar atenção, "digitando" e recibos de leitura ainda não. Uma mensagem minha fica "entregue" quando nenhuma cópia espera mais na caixa de saída.
+- **Membros que não são contatos**: aparecem pelo nome que o admin mandou, sem receber o que eu escrevo (não há sessão). Apresentar os membros entre si é a parte 2.
 
 ## O Bluetooth LE (fase 8)
 

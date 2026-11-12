@@ -155,6 +155,33 @@ pub struct ContactView {
     pub photo: Option<Vec<u8>>,
     /// Está entre os que veem a minha foto, no modo "só os marcados".
     pub photo_allowed: bool,
+    /// É um grupo (fase 9), não uma pessoa.
+    pub is_group: bool,
+    /// Um grupo de que ainda sou membro (falso também para quem não é grupo).
+    pub group_active: bool,
+}
+
+/// Um grupo como a UI mostra.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupView {
+    pub id: i64,
+    pub name: String,
+    pub i_am_admin: bool,
+    /// Ainda sou membro.
+    pub active: bool,
+    /// Os outros membros.
+    pub members: Vec<GroupMemberView>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupMemberView {
+    /// A chave de identidade (pública): o que identifica o membro para tirar.
+    pub key: Vec<u8>,
+    pub name: String,
+    pub avatar_seed: u32,
+    /// O contato, se é um: só assim as minhas mensagens chegam a ele.
+    pub contact_id: Option<i64>,
+    pub is_admin: bool,
 }
 
 /// Por onde um contato foi alcançado da última vez.
@@ -228,10 +255,16 @@ impl From<Contact> for ContactView {
             avatar_seed: avatar_seed(&contact.identity_key),
             display_name: contact.display_name,
             verified: contact.verified,
-            established: contact.state == ContactState::Established,
+            // Um grupo não espera aperto de mão: a conversa vale desde já.
+            established: matches!(
+                contact.state,
+                ContactState::Established | ContactState::Group
+            ),
             reach: ContactReach::Unknown,
             photo: contact.photo,
             photo_allowed: contact.photo_allowed,
+            is_group: contact.state == ContactState::Group,
+            group_active: contact.group_active,
         }
     }
 }
@@ -354,6 +387,9 @@ pub struct MessageView {
     pub file: Option<FileView>,
     /// Minha, e esperando na caixa postal do contato até ele buscar.
     pub in_mailbox: bool,
+    /// Num grupo, quem escreveu (o nome e a semente do avatar); nada nas minhas.
+    pub author_name: Option<String>,
+    pub author_seed: Option<u32>,
 }
 
 /// A caixa postal deste aparelho, como a UI mostra.
@@ -377,7 +413,29 @@ fn with_file(conn: &rusqlite::Connection, m: Message) -> MessageView {
     } else {
         None
     };
-    MessageView { file, ..m.into() }
+    let author = m
+        .author
+        .as_deref()
+        .map(|key| author_of(conn, m.contact_id, key));
+    MessageView {
+        file,
+        author_seed: m.author.as_deref().map(avatar_seed),
+        author_name: author,
+        ..m.into()
+    }
+}
+
+/// O nome de quem escreveu num grupo: o do contato, ou o que o grupo diz.
+fn author_of(conn: &rusqlite::Connection, group: i64, key: &[u8]) -> String {
+    if let Ok(Some(contact)) = crate::contacts::by_identity(conn, key) {
+        return contact.display_name;
+    }
+    conn.query_row(
+        "SELECT name FROM group_members WHERE group_ref = ?1 AND identity_key = ?2",
+        (group, key),
+        |r| r.get(0),
+    )
+    .unwrap_or_default()
 }
 
 impl From<Message> for MessageView {
@@ -411,6 +469,8 @@ impl From<Message> for MessageView {
             can_delete_for_everyone: own && age <= messages::DELETE_WINDOW_MS,
             file: None,
             in_mailbox: m.in_mailbox,
+            author_name: None,
+            author_seed: None,
         }
     }
 }
@@ -590,11 +650,28 @@ impl ChirpStore {
 
     /// Pede a entrega ao contato, se a rede está ligada. Sem ela, fica na caixa de
     /// saída até ligar.
+    /// Entrega o que espera na caixa de saída da conversa: a do contato, ou a de cada
+    /// membro do grupo.
     fn flush(&self, contact_id: i64) {
-        if let Ok(slot) = self.node.lock() {
-            if let Some(node) = slot.as_ref() {
-                node.flush(contact_id);
-            }
+        let Some(node) = self.running() else {
+            return;
+        };
+        let members: Vec<i64> = self
+            .lock()
+            .ok()
+            .and_then(|s| {
+                let me = crate::session::me(&s).ok()?;
+                crate::groups::get(s.conn(), &me.public(), contact_id).ok()
+            })
+            .map(|g| {
+                g.members
+                    .iter()
+                    .filter_map(|m| m.contact.as_ref().map(|c| c.id))
+                    .collect()
+            })
+            .unwrap_or_else(|| vec![contact_id]);
+        for id in members {
+            node.flush(id);
         }
     }
 
@@ -616,6 +693,89 @@ impl ChirpStore {
             reach,
             ..contact.into()
         }
+    }
+
+    // ------------------------------------------------------------ grupos (fase 9)
+
+    /// Cria um grupo com estes contatos, com quem usa de admin.
+    pub fn create_group(
+        &self,
+        name: String,
+        member_ids: Vec<i64>,
+    ) -> Result<ContactView, CoreError> {
+        let contact = crate::groups::create(&mut *self.lock()?, &name, &member_ids)?;
+        self.flush(contact.id);
+        Ok(self.view(contact))
+    }
+
+    pub fn group(&self, id: i64) -> Result<GroupView, CoreError> {
+        let store = self.lock()?;
+        let me = crate::session::me(&store)?;
+        let g = crate::groups::get(store.conn(), &me.public(), id)?;
+        Ok(GroupView {
+            id: g.id,
+            name: g.name,
+            i_am_admin: g.i_am_admin,
+            active: g.active,
+            members: g
+                .members
+                .into_iter()
+                .map(|m| GroupMemberView {
+                    avatar_seed: avatar_seed(&m.identity_key),
+                    is_admin: m.identity_key == g.admin,
+                    name: m
+                        .contact
+                        .as_ref()
+                        .map_or(m.name, |c| c.display_name.clone()),
+                    contact_id: m.contact.map(|c| c.id),
+                    key: m.identity_key,
+                })
+                .collect(),
+        })
+    }
+
+    pub fn rename_group(&self, id: i64, name: String) -> Result<(), CoreError> {
+        crate::groups::rename(&mut *self.lock()?, id, &name)?;
+        self.flush(id);
+        Ok(())
+    }
+
+    pub fn add_group_members(&self, id: i64, member_ids: Vec<i64>) -> Result<(), CoreError> {
+        crate::groups::add(&mut *self.lock()?, id, &member_ids)?;
+        self.flush(id);
+        Ok(())
+    }
+
+    /// Tira um membro (pela chave que o `GroupView` dá). Ele fica sabendo.
+    pub fn remove_group_member(&self, id: i64, key: Vec<u8>) -> Result<(), CoreError> {
+        let removed = crate::contacts::by_identity(self.lock()?.conn(), &key)?;
+        crate::groups::remove(&mut *self.lock()?, id, &key)?;
+        self.flush(id);
+        // O tirado recebe o grupo sem ele.
+        if let Some(contact) = removed {
+            self.flush(contact.id);
+        }
+        Ok(())
+    }
+
+    pub fn leave_group(&self, id: i64) -> Result<(), CoreError> {
+        // Quem avisar: os membros de antes de sair.
+        let before: Vec<i64> = {
+            let store = self.lock()?;
+            let me = crate::session::me(&store)?;
+            crate::groups::get(store.conn(), &me.public(), id)?
+                .members
+                .iter()
+                .filter_map(|m| m.contact.as_ref().map(|c| c.id))
+                .collect()
+        };
+        crate::groups::leave(&mut *self.lock()?, id)?;
+        if let Some(node) = self.running() {
+            for contact in before {
+                node.flush(contact);
+            }
+        }
+        Ok(())
     }
 
     pub fn network_settings(&self) -> Result<NetworkSettings, CoreError> {

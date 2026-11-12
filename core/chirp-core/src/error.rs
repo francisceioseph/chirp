@@ -75,6 +75,15 @@ pub enum CoreError {
     /// A caixa postal recusou o código: vencido, já usado ou de outra caixa.
     #[error("the mailbox refused the code")]
     MailboxRefused,
+    /// Só o admin do grupo muda o grupo.
+    #[error("only the group admin can do that")]
+    NotAdmin,
+    /// Saí do grupo (ou fui tirado): a conversa é só para ler.
+    #[error("not a member of the group")]
+    NotAMember,
+    /// O grupo passaria de 64 membros.
+    #[error("too many members")]
+    TooManyMembers,
     /// Falha de disco ou do SQLite que não é nenhuma das acima.
     #[error("storage failure")]
     Storage,

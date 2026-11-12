@@ -15,19 +15,23 @@ typedef MessageChoice = ({MessageAction? action, int? reaction});
 
 Future<MessageChoice?> showMessageActions(
   BuildContext context,
-  ChatMessage message,
-) => showModalBottomSheet<MessageChoice>(
+  ChatMessage message, {
+  bool reactions = true,
+}) => showModalBottomSheet<MessageChoice>(
   context: context,
   showDragHandle: true,
   // A lista inteira cabe numa janela comum; numa pequena, ela rola.
   isScrollControlled: true,
-  builder: (context) => _MessageActions(message: message),
+  builder: (context) => _MessageActions(message: message, reactions: reactions),
 );
 
 class _MessageActions extends StatelessWidget {
-  const _MessageActions({required this.message});
+  const _MessageActions({required this.message, this.reactions = true});
 
   final ChatMessage message;
+
+  /// Os grupos ainda não têm reações.
+  final bool reactions;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +51,7 @@ class _MessageActions extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (text)
+            if (text && reactions)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Wrap(

@@ -895,4 +895,74 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get photoAllowedHelp => '关闭后，你的照片会从对方的 Chirp 中删除。';
+
+  @override
+  String get groupNew => '新建群组';
+
+  @override
+  String get groupName => '群组名称';
+
+  @override
+  String get groupPickMembers => '成员';
+
+  @override
+  String get groupCreate => '创建';
+
+  @override
+  String get groupAdd => '添加';
+
+  @override
+  String get groupNoOneToAdd => '还没有可以添加的联系人。先添加联系人，再把他们拉进群组。';
+
+  @override
+  String get groupHelp => '每位成员都会直接从你的设备收到加密的消息，不经过服务器。目前只有同时也是你联系人的成员能收到。';
+
+  @override
+  String get groupLabel => '群组';
+
+  @override
+  String get groupClosed => '你已不在这个群组中。';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '你和另外 $count 人',
+      zero: '只有你',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupAdmin => '管理员';
+
+  @override
+  String get groupNotConnected => '不是你的联系人：你的消息暂时到不了对方';
+
+  @override
+  String get groupAddMembers => '添加成员';
+
+  @override
+  String get groupRemove => '移出群组';
+
+  @override
+  String get groupRename => '重命名群组';
+
+  @override
+  String get groupLeave => '退出群组';
+
+  @override
+  String groupLeaveTitle(String name) {
+    return '退出 $name？';
+  }
+
+  @override
+  String get groupLeaveBody => '成员会知道你已退出。消息会留在这里，但你不能再在这个群组里收发消息。';
+
+  @override
+  String get groupNotAdmin => '只有群组管理员可以这样做。';
+
+  @override
+  String get groupTooMany => '一个群组最多 64 名成员。';
 }

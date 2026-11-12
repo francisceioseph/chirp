@@ -947,4 +947,79 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   @override
   String get photoAllowedHelp =>
       'Al desactivarlo, tu foto se borra de su Chirp.';
+
+  @override
+  String get groupNew => 'Nuevo grupo';
+
+  @override
+  String get groupName => 'Nombre del grupo';
+
+  @override
+  String get groupPickMembers => 'Quién está';
+
+  @override
+  String get groupCreate => 'Crear';
+
+  @override
+  String get groupAdd => 'Añadir';
+
+  @override
+  String get groupNoOneToAdd =>
+      'Aún no hay contactos para añadir. Añade a alguien primero y luego súmalo al grupo.';
+
+  @override
+  String get groupHelp =>
+      'Cada miembro recibe tus mensajes cifrados, directamente desde tu dispositivo, sin servidor. Por ahora solo llegan a los miembros que también son tus contactos.';
+
+  @override
+  String get groupLabel => 'Grupo';
+
+  @override
+  String get groupClosed => 'Ya no estás en este grupo.';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tú y $count más',
+      one: 'Tú y $count más',
+      zero: 'Solo tú',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupAdmin => 'Admin';
+
+  @override
+  String get groupNotConnected =>
+      'No es tu contacto: tus mensajes aún no le llegan';
+
+  @override
+  String get groupAddMembers => 'Añadir miembros';
+
+  @override
+  String get groupRemove => 'Quitar del grupo';
+
+  @override
+  String get groupRename => 'Renombrar el grupo';
+
+  @override
+  String get groupLeave => 'Salir del grupo';
+
+  @override
+  String groupLeaveTitle(String name) {
+    return '¿Salir de $name?';
+  }
+
+  @override
+  String get groupLeaveBody =>
+      'Los miembros sabrán que saliste. Los mensajes se quedan aquí, pero ya no podrás escribir ni recibir en este grupo.';
+
+  @override
+  String get groupNotAdmin => 'Solo el admin del grupo puede hacer eso.';
+
+  @override
+  String get groupTooMany => 'Un grupo tiene como máximo 64 miembros.';
 }

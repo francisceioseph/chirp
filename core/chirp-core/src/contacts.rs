@@ -14,6 +14,8 @@ use crate::error::{CoreError, CoreResult};
 pub enum ContactState {
     Pending = 0,
     Established = 1,
+    /// Não é uma pessoa: um grupo (fase 9), com a conversa como a de um contato.
+    Group = 2,
 }
 
 impl ContactState {
@@ -21,6 +23,7 @@ impl ContactState {
         match value {
             0 => Ok(Self::Pending),
             1 => Ok(Self::Established),
+            2 => Ok(Self::Group),
             _ => Err(CoreError::Storage),
         }
     }
@@ -41,6 +44,8 @@ pub struct Contact {
     pub photo: Option<Vec<u8>>,
     /// Está entre os que veem a minha foto, no modo "só os marcados".
     pub photo_allowed: bool,
+    /// Um grupo de que ainda sou membro.
+    pub group_active: bool,
 }
 
 /// O que se grava de um contato novo.
@@ -56,7 +61,8 @@ pub struct NewContact<'a> {
 }
 
 const COLUMNS: &str = "id, identity_key, endpoint_id, addrs, discovery_key, display_name, \
-                       profile_version, verified, state, photo, photo_allowed";
+                       profile_version, verified, state, photo, photo_allowed, \
+                       COALESCE((SELECT g.active FROM groups g WHERE g.contact_id = contacts.id), 0)";
 
 fn from_row(row: &Row) -> rusqlite::Result<(Contact, i64)> {
     let addrs: String = row.get(3)?;
@@ -77,6 +83,7 @@ fn from_row(row: &Row) -> rusqlite::Result<(Contact, i64)> {
             state: ContactState::Pending,
             photo: row.get(9)?,
             photo_allowed: row.get(10)?,
+            group_active: row.get(11)?,
         },
         row.get(8)?,
     ))

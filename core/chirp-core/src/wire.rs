@@ -110,7 +110,7 @@ pub struct Content {
     pub message_id: Vec<u8>,
     #[prost(
         oneof = "ContentBody",
-        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18"
+        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 20, 21"
     )]
     pub body: Option<ContentBody>,
     /// O relógio de quem manda, em milissegundos: só para mostrar.
@@ -122,6 +122,9 @@ pub struct Content {
     /// Até o próximo degrau de tamanho (docs/PLANO.md, 6.5).
     #[prost(bytes = "vec", tag = "15")]
     pub padding: Vec<u8>,
+    /// O grupo da mensagem (fase 9, 16 bytes), ou vazio: a conversa a dois.
+    #[prost(bytes = "vec", tag = "19")]
+    pub group: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, prost::Oneof)]
@@ -167,6 +170,44 @@ pub enum ContentBody {
     /// A foto do perfil de quem manda, ou vazio: não é mais para este contato.
     #[prost(message, tag = "18")]
     Photo(PeerPhoto),
+    /// O grupo como o admin o deixou (fase 9): o nome e os membros, numa versão.
+    #[prost(message, tag = "20")]
+    Group(GroupUpdate),
+    /// Quem manda saiu do grupo.
+    #[prost(message, tag = "21")]
+    GroupLeave(GroupLeave),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct GroupUpdate {
+    #[prost(bytes = "vec", tag = "1")]
+    pub group_id: Vec<u8>,
+    #[prost(string, tag = "2")]
+    pub name: String,
+    #[prost(uint64, tag = "3")]
+    pub version: u64,
+    /// A chave de identidade do admin (um dos membros).
+    #[prost(bytes = "vec", tag = "4")]
+    pub admin: Vec<u8>,
+    /// Todos os membros, o admin e quem recebe também.
+    #[prost(message, repeated, tag = "5")]
+    pub members: Vec<GroupMember>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct GroupMember {
+    #[prost(bytes = "vec", tag = "1")]
+    pub identity_key: Vec<u8>,
+    #[prost(bytes = "vec", tag = "2")]
+    pub endpoint_id: Vec<u8>,
+    #[prost(string, tag = "3")]
+    pub name: String,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct GroupLeave {
+    #[prost(bytes = "vec", tag = "1")]
+    pub group_id: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -386,6 +427,7 @@ mod tests {
                 sent_at: 1,
                 lamport: 1,
                 padding: vec![],
+                group: vec![],
             };
             let len = content.encode_padded().len();
             assert!(PAD_STEPS.contains(&len), "{name_len} -> {len}");

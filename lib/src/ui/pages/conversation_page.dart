@@ -118,7 +118,11 @@ class _ConversationPageState extends State<ConversationPage>
   }
 
   Future<void> _options(ChatMessage message) async {
-    final choice = await showMessageActions(context, message);
+    final choice = await showMessageActions(
+      context,
+      message,
+      reactions: !(_conversation.contact?.isGroup ?? false),
+    );
     if (choice == null || !mounted) return;
     final reaction = choice.reaction;
     if (reaction != null) {
@@ -281,7 +285,10 @@ class _ConversationPageState extends State<ConversationPage>
         final name = contactName(l10n, contact);
         final messages = _conversation.messages;
         final replyTo = _conversation.replyTo;
-        final subtitle = _conversation.theyAreTyping
+        final group = contact.isGroup;
+        final subtitle = group
+            ? (contact.groupClosed ? l10n.groupClosed : l10n.groupLabel)
+            : _conversation.theyAreTyping
             ? l10n.typing
             : !contact.established
             ? l10n.contactPending
@@ -295,7 +302,7 @@ class _ConversationPageState extends State<ConversationPage>
                 name: name,
                 contact: contact,
                 onVerify: _openDetails,
-                onNudge: contact.established
+                onNudge: contact.established && !group
                     ? () => _run(_conversation.nudge)
                     : null,
               )
@@ -315,6 +322,7 @@ class _ConversationPageState extends State<ConversationPage>
                   if (i == messages.length) {
                     return _SecurityNote(
                       verified: contact.verified,
+                      group: group,
                       onVerify: _openDetails,
                     );
                   }
@@ -402,13 +410,14 @@ class _ConversationPageState extends State<ConversationPage>
                 ),
               ),
               actions: [
-                IconButton(
-                  tooltip: l10n.nudge,
-                  onPressed: contact.established
-                      ? () => _run(_conversation.nudge)
-                      : null,
-                  icon: const Icon(Icons.vibration),
-                ),
+                if (!group)
+                  IconButton(
+                    tooltip: l10n.nudge,
+                    onPressed: contact.established
+                        ? () => _run(_conversation.nudge)
+                        : null,
+                    icon: const Icon(Icons.vibration),
+                  ),
                 const SizedBox(width: 4),
               ],
             ),
@@ -430,18 +439,19 @@ class _ConversationPageState extends State<ConversationPage>
                 Composer(
                   text: _text,
                   focusNode: _focus,
-                  enabled: contact.established,
+                  enabled: contact.established && !contact.groupClosed,
                   replyTo: replyTo,
                   replyName: replyTo == null
                       ? null
                       : replyTo.outgoing
                       ? l10n.you
-                      : name,
+                      : (replyTo.authorName ?? name),
                   editing: _conversation.editing,
                   onCancel: _cancelComposer,
-                  onChanged: (_) => _conversation.typed(),
-                  onAttach: _attach,
-                  onRecord: _record,
+                  // Num grupo, ainda sem "digitando", arquivos e notas de voz.
+                  onChanged: group ? null : (_) => _conversation.typed(),
+                  onAttach: group ? null : _attach,
+                  onRecord: group ? null : _record,
                   recording: switch (_conversation.recordingSince) {
                     null => null,
                     final since => DateTime.now().difference(since),
@@ -461,10 +471,17 @@ class _ConversationPageState extends State<ConversationPage>
 
 /// No começo da conversa: cifrada de ponta a ponta, e se vocês já conferiram o código.
 class _SecurityNote extends StatelessWidget {
-  const _SecurityNote({required this.verified, required this.onVerify});
+  const _SecurityNote({
+    required this.verified,
+    required this.onVerify,
+    this.group = false,
+  });
 
   final bool verified;
   final VoidCallback onVerify;
+
+  /// Num grupo, cada membro recebe cifrado; o código se confere com cada contato.
+  final bool group;
 
   @override
   Widget build(BuildContext context) {
@@ -487,21 +504,25 @@ class _SecurityNote extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    verified ? Icons.lock : Icons.gpp_maybe_outlined,
+                    verified || group ? Icons.lock : Icons.gpp_maybe_outlined,
                     size: 18,
                     color: foreground,
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      verified ? l10n.e2eVerified : l10n.e2eUnverified,
+                      group
+                          ? l10n.groupHelp
+                          : verified
+                          ? l10n.e2eVerified
+                          : l10n.e2eUnverified,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: foreground,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  if (!verified)
+                  if (!verified && !group)
                     TextButton(
                       onPressed: onVerify,
                       child: Text(l10n.checkCode),
@@ -566,7 +587,16 @@ class _EmptyConversation extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge,
               ),
-              if (contact.established) ...[
+              if (contact.isGroup) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l10n.groupHelp,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ] else if (contact.established) ...[
                 const SizedBox(height: 8),
                 Text(
                   contact.verified ? l10n.e2eVerified : l10n.sayHiUnverified,

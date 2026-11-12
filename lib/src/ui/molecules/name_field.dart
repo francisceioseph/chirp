@@ -15,12 +15,16 @@ class NameField extends StatelessWidget {
     this.errorText,
     this.autofocus = false,
     this.onSubmitted,
+    this.label,
   });
 
   final TextEditingController controller;
   final String? errorText;
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
+
+  /// O rótulo, quando não é o nome do perfil (o nome de um grupo).
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +38,8 @@ class NameField extends StatelessWidget {
       textInputAction: TextInputAction.done,
       onSubmitted: onSubmitted,
       decoration: InputDecoration(
-        labelText: l10n.nameLabel,
-        helperText: l10n.nameHelp,
+        labelText: label ?? l10n.nameLabel,
+        helperText: label == null ? l10n.nameHelp : null,
         helperMaxLines: 3,
         errorText: errorText,
         errorMaxLines: 3,

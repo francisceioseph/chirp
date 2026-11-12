@@ -393,6 +393,7 @@ pub fn join(
         sent_at: 0,
         lamport: 0,
         padding: vec![],
+        group: vec![],
     }
     .encode_padded();
 
@@ -568,6 +569,7 @@ pub fn accept_hello(
         sent_at: 0,
         lamport: 0,
         padding: vec![],
+        group: vec![],
     }
     .encode_padded();
     let reply = {
@@ -646,6 +648,13 @@ pub fn accept_welcome(
 pub struct Me {
     pair: IdentityKeyPair,
     registration_id: u32,
+}
+
+impl Me {
+    /// A minha chave de identidade, como os contatos a guardam.
+    pub fn public(&self) -> Vec<u8> {
+        self.pair.identity_key().serialize().to_vec()
+    }
 }
 
 pub fn me(store: &Store) -> CoreResult<Me> {

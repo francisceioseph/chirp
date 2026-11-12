@@ -12,6 +12,7 @@ import '../atoms/panel_text.dart';
 import '../molecules/fingerprint_text.dart';
 import '../reach_text.dart';
 import '../templates/centered_panel.dart';
+import 'group_page.dart';
 
 class ContactPage extends StatefulWidget {
   const ContactPage({
@@ -73,6 +74,14 @@ class _ContactPageState extends State<ContactPage> {
         final contact = widget.controller.byId(widget.contactId);
         if (contact == null) {
           return Scaffold(appBar: AppBar(leading: _close(context)));
+        }
+        // Um grupo tem a página dele (os membros, sair).
+        if (contact.isGroup) {
+          return GroupPage(
+            controller: widget.controller,
+            groupId: contact.id,
+            onClose: widget.onClose,
+          );
         }
         final name = contact.displayName.isEmpty
             ? l10n.contactUnnamed

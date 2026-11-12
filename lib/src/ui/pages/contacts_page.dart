@@ -33,6 +33,7 @@ import '../templates/shell_template.dart';
 import 'add_contact_page.dart';
 import 'contact_page.dart';
 import 'conversation_page.dart';
+import 'pick_members_page.dart';
 import 'search_page.dart';
 
 class ContactsPage extends StatefulWidget {
@@ -179,6 +180,27 @@ class _ContactsPageState extends State<ContactsPage> {
             AddContactPage(controller: _controller, startOnPaste: paste),
       ),
     );
+  }
+
+  /// Escolhe os contatos e o nome; criado, o grupo abre.
+  Future<void> _newGroup() async {
+    Contact? created;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PickMembersPage(
+          people: _controller.people,
+          onDone: (name, ids) async {
+            try {
+              created = await _controller.createGroup(name, ids);
+              return null;
+            } on CoreException catch (error) {
+              return error.failure;
+            }
+          },
+        ),
+      ),
+    );
+    if (created case final group? when mounted) _openConversation(group.id);
   }
 
   void _openConversation(int contactId) {
@@ -418,6 +440,12 @@ class _ContactsPageState extends State<ContactsPage> {
               tooltip: l10n.searchMessages,
               onPressed: _openSearch,
               icon: const Icon(Icons.search),
+            ),
+          if (_controller.people.isNotEmpty)
+            IconButton(
+              tooltip: l10n.groupNew,
+              onPressed: _newGroup,
+              icon: const Icon(Icons.group_add_outlined),
             ),
           IconButton(
             tooltip: l10n.profileTitle,

@@ -945,4 +945,79 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
   @override
   String get photoAllowedHelp =>
       'Turning this off removes your photo from their Chirp.';
+
+  @override
+  String get groupNew => 'New group';
+
+  @override
+  String get groupName => 'Group name';
+
+  @override
+  String get groupPickMembers => 'Who is in it';
+
+  @override
+  String get groupCreate => 'Create';
+
+  @override
+  String get groupAdd => 'Add';
+
+  @override
+  String get groupNoOneToAdd =>
+      'No contacts to add yet. Add someone first, then bring them into the group.';
+
+  @override
+  String get groupHelp =>
+      'Each member gets your messages encrypted, straight from your device, with no server. For now they reach only members who are also your contacts.';
+
+  @override
+  String get groupLabel => 'Group';
+
+  @override
+  String get groupClosed => 'You are no longer in this group.';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You and $count others',
+      one: 'You and $count other',
+      zero: 'Only you',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupAdmin => 'Admin';
+
+  @override
+  String get groupNotConnected =>
+      'Not your contact: your messages do not reach them yet';
+
+  @override
+  String get groupAddMembers => 'Add members';
+
+  @override
+  String get groupRemove => 'Remove from the group';
+
+  @override
+  String get groupRename => 'Rename group';
+
+  @override
+  String get groupLeave => 'Leave group';
+
+  @override
+  String groupLeaveTitle(String name) {
+    return 'Leave $name?';
+  }
+
+  @override
+  String get groupLeaveBody =>
+      'The members are told you left. The messages stay here, but you can no longer write or receive in this group.';
+
+  @override
+  String get groupNotAdmin => 'Only the group admin can do that.';
+
+  @override
+  String get groupTooMany => 'A group has at most 64 members.';
 }

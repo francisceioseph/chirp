@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `photo_changed`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`, `with_photo`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `author_of`, `done_file`, `flush`, `lock`, `open`, `photo_changed`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`, `with_photo`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -37,6 +37,11 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// frente.
   Future<ContactView> addContact({required String link, required bool scanned});
 
+  Future<void> addGroupMembers({
+    required PlatformInt64 id,
+    required Int64List memberIds,
+  });
+
   Future<AppearanceView> appearance();
 
   /// Para de gravar e joga fora.
@@ -48,6 +53,12 @@ abstract class ChirpStore implements RustOpaqueInterface {
 
   /// As conversas, a mais recente primeiro.
   Future<List<ConversationView>> conversations();
+
+  /// Cria um grupo com estes contatos, com quem usa de admin.
+  Future<ContactView> createGroup({
+    required String name,
+    required Int64List memberIds,
+  });
 
   /// Um convite novo, como link. [qr] diz se vai ser mostrado como QR (frente a
   /// frente: o contato nasce verificado) ou mandado como link.
@@ -81,8 +92,12 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// O arquivo em claro, na memória, para mostrar uma foto (até 32 MiB).
   Future<Uint8List> fileBytes({required PlatformInt64 messageId});
 
+  Future<GroupView> group({required PlatformInt64 id});
+
   /// Continuar recebendo com a janela fechada (no desktop, na bandeja).
   Future<bool> keepRunning();
+
+  Future<void> leaveGroup({required PlatformInt64 id});
 
   /// A caixa postal ligada, se houver.
   Future<MailboxView?> mailbox();
@@ -135,11 +150,19 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// Reage a uma mensagem ([kind] 0 tira a reação).
   Future<MessageView> react({required PlatformInt64 id, required int kind});
 
+  /// Tira um membro (pela chave que o `GroupView` dá). Ele fica sabendo.
+  Future<void> removeGroupMember({
+    required PlatformInt64 id,
+    required List<int> key,
+  });
+
   /// Tira a foto do perfil: os contatos que tinham recebem a falta dela.
   Future<Profile> removeProfilePhoto();
 
   /// Troca o nome e manda o perfil novo a cada contato.
   Future<Profile> rename({required String name});
+
+  Future<void> renameGroup({required PlatformInt64 id, required String name});
 
   /// O número de segurança com um contato: 60 dígitos, igual nos dois aparelhos.
   Future<String> safetyNumber({required PlatformInt64 contactId});
@@ -337,6 +360,12 @@ class ContactView {
   /// Está entre os que veem a minha foto, no modo "só os marcados".
   final bool photoAllowed;
 
+  /// É um grupo (fase 9), não uma pessoa.
+  final bool isGroup;
+
+  /// Um grupo de que ainda sou membro (falso também para quem não é grupo).
+  final bool groupActive;
+
   const ContactView({
     required this.id,
     required this.displayName,
@@ -346,6 +375,8 @@ class ContactView {
     required this.reach,
     this.photo,
     required this.photoAllowed,
+    required this.isGroup,
+    required this.groupActive,
   });
 
   @override
@@ -357,7 +388,9 @@ class ContactView {
       established.hashCode ^
       reach.hashCode ^
       photo.hashCode ^
-      photoAllowed.hashCode;
+      photoAllowed.hashCode ^
+      isGroup.hashCode ^
+      groupActive.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -371,7 +404,9 @@ class ContactView {
           established == other.established &&
           reach == other.reach &&
           photo == other.photo &&
-          photoAllowed == other.photoAllowed;
+          photoAllowed == other.photoAllowed &&
+          isGroup == other.isGroup &&
+          groupActive == other.groupActive;
 }
 
 /// Uma conversa na lista.
@@ -517,6 +552,84 @@ class FileView {
           voice == other.voice;
 }
 
+class GroupMemberView {
+  /// A chave de identidade (pública): o que identifica o membro para tirar.
+  final Uint8List key;
+  final String name;
+  final int avatarSeed;
+
+  /// O contato, se é um: só assim as minhas mensagens chegam a ele.
+  final PlatformInt64? contactId;
+  final bool isAdmin;
+
+  const GroupMemberView({
+    required this.key,
+    required this.name,
+    required this.avatarSeed,
+    this.contactId,
+    required this.isAdmin,
+  });
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      name.hashCode ^
+      avatarSeed.hashCode ^
+      contactId.hashCode ^
+      isAdmin.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupMemberView &&
+          runtimeType == other.runtimeType &&
+          key == other.key &&
+          name == other.name &&
+          avatarSeed == other.avatarSeed &&
+          contactId == other.contactId &&
+          isAdmin == other.isAdmin;
+}
+
+/// Um grupo como a UI mostra.
+class GroupView {
+  final PlatformInt64 id;
+  final String name;
+  final bool iAmAdmin;
+
+  /// Ainda sou membro.
+  final bool active;
+
+  /// Os outros membros.
+  final List<GroupMemberView> members;
+
+  const GroupView({
+    required this.id,
+    required this.name,
+    required this.iAmAdmin,
+    required this.active,
+    required this.members,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      iAmAdmin.hashCode ^
+      active.hashCode ^
+      members.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupView &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          iAmAdmin == other.iAmAdmin &&
+          active == other.active &&
+          members == other.members;
+}
+
 /// A caixa postal deste aparelho, como a UI mostra.
 class MailboxView {
   /// Quando foi ligada e quando foi lida por último, em segundos desde 1970 (0:
@@ -594,6 +707,10 @@ class MessageView {
   /// Minha, e esperando na caixa postal do contato até ele buscar.
   final bool inMailbox;
 
+  /// Num grupo, quem escreveu (o nome e a semente do avatar); nada nas minhas.
+  final String? authorName;
+  final int? authorSeed;
+
   const MessageView({
     required this.id,
     required this.contactId,
@@ -612,6 +729,8 @@ class MessageView {
     required this.canDeleteForEveryone,
     this.file,
     required this.inMailbox,
+    this.authorName,
+    this.authorSeed,
   });
 
   @override
@@ -632,7 +751,9 @@ class MessageView {
       canEdit.hashCode ^
       canDeleteForEveryone.hashCode ^
       file.hashCode ^
-      inMailbox.hashCode;
+      inMailbox.hashCode ^
+      authorName.hashCode ^
+      authorSeed.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -655,7 +776,9 @@ class MessageView {
           canEdit == other.canEdit &&
           canDeleteForEveryone == other.canDeleteForEveryone &&
           file == other.file &&
-          inMailbox == other.inMailbox;
+          inMailbox == other.inMailbox &&
+          authorName == other.authorName &&
+          authorSeed == other.authorSeed;
 }
 
 /// A internet e os servidores de retransmissão (os dois desligados no começo).

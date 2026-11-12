@@ -332,6 +332,9 @@ class FakeStore implements ProfileStore {
     if (!people.any((c) => c.id == contactId && c.established)) {
       throw const CoreException(CoreFailure.unknownContact);
     }
+    if (groups[contactId]?.active == false) {
+      throw const CoreException(CoreFailure.notAMember);
+    }
   }
 
   @override
@@ -699,8 +702,156 @@ class FakeStore implements ProfileStore {
         reach: c.reach,
         photo: c.photo,
         photoAllowed: photoAllowed.contains(c.id),
+        isGroup: c.isGroup,
+        groupActive: groups[c.id]?.active ?? false,
       ),
   ];
+
+  /// Os grupos falsos, pelo id da conversa.
+  final Map<int, FakeGroup> groups = {};
+
+  void _changed(int id) => _events.add(CoreEvent(CoreEventKind.contact, id));
+
+  FakeGroup _group(int id) =>
+      groups[id] ?? (throw const CoreException(CoreFailure.unknownContact));
+
+  void _admin(int id) {
+    final g = _group(id);
+    if (!g.admin || !g.active) throw const CoreException(CoreFailure.notAdmin);
+  }
+
+  @override
+  Future<Contact> createGroup(String name, List<int> memberIds) async {
+    if (name.trim().isEmpty) throw const CoreException(CoreFailure.invalidName);
+    final id = people.length + 1;
+    final contact = Contact(
+      id: id,
+      displayName: name.trim(),
+      avatarSeed: id * 7919,
+      verified: false,
+      established: true,
+      isGroup: true,
+    );
+    people.add(contact);
+    groups[id] = FakeGroup(members: [...memberIds]);
+    _changed(id);
+    return (await contacts()).firstWhere((c) => c.id == id);
+  }
+
+  /// Chegou um grupo em que alguém (não eu) é o admin.
+  int joinedGroup(
+    String name,
+    List<int> memberIds, {
+    List<String> strangers = const [],
+  }) {
+    final id = people.length + 1;
+    people.add(
+      Contact(
+        id: id,
+        displayName: name,
+        avatarSeed: id * 7919,
+        verified: false,
+        established: true,
+        isGroup: true,
+      ),
+    );
+    groups[id] = FakeGroup(
+      members: [...memberIds],
+      admin: false,
+      strangers: [...strangers],
+    );
+    _changed(id);
+    return id;
+  }
+
+  /// Um membro escreveu no grupo.
+  ChatMessage groupMessage(int groupId, int authorId, String text) {
+    final author = people.firstWhere((c) => c.id == authorId);
+    final m = _new(groupId, outgoing: false, text: text);
+    final withAuthor = ChatMessage(
+      id: m.id,
+      contactId: groupId,
+      outgoing: false,
+      kind: m.kind,
+      text: text,
+      sentAt: m.sentAt,
+      receivedAt: m.receivedAt,
+      status: m.status,
+      authorName: author.displayName,
+      authorSeed: author.avatarSeed,
+    );
+    _put(withAuthor);
+    _events.add(CoreEvent(CoreEventKind.messages, groupId));
+    return withAuthor;
+  }
+
+  @override
+  Future<GroupInfo> group(int id) async {
+    final g = _group(id);
+    final c = people.firstWhere((p) => p.id == id);
+    return GroupInfo(
+      id: id,
+      name: c.displayName,
+      iAmAdmin: g.admin,
+      active: g.active,
+      members: [
+        for (final m in g.members)
+          GroupMember(
+            key: Uint8List.fromList([m]),
+            name: people.firstWhere((p) => p.id == m).displayName,
+            avatarSeed: m * 7919,
+            contactId: m,
+          ),
+        for (final (i, name) in g.strangers.indexed)
+          GroupMember(
+            key: Uint8List.fromList([200 + i]),
+            name: name,
+            avatarSeed: 200 + i,
+            isAdmin: !g.admin && i == 0,
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<void> renameGroup(int id, String name) async {
+    _admin(id);
+    if (name.trim().isEmpty) throw const CoreException(CoreFailure.invalidName);
+    final i = people.indexWhere((p) => p.id == id);
+    final c = people[i];
+    people[i] = Contact(
+      id: c.id,
+      displayName: name.trim(),
+      avatarSeed: c.avatarSeed,
+      verified: false,
+      established: true,
+      isGroup: true,
+    );
+    _changed(id);
+  }
+
+  @override
+  Future<void> addGroupMembers(int id, List<int> memberIds) async {
+    _admin(id);
+    final g = _group(id);
+    for (final m in memberIds) {
+      if (!g.members.contains(m)) g.members.add(m);
+    }
+    _changed(id);
+  }
+
+  @override
+  Future<void> removeGroupMember(int id, GroupMember member) async {
+    _admin(id);
+    _group(id).members.remove(member.contactId);
+    _changed(id);
+  }
+
+  @override
+  Future<void> leaveGroup(int id) async {
+    _group(id).active = false;
+    _changed(id);
+  }
 
   /// Os contatos que veem a foto no modo "só os marcados".
   final Set<int> photoAllowed = {};
@@ -996,3 +1147,18 @@ const _onePixelPng = <int>[
   0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, //
   0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, //
 ];
+
+/// Um grupo do [FakeStore]: os membros que são contatos, os que não são (só o nome),
+/// se sou o admin e se ainda sou membro.
+class FakeGroup {
+  FakeGroup({
+    required this.members,
+    this.admin = true,
+    this.strangers = const [],
+  });
+
+  final List<int> members;
+  final List<String> strangers;
+  bool admin;
+  bool active = true;
+}

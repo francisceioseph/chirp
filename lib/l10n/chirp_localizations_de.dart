@@ -952,4 +952,79 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
   @override
   String get photoAllowedHelp =>
       'Ausschalten entfernt dein Foto aus seinem Chirp.';
+
+  @override
+  String get groupNew => 'Neue Gruppe';
+
+  @override
+  String get groupName => 'Gruppenname';
+
+  @override
+  String get groupPickMembers => 'Wer dabei ist';
+
+  @override
+  String get groupCreate => 'Erstellen';
+
+  @override
+  String get groupAdd => 'Hinzufügen';
+
+  @override
+  String get groupNoOneToAdd =>
+      'Noch keine Kontakte zum Hinzufügen. Füge zuerst jemanden hinzu und hol ihn dann in die Gruppe.';
+
+  @override
+  String get groupHelp =>
+      'Jedes Mitglied bekommt deine Nachrichten verschlüsselt, direkt von deinem Gerät, ohne Server. Vorerst erreichen sie nur Mitglieder, die auch deine Kontakte sind.';
+
+  @override
+  String get groupLabel => 'Gruppe';
+
+  @override
+  String get groupClosed => 'Du bist nicht mehr in dieser Gruppe.';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du und $count weitere',
+      one: 'Du und $count weitere Person',
+      zero: 'Nur du',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupAdmin => 'Admin';
+
+  @override
+  String get groupNotConnected =>
+      'Nicht dein Kontakt: deine Nachrichten erreichen diese Person noch nicht';
+
+  @override
+  String get groupAddMembers => 'Mitglieder hinzufügen';
+
+  @override
+  String get groupRemove => 'Aus der Gruppe entfernen';
+
+  @override
+  String get groupRename => 'Gruppe umbenennen';
+
+  @override
+  String get groupLeave => 'Gruppe verlassen';
+
+  @override
+  String groupLeaveTitle(String name) {
+    return '$name verlassen?';
+  }
+
+  @override
+  String get groupLeaveBody =>
+      'Die Mitglieder erfahren, dass du gegangen bist. Die Nachrichten bleiben hier, aber du kannst in dieser Gruppe nicht mehr schreiben oder empfangen.';
+
+  @override
+  String get groupNotAdmin => 'Nur der Gruppen-Admin kann das.';
+
+  @override
+  String get groupTooMany => 'Eine Gruppe hat höchstens 64 Mitglieder.';
 }

@@ -32,7 +32,7 @@ pub const EDIT_WINDOW_MS: i64 = 15 * 60 * 1000;
 /// Apagar para todos vale por um dia.
 pub const DELETE_WINDOW_MS: i64 = 24 * 60 * 60 * 1000;
 /// Quem recebe dá essa folga aos prazos, pela demora da entrega.
-const SLACK_MS: i64 = 5 * 60 * 1000;
+pub(crate) const SLACK_MS: i64 = 5 * 60 * 1000;
 /// Chamar atenção: uma vez a cada 10 segundos por conversa, nos dois sentidos.
 pub const NUDGE_INTERVAL_MS: i64 = 10 * 1000;
 /// O "digitando" que não sai nesse tempo já não diz nada e é jogado fora.
@@ -85,6 +85,8 @@ pub struct Message {
     pub their_reaction: u32,
     /// Minha, e esperando na caixa postal do contato (fase 7) até ele buscar.
     pub in_mailbox: bool,
+    /// Num grupo, a chave de identidade de quem escreveu (as minhas não têm).
+    pub author: Option<Vec<u8>>,
 }
 
 /// O que mudou com o que chegou, para avisar a UI.
@@ -119,7 +121,7 @@ const SELECT: &str = "SELECT m.id, m.contact_id, m.message_id, m.outgoing, m.kin
         m.sent_at, m.received_at, m.lamport, m.status, m.edited, m.deleted,
         COALESCE((SELECT kind FROM reactions WHERE message = m.id AND outgoing = 1), 0),
         COALESCE((SELECT kind FROM reactions WHERE message = m.id AND outgoing = 0), 0),
-        m.in_mailbox
+        m.in_mailbox, m.author
    FROM messages m";
 
 fn from_row(row: &Row) -> rusqlite::Result<Message> {
@@ -150,6 +152,7 @@ fn from_row(row: &Row) -> rusqlite::Result<Message> {
         my_reaction: row.get(13)?,
         their_reaction: row.get(14)?,
         in_mailbox: row.get(15)?,
+        author: row.get(16)?,
     })
 }
 
@@ -309,6 +312,7 @@ fn enqueue(
         sent_at: sent_at as u64,
         lamport: lamport as u64,
         padding: vec![],
+        group: vec![],
     }
     .encode_padded();
     let (prekey, bytes) = session::encrypt(conn, me, &contact.identity_key, &plain)?;
@@ -320,7 +324,7 @@ fn enqueue(
     Ok(message_id)
 }
 
-fn valid_text(text: &str) -> CoreResult<String> {
+pub(crate) fn valid_text(text: &str) -> CoreResult<String> {
     // O fim de linha do Windows (e um `\r` solto) vira `\n`.
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
     let trimmed = text.trim();
@@ -336,7 +340,7 @@ fn valid_text(text: &str) -> CoreResult<String> {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn insert(
+pub(crate) fn insert(
     conn: &Connection,
     contact_id: i64,
     message_id: &[u8],
@@ -378,7 +382,11 @@ pub fn send_text(
     let text = valid_text(text)?;
     let me = session::me(store)?;
     let tx = store.conn_mut().transaction()?;
-    let contact = established(&tx, contact_id)?;
+    let group = crate::groups::writable(&tx, contact_id)?;
+    let contact = match group {
+        Some(_) => contacts::by_id(&tx, contact_id)?,
+        None => established(&tx, contact_id)?,
+    };
     let quoted = match reply_to {
         Some(id) => {
             let m = by_id(&tx, id)?;
@@ -391,18 +399,14 @@ pub fn send_text(
     };
     let lamport = next_lamport(&tx, contact_id)?;
     let sent_at = now_ms();
-    let message_id = enqueue(
-        &tx,
-        &me,
-        &contact,
-        ContentBody::Text(wire::Text {
-            text: text.clone(),
-            reply_to: quoted.clone(),
-        }),
-        lamport,
-        sent_at,
-        false,
-    )?;
+    let body = ContentBody::Text(wire::Text {
+        text: text.clone(),
+        reply_to: quoted.clone(),
+    });
+    let message_id = match &group {
+        Some(group) => crate::groups::fanout(&tx, &me, group, body, lamport, sent_at)?,
+        None => enqueue(&tx, &me, &contact, body, lamport, sent_at, false)?,
+    };
     let id = insert(
         &tx,
         contact_id,
@@ -468,7 +472,41 @@ pub fn send_nudge(store: &mut Store, contact_id: i64) -> CoreResult<Message> {
 }
 
 /// Uma mensagem minha, de texto e não apagada, ainda no prazo.
-fn own_in_window(conn: &Connection, id: i64, window: i64) -> CoreResult<(Message, Contact)> {
+/// Para quem vai o que muda numa mensagem minha: o contato, ou os membros do grupo.
+enum Target {
+    Contact(Contact),
+    Group(i64, crate::groups::Writable),
+}
+
+impl Target {
+    fn id(&self) -> i64 {
+        match self {
+            Target::Contact(c) => c.id,
+            Target::Group(id, _) => *id,
+        }
+    }
+
+    fn send(&self, conn: &Connection, me: &Me, body: ContentBody, lamport: i64) -> CoreResult<()> {
+        match self {
+            Target::Contact(contact) => {
+                enqueue(conn, me, contact, body, lamport, now_ms(), false)?;
+            }
+            Target::Group(_, group) => {
+                crate::groups::fanout(conn, me, group, body, lamport, now_ms())?;
+            }
+        }
+        Ok(())
+    }
+}
+
+fn target_of(conn: &Connection, contact_id: i64) -> CoreResult<Target> {
+    Ok(match crate::groups::writable(conn, contact_id)? {
+        Some(group) => Target::Group(contact_id, group),
+        None => Target::Contact(established(conn, contact_id)?),
+    })
+}
+
+fn own_in_window(conn: &Connection, id: i64, window: i64) -> CoreResult<(Message, Target)> {
     let message = by_id(conn, id)?;
     // Apagar vale para texto e arquivo; editar, só texto (o `edit` confere).
     if !message.outgoing || message.kind == Kind::Nudge || message.deleted {
@@ -477,33 +515,30 @@ fn own_in_window(conn: &Connection, id: i64, window: i64) -> CoreResult<(Message
     if now_ms() - message.received_at > window {
         return Err(CoreError::TooLate);
     }
-    let contact = established(conn, message.contact_id)?;
-    Ok((message, contact))
+    let target = target_of(conn, message.contact_id)?;
+    Ok((message, target))
 }
 
 pub fn edit(store: &mut Store, id: i64, text: &str) -> CoreResult<Message> {
     let text = valid_text(text)?;
     let me = session::me(store)?;
     let tx = store.conn_mut().transaction()?;
-    let (message, contact) = own_in_window(&tx, id, EDIT_WINDOW_MS)?;
+    let (message, target) = own_in_window(&tx, id, EDIT_WINDOW_MS)?;
     if message.kind != Kind::Text {
         return Err(CoreError::UnknownMessage);
     }
     if message.body == text {
         return Ok(message);
     }
-    let lamport = next_lamport(&tx, contact.id)?;
-    enqueue(
+    let lamport = next_lamport(&tx, target.id())?;
+    target.send(
         &tx,
         &me,
-        &contact,
         ContentBody::Edit(wire::Edit {
             target: message.message_id.clone(),
             text: text.clone(),
         }),
         lamport,
-        now_ms(),
-        false,
     )?;
     tx.execute(
         "UPDATE messages SET body = ?2, edited = 1 WHERE id = ?1",
@@ -514,7 +549,7 @@ pub fn edit(store: &mut Store, id: i64, text: &str) -> CoreResult<Message> {
     Ok(message)
 }
 
-fn wipe(conn: &Connection, id: i64) -> CoreResult<()> {
+pub(crate) fn wipe(conn: &Connection, id: i64) -> CoreResult<()> {
     conn.execute(
         "UPDATE messages SET body = '', reply_to = NULL, deleted = 1, edited = 0 WHERE id = ?1",
         [id],
@@ -529,18 +564,15 @@ fn wipe(conn: &Connection, id: i64) -> CoreResult<()> {
 pub fn delete_for_everyone(store: &mut Store, id: i64) -> CoreResult<Message> {
     let me = session::me(store)?;
     let tx = store.conn_mut().transaction()?;
-    let (message, contact) = own_in_window(&tx, id, DELETE_WINDOW_MS)?;
-    let lamport = next_lamport(&tx, contact.id)?;
-    enqueue(
+    let (message, target) = own_in_window(&tx, id, DELETE_WINDOW_MS)?;
+    let lamport = next_lamport(&tx, target.id())?;
+    target.send(
         &tx,
         &me,
-        &contact,
         ContentBody::Delete(wire::Delete {
             target: message.message_id.clone(),
         }),
         lamport,
-        now_ms(),
-        false,
     )?;
     wipe(&tx, id)?;
     let message = by_id(&tx, id)?;
@@ -1002,7 +1034,19 @@ pub fn delivered(conn: &Connection, outbox_id: i64) -> CoreResult<bool> {
     let changed = conn.execute(
         "UPDATE messages SET status = 1
           WHERE contact_id = ?1 AND message_id = ?2 AND outgoing = 1 AND status = 0",
-        (contact_id, message_id),
+        (contact_id, &message_id),
+    )?;
+    Ok(changed > 0 || group_delivered(conn, &message_id)?)
+}
+
+/// Uma mensagem minha num grupo fica "entregue" quando nenhuma cópia espera mais.
+fn group_delivered(conn: &Connection, message_id: &[u8]) -> CoreResult<bool> {
+    let changed = conn.execute(
+        "UPDATE messages SET status = 1, in_mailbox = 0
+          WHERE message_id = ?1 AND outgoing = 1 AND status = 0
+            AND contact_id IN (SELECT contact_id FROM groups)
+            AND NOT EXISTS (SELECT 1 FROM outbox WHERE message_id = ?1)",
+        [message_id],
     )?;
     Ok(changed > 0)
 }
@@ -1067,7 +1111,7 @@ pub fn receive_from(
                 Some(ContentBody::Text(_) | ContentBody::Nudge(_) | ContentBody::File(_))
             )
             .then(|| content.message_id.clone());
-            (apply(&tx, contact, content)?, shown)
+            (apply(&tx, &me.public(), contact, content)?, shown)
         }
         _ => (Effect::Nothing, None),
     };
@@ -1075,22 +1119,37 @@ pub fn receive_from(
     Ok((effect, shown))
 }
 
-fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<Effect> {
+/// O relógio de Lamport da conversa avança com o que chega, sem deixar um contato
+/// empurrá-lo para longe. Devolve o valor da mensagem.
+pub(crate) fn advance_lamport(conn: &Connection, id: i64, theirs: u64) -> CoreResult<i64> {
+    let local: i64 = conn.query_row("SELECT lamport FROM contacts WHERE id = ?1", [id], |r| {
+        r.get(0)
+    })?;
+    let lamport = (theirs.min(i64::MAX as u64) as i64).min(local + MAX_LAMPORT_JUMP);
+    conn.execute(
+        "UPDATE contacts SET lamport = max(lamport, ?2) WHERE id = ?1",
+        (id, lamport),
+    )?;
+    Ok(lamport)
+}
+
+fn apply(
+    conn: &Connection,
+    me_key: &[u8],
+    contact: &Contact,
+    content: Content,
+) -> CoreResult<Effect> {
+    if !content.group.is_empty() {
+        return crate::groups::apply_message(conn, contact, content);
+    }
     let Some(body) = content.body else {
         return Ok(Effect::Nothing);
     };
-    // O relógio de Lamport avança com o que chega, sem deixar um contato empurrá-lo
-    // para longe.
-    let local: i64 = conn.query_row(
-        "SELECT lamport FROM contacts WHERE id = ?1",
-        [contact.id],
-        |r| r.get(0),
-    )?;
-    let lamport = (content.lamport.min(i64::MAX as u64) as i64).min(local + MAX_LAMPORT_JUMP);
-    conn.execute(
-        "UPDATE contacts SET lamport = max(lamport, ?2) WHERE id = ?1",
-        (contact.id, lamport),
-    )?;
+    let lamport = match body {
+        // O grupo tem o relógio dele; o da conversa a dois não muda.
+        ContentBody::Group(_) | ContentBody::GroupLeave(_) => 0,
+        _ => advance_lamport(conn, contact.id, content.lamport)?,
+    };
     let sent_at = content.sent_at.min(i64::MAX as u64) as i64;
     let id = contact.id;
     let messages = Effect::Messages(id);
@@ -1202,6 +1261,7 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
                       WHERE contact_id = ?1 AND message_id = ?2 AND outgoing = 1 AND status = 0",
                     (id, message_id),
                 )?;
+                group_delivered(conn, message_id)?;
             }
             if settings(conn)?.read_receipts {
                 for message_id in receipt.read.iter().take(MAX_RECEIPT_IDS) {
@@ -1327,6 +1387,8 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
                 Effect::Nothing
             }
         }
+        ContentBody::Group(update) => crate::groups::apply_update(conn, me_key, contact, update)?,
+        ContentBody::GroupLeave(leave) => crate::groups::apply_leave(conn, me_key, contact, leave)?,
         // O aperto de mão já passou.
         ContentBody::Hello(_) | ContentBody::Welcome(_) => Effect::Nothing,
     })

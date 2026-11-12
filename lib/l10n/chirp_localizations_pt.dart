@@ -948,4 +948,79 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
   @override
   String get photoAllowedHelp =>
       'Desligar apaga a sua foto do Chirp desse contato.';
+
+  @override
+  String get groupNew => 'Novo grupo';
+
+  @override
+  String get groupName => 'Nome do grupo';
+
+  @override
+  String get groupPickMembers => 'Quem está nele';
+
+  @override
+  String get groupCreate => 'Criar';
+
+  @override
+  String get groupAdd => 'Adicionar';
+
+  @override
+  String get groupNoOneToAdd =>
+      'Ainda não há contatos para adicionar. Adicione alguém primeiro e depois traga para o grupo.';
+
+  @override
+  String get groupHelp =>
+      'Cada membro recebe as suas mensagens cifradas, direto do seu aparelho, sem servidor. Por enquanto, elas só chegam aos membros que também são seus contatos.';
+
+  @override
+  String get groupLabel => 'Grupo';
+
+  @override
+  String get groupClosed => 'Você não está mais neste grupo.';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Você e mais $count',
+      one: 'Você e mais $count',
+      zero: 'Só você',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupAdmin => 'Admin';
+
+  @override
+  String get groupNotConnected =>
+      'Não é seu contato: as suas mensagens ainda não chegam a ele';
+
+  @override
+  String get groupAddMembers => 'Adicionar membros';
+
+  @override
+  String get groupRemove => 'Tirar do grupo';
+
+  @override
+  String get groupRename => 'Renomear o grupo';
+
+  @override
+  String get groupLeave => 'Sair do grupo';
+
+  @override
+  String groupLeaveTitle(String name) {
+    return 'Sair de $name?';
+  }
+
+  @override
+  String get groupLeaveBody =>
+      'Os membros ficam sabendo que você saiu. As mensagens continuam aqui, mas você não escreve nem recebe mais neste grupo.';
+
+  @override
+  String get groupNotAdmin => 'Só o admin do grupo pode fazer isso.';
+
+  @override
+  String get groupTooMany => 'Um grupo tem no máximo 64 membros.';
 }

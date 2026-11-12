@@ -5,6 +5,9 @@
 // usam um falso. Os tipos da ponte não passam daqui.
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
+    as frb
+    show Int64List;
 import 'package:path_provider/path_provider.dart';
 
 import '../bridge/api/info.dart' as bridge;
@@ -69,6 +72,15 @@ enum CoreFailure {
 
   /// A caixa postal recusou o código: vencido, já usado ou de outra caixa.
   mailboxRefused,
+
+  /// Só o admin do grupo muda o grupo.
+  notAdmin,
+
+  /// Saí do grupo (ou fui tirado): a conversa é só para ler.
+  notAMember,
+
+  /// O grupo passaria de 64 membros.
+  tooManyMembers,
   storage,
 }
 
@@ -132,11 +144,22 @@ class Contact {
     this.reach = ContactReach.unknown,
     this.photo,
     this.photoAllowed = false,
+    this.isGroup = false,
+    this.groupActive = false,
   });
 
   final int id;
   final String displayName;
   final int avatarSeed;
+
+  /// É um grupo (fase 9), não uma pessoa.
+  final bool isGroup;
+
+  /// Um grupo de que ainda sou membro.
+  final bool groupActive;
+
+  /// Um grupo em que não dá mais para escrever (saí, ou fui tirado).
+  bool get groupClosed => isGroup && !groupActive;
 
   /// O número de segurança foi conferido (QR frente a frente, ou marcado à mão).
   final bool verified;
@@ -356,10 +379,16 @@ class ChatMessage {
     this.canDeleteForEveryone = false,
     this.file,
     this.inMailbox = false,
+    this.authorName,
+    this.authorSeed,
   });
 
   final int id;
   final int contactId;
+
+  /// Num grupo, quem escreveu (nada nas minhas).
+  final String? authorName;
+  final int? authorSeed;
   final bool outgoing;
   final MessageKind kind;
   final String text;
@@ -387,6 +416,44 @@ class ChatMessage {
   final bool inMailbox;
 
   bool get unread => !outgoing && status == MessageStatus.pending;
+}
+
+/// Um grupo (fase 9): o nome, se sou o admin, se ainda sou membro e os outros membros.
+@immutable
+class GroupInfo {
+  const GroupInfo({
+    required this.id,
+    required this.name,
+    required this.iAmAdmin,
+    required this.active,
+    required this.members,
+  });
+
+  final int id;
+  final String name;
+  final bool iAmAdmin;
+  final bool active;
+  final List<GroupMember> members;
+}
+
+@immutable
+class GroupMember {
+  const GroupMember({
+    required this.key,
+    required this.name,
+    required this.avatarSeed,
+    this.contactId,
+    this.isAdmin = false,
+  });
+
+  /// A chave de identidade (pública).
+  final Uint8List key;
+  final String name;
+  final int avatarSeed;
+
+  /// O contato, se é um: só assim as minhas mensagens chegam a ele.
+  final int? contactId;
+  final bool isAdmin;
 }
 
 /// Uma conversa na lista: o contato, a última mensagem e as não lidas.
@@ -538,6 +605,21 @@ abstract interface class ProfileStore {
 
   /// Marca o contato entre os que veem a foto no modo [PhotoVisibility.chosen].
   Future<Contact> setPhotoAllowed(int contactId, {required bool allowed});
+
+  /// Cria um grupo com estes contatos, comigo de admin (fase 9).
+  Future<Contact> createGroup(String name, List<int> memberIds);
+
+  Future<GroupInfo> group(int id);
+
+  /// Só o admin (`CoreFailure.notAdmin`).
+  Future<void> renameGroup(int id, String name);
+
+  Future<void> addGroupMembers(int id, List<int> memberIds);
+
+  Future<void> removeGroupMember(int id, GroupMember member);
+
+  /// Saio: aviso os membros, e a conversa fica só para ler.
+  Future<void> leaveGroup(int id);
 
   /// Liga o nó da rede local (precisa do perfil). Chamar de novo não faz nada.
   Future<void> startNetwork();
@@ -786,6 +868,57 @@ class _BridgeStore implements ProfileStore {
           await _store.setPhotoAllowed(contactId: contactId, allowed: allowed),
         ),
       );
+
+  @override
+  Future<Contact> createGroup(String name, List<int> memberIds) => _guardAsync(
+    () async => _contact(
+      await _store.createGroup(
+        name: name,
+        memberIds: frb.Int64List.fromList(memberIds),
+      ),
+    ),
+  );
+
+  @override
+  Future<GroupInfo> group(int id) => _guardAsync(() async {
+    final g = await _store.group(id: id);
+    return GroupInfo(
+      id: g.id,
+      name: g.name,
+      iAmAdmin: g.iAmAdmin,
+      active: g.active,
+      members: [
+        for (final m in g.members)
+          GroupMember(
+            key: m.key,
+            name: m.name,
+            avatarSeed: m.avatarSeed,
+            contactId: m.contactId,
+            isAdmin: m.isAdmin,
+          ),
+      ],
+    );
+  });
+
+  @override
+  Future<void> renameGroup(int id, String name) =>
+      _guardAsync(() => _store.renameGroup(id: id, name: name));
+
+  @override
+  Future<void> addGroupMembers(int id, List<int> memberIds) => _guardAsync(
+    () => _store.addGroupMembers(
+      id: id,
+      memberIds: frb.Int64List.fromList(memberIds),
+    ),
+  );
+
+  @override
+  Future<void> removeGroupMember(int id, GroupMember member) =>
+      _guardAsync(() => _store.removeGroupMember(id: id, key: member.key));
+
+  @override
+  Future<void> leaveGroup(int id) =>
+      _guardAsync(() => _store.leaveGroup(id: id));
 
   @override
   Future<void> startNetwork() => _guardAsync(_store.startNetwork);
@@ -1124,6 +1257,8 @@ ChatMessage _message(bridge.MessageView m) => ChatMessage(
   canEdit: m.canEdit,
   canDeleteForEveryone: m.canDeleteForEveryone,
   inMailbox: m.inMailbox,
+  authorName: m.authorName,
+  authorSeed: m.authorSeed,
   file: switch (m.file) {
     null => null,
     final f => ChatFile(
@@ -1148,6 +1283,8 @@ Contact _contact(bridge.ContactView c) => Contact(
   reach: ContactReach.values[c.reach.index],
   photo: c.photo,
   photoAllowed: c.photoAllowed,
+  isGroup: c.isGroup,
+  groupActive: c.groupActive,
 );
 
 Profile? _profile(bridge.Profile? p) => p == null
@@ -1185,6 +1322,9 @@ CoreFailure _failure(bridge.CoreError error) => switch (error) {
   bridge.CoreError.noAudio => CoreFailure.noAudio,
   bridge.CoreError.invalidMailbox => CoreFailure.invalidMailbox,
   bridge.CoreError.mailboxRefused => CoreFailure.mailboxRefused,
+  bridge.CoreError.notAdmin => CoreFailure.notAdmin,
+  bridge.CoreError.notAMember => CoreFailure.notAMember,
+  bridge.CoreError.tooManyMembers => CoreFailure.tooManyMembers,
   bridge.CoreError.storage => CoreFailure.storage,
 };
 

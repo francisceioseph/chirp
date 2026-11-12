@@ -952,4 +952,79 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
 
   @override
   String get photoAllowedHelp => 'Désactiver efface votre photo de son Chirp.';
+
+  @override
+  String get groupNew => 'Nouveau groupe';
+
+  @override
+  String get groupName => 'Nom du groupe';
+
+  @override
+  String get groupPickMembers => 'Qui en fait partie';
+
+  @override
+  String get groupCreate => 'Créer';
+
+  @override
+  String get groupAdd => 'Ajouter';
+
+  @override
+  String get groupNoOneToAdd =>
+      'Pas encore de contacts à ajouter. Ajoutez d’abord quelqu’un, puis faites-le entrer dans le groupe.';
+
+  @override
+  String get groupHelp =>
+      'Chaque membre reçoit vos messages chiffrés, directement depuis votre appareil, sans serveur. Pour l’instant, ils n’arrivent qu’aux membres qui sont aussi vos contacts.';
+
+  @override
+  String get groupLabel => 'Groupe';
+
+  @override
+  String get groupClosed => 'Vous ne faites plus partie de ce groupe.';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Vous et $count autres',
+      one: 'Vous et $count autre',
+      zero: 'Vous seul',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupAdmin => 'Admin';
+
+  @override
+  String get groupNotConnected =>
+      'Pas votre contact : vos messages ne lui parviennent pas encore';
+
+  @override
+  String get groupAddMembers => 'Ajouter des membres';
+
+  @override
+  String get groupRemove => 'Retirer du groupe';
+
+  @override
+  String get groupRename => 'Renommer le groupe';
+
+  @override
+  String get groupLeave => 'Quitter le groupe';
+
+  @override
+  String groupLeaveTitle(String name) {
+    return 'Quitter $name ?';
+  }
+
+  @override
+  String get groupLeaveBody =>
+      'Les membres sauront que vous êtes parti. Les messages restent ici, mais vous ne pourrez plus écrire ni recevoir dans ce groupe.';
+
+  @override
+  String get groupNotAdmin => 'Seul l’admin du groupe peut faire cela.';
+
+  @override
+  String get groupTooMany => 'Un groupe compte au plus 64 membres.';
 }

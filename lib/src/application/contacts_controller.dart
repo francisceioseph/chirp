@@ -174,6 +174,35 @@ class ContactsController extends ChangeNotifier {
     await reload();
   }
 
+  /// As pessoas que podem entrar num grupo: os contatos com o aperto de mão feito,
+  /// por nome.
+  List<Contact> get people {
+    final list = [
+      for (final c in _conversations)
+        if (c.contact.established && !c.contact.isGroup) c.contact,
+    ];
+    list.sort(
+      (a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+    );
+    return list;
+  }
+
+  /// Cria um grupo com estes contatos (fase 9). Devolve a conversa dele.
+  Future<Contact> createGroup(String name, List<int> memberIds) async {
+    final group = await store.createGroup(name, memberIds);
+    await reload();
+    return group;
+  }
+
+  /// Uma mudança no grupo (renomear, membros, sair), e a lista relida.
+  Future<void> changeGroup(
+    Future<void> Function(ProfileStore store) change,
+  ) async {
+    await change(store);
+    await reload();
+  }
+
   Contact? byId(int id) {
     for (final conversation in _conversations) {
       if (conversation.contact.id == id) return conversation.contact;

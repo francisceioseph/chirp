@@ -78,6 +78,15 @@ enum CoreError {
   /// A caixa postal recusou o código: vencido, já usado ou de outra caixa.
   mailboxRefused,
 
+  /// Só o admin do grupo muda o grupo.
+  notAdmin,
+
+  /// Saí do grupo (ou fui tirado): a conversa é só para ler.
+  notAMember,
+
+  /// O grupo passaria de 64 membros.
+  tooManyMembers,
+
   /// Falha de disco ou do SQLite que não é nenhuma das acima.
   storage,
 }

@@ -111,7 +111,8 @@ class MessageBubble extends StatelessWidget {
     final time = messageTime(context, message.sentAt, now: now);
     final text = message.deleted ? l10n.messageDeleted : message.text;
     final file = message.deleted ? null : message.file;
-    final sender = mine ? l10n.you : contactName;
+    // Num grupo, quem escreveu; numa conversa a dois, o contato.
+    final sender = mine ? l10n.you : (message.authorName ?? contactName);
     final semantics = [
       sender,
       text,
@@ -121,7 +122,7 @@ class MessageBubble extends StatelessWidget {
       if (message.myReaction > 0)
         '${l10n.you}: ${reactionLabel(l10n, message.myReaction)}',
       if (message.theirReaction > 0)
-        '$contactName: ${reactionLabel(l10n, message.theirReaction)}',
+        '$sender: ${reactionLabel(l10n, message.theirReaction)}',
     ].join(', ');
 
     final bubble = Container(
@@ -134,10 +135,25 @@ class MessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (!mine && message.authorName != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                message.authorName!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           if (message.replyTo != null || quoted != null)
             _Quote(
               quoted: quoted,
-              name: quoted == null || quoted!.outgoing ? l10n.you : contactName,
+              name: quoted == null || quoted!.outgoing
+                  ? l10n.you
+                  : (quoted!.authorName ?? contactName),
               color: foreground,
             ),
           if (file != null && file.voice && file.state == FileState.done)

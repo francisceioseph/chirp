@@ -12,6 +12,7 @@ mod discovery;
 mod downloads;
 mod error;
 mod files;
+mod groups;
 mod identity;
 mod invite;
 mod mailbox;

@@ -952,4 +952,81 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   @override
   String get photoAllowedHelp =>
       'Если выключить, ваше фото удалится из его Chirp.';
+
+  @override
+  String get groupNew => 'Новая группа';
+
+  @override
+  String get groupName => 'Название группы';
+
+  @override
+  String get groupPickMembers => 'Кто в ней';
+
+  @override
+  String get groupCreate => 'Создать';
+
+  @override
+  String get groupAdd => 'Добавить';
+
+  @override
+  String get groupNoOneToAdd =>
+      'Пока некого добавить. Сначала добавьте кого-нибудь в контакты, потом пригласите в группу.';
+
+  @override
+  String get groupHelp =>
+      'Каждый участник получает ваши сообщения зашифрованными, прямо с вашего устройства, без сервера. Пока они доходят только до участников, которые есть у вас в контактах.';
+
+  @override
+  String get groupLabel => 'Группа';
+
+  @override
+  String get groupClosed => 'Вы больше не в этой группе.';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Вы и ещё $count',
+      many: 'Вы и ещё $count',
+      few: 'Вы и ещё $count',
+      one: 'Вы и ещё $count',
+      zero: 'Только вы',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupAdmin => 'Админ';
+
+  @override
+  String get groupNotConnected =>
+      'Не ваш контакт: ваши сообщения пока до него не доходят';
+
+  @override
+  String get groupAddMembers => 'Добавить участников';
+
+  @override
+  String get groupRemove => 'Убрать из группы';
+
+  @override
+  String get groupRename => 'Переименовать группу';
+
+  @override
+  String get groupLeave => 'Выйти из группы';
+
+  @override
+  String groupLeaveTitle(String name) {
+    return 'Выйти из $name?';
+  }
+
+  @override
+  String get groupLeaveBody =>
+      'Участники узнают, что вы вышли. Сообщения останутся здесь, но писать и получать в этой группе вы больше не сможете.';
+
+  @override
+  String get groupNotAdmin => 'Это может только админ группы.';
+
+  @override
+  String get groupTooMany => 'В группе не больше 64 участников.';
 }

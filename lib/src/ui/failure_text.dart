@@ -26,5 +26,8 @@ String failureText(
   CoreFailure.noAudio => l10n.audioUnavailable,
   CoreFailure.invalidMailbox => l10n.mailboxInvalid,
   CoreFailure.mailboxRefused => l10n.mailboxRefused,
+  CoreFailure.notAdmin => l10n.groupNotAdmin,
+  CoreFailure.notAMember => l10n.groupClosed,
+  CoreFailure.tooManyMembers => l10n.groupTooMany,
   _ => l10n.somethingWentWrong,
 };
