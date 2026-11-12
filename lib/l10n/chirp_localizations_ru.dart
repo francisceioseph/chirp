@@ -896,4 +896,46 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   @override
   String get contactRequestLeft =>
       'Собеседник был не в сети, поэтому запрос ждёт в его почтовом ящике. Он появится в контактах, когда откроет Chirp.';
+
+  @override
+  String get photoTitle => 'Фото профиля';
+
+  @override
+  String get photoHelp =>
+      'Его видят только контакты, которым вы разрешили, и больше никто. Фото обрезается до квадрата и покидает устройство без местоположения и других данных исходного файла.';
+
+  @override
+  String get photoChoose => 'Выбрать фото';
+
+  @override
+  String get photoChange => 'Сменить фото';
+
+  @override
+  String get photoRemove => 'Удалить фото';
+
+  @override
+  String get photoWhoSees => 'Кто видит';
+
+  @override
+  String get photoEveryone => 'Все мои контакты';
+
+  @override
+  String get photoChosen => 'Только выбранные контакты';
+
+  @override
+  String get photoChosenHelp => 'Выберите их на странице каждого контакта.';
+
+  @override
+  String get photoNobody => 'Никто';
+
+  @override
+  String get photoRevokeNote =>
+      'Если убрать человека, ваше фото удалится из его Chirp, но он мог уже сохранить копию.';
+
+  @override
+  String get photoAllowed => 'Может видеть моё фото';
+
+  @override
+  String get photoAllowedHelp =>
+      'Если выключить, ваше фото удалится из его Chirp.';
 }

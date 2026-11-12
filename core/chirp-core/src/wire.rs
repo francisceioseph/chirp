@@ -110,7 +110,7 @@ pub struct Content {
     pub message_id: Vec<u8>,
     #[prost(
         oneof = "ContentBody",
-        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17"
+        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18"
     )]
     pub body: Option<ContentBody>,
     /// O relógio de quem manda, em milissegundos: só para mostrar.
@@ -164,6 +164,16 @@ pub enum ContentBody {
     /// e a ficha deste contato. Vazio: a caixa foi desligada.
     #[prost(message, tag = "17")]
     Mailbox(MailboxInfo),
+    /// A foto do perfil de quem manda, ou vazio: não é mais para este contato.
+    #[prost(message, tag = "18")]
+    Photo(PeerPhoto),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct PeerPhoto {
+    /// Um JPEG quadrado de até 512 px (`photo::MAX_PHOTO`), ou vazio.
+    #[prost(bytes = "vec", tag = "1")]
+    pub jpeg: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, Message)]

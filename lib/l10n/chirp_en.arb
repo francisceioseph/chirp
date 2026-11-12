@@ -415,5 +415,18 @@
   "mailboxInvalid": "That code does not work. Paste the whole chirp://mailbox# link.",
   "mailboxRefused": "The mailbox refused the code. It works only once and expires in 24 hours: make a new one.",
   "mailboxUnreachable": "Could not reach the mailbox. With the internet off, only a mailbox on the local network works.",
-  "contactRequestLeft": "They were offline, so your request is waiting in their mailbox. They'll appear as a contact once they open Chirp."
+  "contactRequestLeft": "They were offline, so your request is waiting in their mailbox. They'll appear as a contact once they open Chirp.",
+  "photoTitle": "Profile photo",
+  "photoHelp": "Only contacts you allow see it, never anyone else. It is made square and leaves this device without location or any other data from the original file.",
+  "photoChoose": "Choose a photo",
+  "photoChange": "Change photo",
+  "photoRemove": "Remove photo",
+  "photoWhoSees": "Who sees it",
+  "photoEveryone": "All my contacts",
+  "photoChosen": "Only contacts I choose",
+  "photoChosenHelp": "Choose them on each contact's page.",
+  "photoNobody": "Nobody",
+  "photoRevokeNote": "Taking someone off removes your photo from their Chirp, but they may already have saved a copy.",
+  "photoAllowed": "Can see my photo",
+  "photoAllowedHelp": "Turning this off removes your photo from their Chirp."
 }

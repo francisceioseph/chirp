@@ -37,6 +37,10 @@ pub struct Contact {
     pub profile_version: u32,
     pub verified: bool,
     pub state: ContactState,
+    /// A foto que o contato mandou, se houver.
+    pub photo: Option<Vec<u8>>,
+    /// Está entre os que veem a minha foto, no modo "só os marcados".
+    pub photo_allowed: bool,
 }
 
 /// O que se grava de um contato novo.
@@ -52,7 +56,7 @@ pub struct NewContact<'a> {
 }
 
 const COLUMNS: &str = "id, identity_key, endpoint_id, addrs, discovery_key, display_name, \
-                       profile_version, verified, state";
+                       profile_version, verified, state, photo, photo_allowed";
 
 fn from_row(row: &Row) -> rusqlite::Result<(Contact, i64)> {
     let addrs: String = row.get(3)?;
@@ -71,6 +75,8 @@ fn from_row(row: &Row) -> rusqlite::Result<(Contact, i64)> {
             profile_version: row.get(6)?,
             verified: row.get(7)?,
             state: ContactState::Pending,
+            photo: row.get(9)?,
+            photo_allowed: row.get(10)?,
         },
         row.get(8)?,
     ))

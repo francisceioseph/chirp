@@ -889,4 +889,46 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
   @override
   String get contactRequestLeft =>
       'They were offline, so your request is waiting in their mailbox. They\'ll appear as a contact once they open Chirp.';
+
+  @override
+  String get photoTitle => 'Profile photo';
+
+  @override
+  String get photoHelp =>
+      'Only contacts you allow see it, never anyone else. It is made square and leaves this device without location or any other data from the original file.';
+
+  @override
+  String get photoChoose => 'Choose a photo';
+
+  @override
+  String get photoChange => 'Change photo';
+
+  @override
+  String get photoRemove => 'Remove photo';
+
+  @override
+  String get photoWhoSees => 'Who sees it';
+
+  @override
+  String get photoEveryone => 'All my contacts';
+
+  @override
+  String get photoChosen => 'Only contacts I choose';
+
+  @override
+  String get photoChosenHelp => 'Choose them on each contact\'s page.';
+
+  @override
+  String get photoNobody => 'Nobody';
+
+  @override
+  String get photoRevokeNote =>
+      'Taking someone off removes your photo from their Chirp, but they may already have saved a copy.';
+
+  @override
+  String get photoAllowed => 'Can see my photo';
+
+  @override
+  String get photoAllowedHelp =>
+      'Turning this off removes your photo from their Chirp.';
 }

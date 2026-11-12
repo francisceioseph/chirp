@@ -3,6 +3,7 @@
 // O avatar com o anel de alcance, como a presença dos mensageiros dos anos 2000: verde
 // quando o contato está ao alcance agora (rede local, internet ou retransmissor),
 // discreto quando não. Decorativo: quem lê a tela ouve o alcance no texto ao lado.
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/chirp_core.dart';
@@ -21,9 +22,13 @@ class ReachAvatar extends StatelessWidget {
     required this.seed,
     this.reach,
     this.size = 48,
+    this.photo,
   });
 
   final int seed;
+
+  /// A foto do perfil, quando há uma.
+  final Uint8List? photo;
 
   /// Sem alcance (o meu próprio avatar), o anel é o de quem está ao alcance.
   final ContactReach? reach;
@@ -46,7 +51,11 @@ class ReachAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: ring, width: width),
       ),
-      child: IdentityAvatar(seed: seed, size: size - 2 * (gap + width)),
+      child: IdentityAvatar(
+        seed: seed,
+        size: size - 2 * (gap + width),
+        photo: photo,
+      ),
     );
   }
 }

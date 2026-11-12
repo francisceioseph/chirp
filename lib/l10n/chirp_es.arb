@@ -257,5 +257,18 @@
   "mailboxInvalid": "Ese código no sirve. Pega el enlace chirp://mailbox# completo.",
   "mailboxRefused": "El buzón rechazó el código. Sirve una sola vez y caduca en 24 horas: genera otro.",
   "mailboxUnreachable": "No se pudo contactar con el buzón. Con internet apagado, solo funciona un buzón en la red local.",
-  "contactRequestLeft": "La otra persona estaba desconectada, así que tu solicitud quedó en su buzón. Será tu contacto cuando abra Chirp."
+  "contactRequestLeft": "La otra persona estaba desconectada, así que tu solicitud quedó en su buzón. Será tu contacto cuando abra Chirp.",
+  "photoTitle": "Foto de perfil",
+  "photoHelp": "Solo la ven los contactos que permitas, nadie más. Queda cuadrada y sale de este dispositivo sin la ubicación ni otros datos del archivo original.",
+  "photoChoose": "Elegir una foto",
+  "photoChange": "Cambiar la foto",
+  "photoRemove": "Quitar la foto",
+  "photoWhoSees": "Quién la ve",
+  "photoEveryone": "Todos mis contactos",
+  "photoChosen": "Solo los contactos que elija",
+  "photoChosenHelp": "Elígelos en la página de cada contacto.",
+  "photoNobody": "Nadie",
+  "photoRevokeNote": "Quitar a alguien borra tu foto de su Chirp, pero puede que ya haya guardado una copia.",
+  "photoAllowed": "Puede ver mi foto",
+  "photoAllowedHelp": "Al desactivarlo, tu foto se borra de su Chirp."
 }

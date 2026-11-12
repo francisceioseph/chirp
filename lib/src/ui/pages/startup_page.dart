@@ -119,6 +119,7 @@ class _ReadyState extends State<_Ready> {
               info: startup.core.info,
               store: startup.store,
               appearance: widget.appearance,
+              changeProfile: startup.changeProfile,
               onRename: () => showRenameDialog(
                 context,
                 current: state.profile.displayName,

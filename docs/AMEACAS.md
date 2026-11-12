@@ -12,6 +12,7 @@ O que o Chirp protege, contra quem, e o que fica de fora. Vale para a versão 1.
 
   Tudo num banco SQLCipher, com o `secure_delete` ligado. A chave do banco são 32 bytes aleatórios no cofre do sistema (Keychain, Credential Manager, Keystore, Secret Service). Sem cofre, ela vem de uma senha, pelo Argon2id. Ela nunca fica em claro no disco. Os arquivos recebidos ficam na pasta do app, e o Android não faz backup dela (`allowBackup=false`).
 - **Na rede**: o envelope cifrado, dentro de uma conexão QUIC autenticada pela chave do nó (o `iroh`). Na rede local, também um anúncio mDNS.
+- **A foto do perfil, se você puser uma**: só para os contatos que você deixar, pela sessão, refeita no aparelho (quadrada, até 512 px, sem a localização nem outros dados do arquivo).
 - **Na caixa postal, se você ligar uma** (um servidor seu, ou de quem você confia, rodando o `chirp-mailbox`): o que os contatos mandaram com o seu aparelho desligado, no mesmo envelope cifrado, até você buscar (no máximo 30 dias). A caixa não tem chave de nada.
 - **Em servidor nosso**: nada. Não há conta, número de telefone, registro nem telemetria. O app não verifica atualizações sozinho.
 
@@ -41,7 +42,7 @@ Estes limites estão declarados também na página do projeto.
   - Ainda não há o Tor (fase 12).
 - **Os horários e o volume.** Os tamanhos são preenchidos, mas os horários não. Ainda não há tráfego de cobertura.
 - **A caixa postal sumir.** Se ela ficar fora do ar, ou for desligada com mensagens dentro, essas mensagens se perdem: quem mandou continua vendo "na caixa postal", sem o "entregue".
-- **O que o contato faz com o que você manda**: guardar, encaminhar, capturar a tela.
+- **O que o contato faz com o que você manda**: guardar, encaminhar, capturar a tela. Isso vale para a foto do perfil: tirar alguém dos que veem apaga a foto do Chirp dele, não uma cópia que ele já tenha feito.
 - **As notificações.** O sistema mostra e pode guardar o que estiver nelas. O modo "Sem conteúdo" mostra só "Nova mensagem".
 - **O microfone.** Ele só liga enquanto se grava uma nota de voz, e a nota vai cifrada como qualquer arquivo. Quem controla o sistema ouve o microfone de qualquer jeito.
 - **O que o teclado do sistema aprende.** Os campos pedem ao teclado para não aprender, mas a decisão é do teclado.

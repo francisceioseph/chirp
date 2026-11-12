@@ -1423,7 +1423,9 @@ impl Node {
     /// busca o que chegou. Devolve se há caixa.
     async fn mailbox_round(&self) -> CoreResult<bool> {
         let (paired, told) = with_store(&self.store, |s| {
-            let told = messages::send_mailbox(s)?;
+            let mut told = messages::send_mailbox(s)?;
+            // A foto do perfil também: um contato novo, ou um que perdeu a vez.
+            told.extend(messages::send_photos(s)?);
             Ok((mailbox::get(s.conn())?, told))
         })
         .await?;

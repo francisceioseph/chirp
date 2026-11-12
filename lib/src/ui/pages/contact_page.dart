@@ -34,9 +34,18 @@ class ContactPage extends StatefulWidget {
 class _ContactPageState extends State<ContactPage> {
   String? _safetyNumber;
 
+  /// Quem vê a minha foto: no modo "só os marcados", a chave deste contato aparece.
+  PhotoVisibility? _visibility;
+
   @override
   void initState() {
     super.initState();
+    widget.controller.store
+        .profile()
+        .then((profile) {
+          if (mounted) setState(() => _visibility = profile?.photoVisibility);
+        })
+        .catchError((Object _) {});
     widget.controller
         .safetyNumber(widget.contactId)
         .then((number) {
@@ -72,7 +81,13 @@ class _ContactPageState extends State<ContactPage> {
         return CenteredPanel(
           appBar: AppBar(leading: _close(context), title: Text(name)),
           children: [
-            Center(child: IdentityAvatar(seed: contact.avatarSeed, size: 88)),
+            Center(
+              child: IdentityAvatar(
+                seed: contact.avatarSeed,
+                size: 88,
+                photo: contact.photo,
+              ),
+            ),
             const SizedBox(height: 12),
             PanelTitle(name),
             if (!contact.established) ...[
@@ -105,6 +120,17 @@ class _ContactPageState extends State<ContactPage> {
               onChanged: (value) =>
                   widget.controller.setVerified(contact.id, verified: value),
             ),
+            if (contact.established && _visibility == PhotoVisibility.chosen)
+              SwitchListTile(
+                title: Text(l10n.photoAllowed),
+                subtitle: Text(l10n.photoAllowedHelp),
+                secondary: const Icon(Icons.account_circle_outlined),
+                value: contact.photoAllowed,
+                onChanged: (value) => widget.controller.setPhotoAllowed(
+                  contact.id,
+                  allowed: value,
+                ),
+              ),
             if (contact.established)
               ListTile(
                 leading: Icon(reachIcon(contact.reach)),

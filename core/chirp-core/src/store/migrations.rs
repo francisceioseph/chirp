@@ -190,6 +190,18 @@ const MIGRATIONS: &[&str] = &[
     // Hello de um convite publicado chega.
     "ALTER TABLE invites ADD COLUMN drop_hash BLOB;
      CREATE INDEX invites_drop ON invites (drop_hash);",
+    // 12: a foto do perfil, quem vê, e a de cada contato. `photo_sent` é o que o
+    // contato recebeu: nada (nunca), vazio (sem foto) ou o SHA-256 da foto.
+    "CREATE TABLE photo (
+         id         INTEGER PRIMARY KEY CHECK (id = 1),
+         jpeg       BLOB,
+         hash       BLOB,
+         visibility INTEGER NOT NULL
+     );
+     INSERT INTO photo (id, jpeg, hash, visibility) VALUES (1, NULL, NULL, 1);
+     ALTER TABLE contacts ADD COLUMN photo BLOB;
+     ALTER TABLE contacts ADD COLUMN photo_allowed INTEGER NOT NULL DEFAULT 0;
+     ALTER TABLE contacts ADD COLUMN photo_sent BLOB;",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

@@ -302,7 +302,7 @@ pub fn is_clean_image(mime: &str) -> bool {
     matches!(mime, "image/jpeg" | "image/png")
 }
 
-fn decode(bytes: &[u8]) -> CoreResult<image::DynamicImage> {
+pub(crate) fn decode(bytes: &[u8]) -> CoreResult<image::DynamicImage> {
     use image::ImageDecoder;
     let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes))
         .with_guessed_format()
@@ -323,7 +323,7 @@ fn decode(bytes: &[u8]) -> CoreResult<image::DynamicImage> {
     Ok(image)
 }
 
-fn jpeg(image: &image::DynamicImage, quality: u8) -> CoreResult<Vec<u8>> {
+pub(crate) fn jpeg(image: &image::DynamicImage, quality: u8) -> CoreResult<Vec<u8>> {
     let mut out = Vec::new();
     let rgb = image.to_rgb8();
     image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, quality)

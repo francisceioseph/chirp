@@ -257,5 +257,18 @@
   "mailboxInvalid": "Esse código não serve. Cole o link chirp://mailbox# inteiro.",
   "mailboxRefused": "A caixa recusou o código. Ele vale uma vez só e vence em 24 horas: gere outro.",
   "mailboxUnreachable": "Não deu para falar com a caixa. Com a internet desligada, só uma caixa na rede local funciona.",
-  "contactRequestLeft": "A pessoa estava desligada, então o pedido ficou na caixa postal dela. Ela vira contato quando abrir o Chirp."
+  "contactRequestLeft": "A pessoa estava desligada, então o pedido ficou na caixa postal dela. Ela vira contato quando abrir o Chirp.",
+  "photoTitle": "Foto do perfil",
+  "photoHelp": "Só os contatos que você deixar veem, mais ninguém. Ela fica quadrada e sai deste aparelho sem a localização nem outros dados do arquivo original.",
+  "photoChoose": "Escolher uma foto",
+  "photoChange": "Trocar a foto",
+  "photoRemove": "Tirar a foto",
+  "photoWhoSees": "Quem vê",
+  "photoEveryone": "Todos os meus contatos",
+  "photoChosen": "Só os contatos que eu escolher",
+  "photoChosenHelp": "Escolha na página de cada contato.",
+  "photoNobody": "Ninguém",
+  "photoRevokeNote": "Tirar alguém apaga a sua foto do Chirp dele, mas ele pode já ter guardado uma cópia.",
+  "photoAllowed": "Pode ver a minha foto",
+  "photoAllowedHelp": "Desligar apaga a sua foto do Chirp desse contato."
 }

@@ -257,5 +257,18 @@
   "mailboxInvalid": "Ce code ne fonctionne pas. Collez le lien chirp://mailbox# en entier.",
   "mailboxRefused": "La boîte a refusé le code. Il ne sert qu’une fois et expire au bout de 24 heures : créez-en un autre.",
   "mailboxUnreachable": "Impossible de joindre la boîte. Sans internet, seule une boîte sur le réseau local fonctionne.",
-  "contactRequestLeft": "La personne était hors ligne : votre demande attend dans sa boîte aux lettres. Elle deviendra un contact à l’ouverture de Chirp."
+  "contactRequestLeft": "La personne était hors ligne : votre demande attend dans sa boîte aux lettres. Elle deviendra un contact à l’ouverture de Chirp.",
+  "photoTitle": "Photo de profil",
+  "photoHelp": "Seuls les contacts que vous autorisez la voient, personne d’autre. Elle est recadrée en carré et quitte cet appareil sans la localisation ni aucune autre donnée du fichier d’origine.",
+  "photoChoose": "Choisir une photo",
+  "photoChange": "Changer la photo",
+  "photoRemove": "Retirer la photo",
+  "photoWhoSees": "Qui la voit",
+  "photoEveryone": "Tous mes contacts",
+  "photoChosen": "Seulement les contacts choisis",
+  "photoChosenHelp": "Choisissez-les sur la page de chaque contact.",
+  "photoNobody": "Personne",
+  "photoRevokeNote": "Retirer quelqu’un efface votre photo de son Chirp, mais il a peut-être déjà gardé une copie.",
+  "photoAllowed": "Peut voir ma photo",
+  "photoAllowedHelp": "Désactiver efface votre photo de son Chirp."
 }

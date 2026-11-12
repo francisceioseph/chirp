@@ -168,6 +168,12 @@ class ContactsController extends ChangeNotifier {
     await reload();
   }
 
+  /// Marca o contato entre os que veem a foto no modo "só os marcados".
+  Future<void> setPhotoAllowed(int id, {required bool allowed}) async {
+    await store.setPhotoAllowed(id, allowed: allowed);
+    await reload();
+  }
+
   Contact? byId(int id) {
     for (final conversation in _conversations) {
       if (conversation.contact.id == id) return conversation.contact;

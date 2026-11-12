@@ -195,6 +195,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Profile? dco_decode_opt_box_autoadd_profile(dynamic raw);
 
   @protected
+  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
+
+  @protected
+  PhotoVisibility dco_decode_photo_visibility(dynamic raw);
+
+  @protected
   Profile dco_decode_profile(dynamic raw);
 
   @protected
@@ -403,6 +409,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Profile? sse_decode_opt_box_autoadd_profile(SseDeserializer deserializer);
+
+  @protected
+  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  PhotoVisibility sse_decode_photo_visibility(SseDeserializer deserializer);
 
   @protected
   Profile sse_decode_profile(SseDeserializer deserializer);
@@ -671,6 +683,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_box_autoadd_profile(
     Profile? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_list_prim_u_8_strict(
+    Uint8List? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_photo_visibility(
+    PhotoVisibility self,
     SseSerializer serializer,
   );
 

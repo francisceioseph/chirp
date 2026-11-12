@@ -892,4 +892,46 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
   @override
   String get contactRequestLeft =>
       'A pessoa estava desligada, então o pedido ficou na caixa postal dela. Ela vira contato quando abrir o Chirp.';
+
+  @override
+  String get photoTitle => 'Foto do perfil';
+
+  @override
+  String get photoHelp =>
+      'Só os contatos que você deixar veem, mais ninguém. Ela fica quadrada e sai deste aparelho sem a localização nem outros dados do arquivo original.';
+
+  @override
+  String get photoChoose => 'Escolher uma foto';
+
+  @override
+  String get photoChange => 'Trocar a foto';
+
+  @override
+  String get photoRemove => 'Tirar a foto';
+
+  @override
+  String get photoWhoSees => 'Quem vê';
+
+  @override
+  String get photoEveryone => 'Todos os meus contatos';
+
+  @override
+  String get photoChosen => 'Só os contatos que eu escolher';
+
+  @override
+  String get photoChosenHelp => 'Escolha na página de cada contato.';
+
+  @override
+  String get photoNobody => 'Ninguém';
+
+  @override
+  String get photoRevokeNote =>
+      'Tirar alguém apaga a sua foto do Chirp dele, mas ele pode já ter guardado uma cópia.';
+
+  @override
+  String get photoAllowed => 'Pode ver a minha foto';
+
+  @override
+  String get photoAllowedHelp =>
+      'Desligar apaga a sua foto do Chirp desse contato.';
 }

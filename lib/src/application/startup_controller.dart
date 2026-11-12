@@ -185,6 +185,21 @@ class StartupController extends ChangeNotifier {
     }
   }
 
+  /// Muda o perfil por outro caminho que o nome (a foto, quem vê). Devolve a falha, ou
+  /// nulo se deu certo.
+  Future<CoreFailure?> changeProfile(
+    Future<Profile> Function(ProfileStore store) change,
+  ) async {
+    final store = _store;
+    if (_state is! StartupReady || store == null) return CoreFailure.storage;
+    try {
+      _set(StartupReady(await change(store)));
+      return null;
+    } on CoreException catch (error) {
+      return error.failure;
+    }
+  }
+
   /// Apaga o banco e tira a chave do cofre, e começa de novo.
   Future<void> wipeAndRestart() async {
     if (_busy) return;

@@ -19,6 +19,7 @@ import '../organisms/mailbox_card.dart';
 import '../organisms/network_card.dart';
 import '../organisms/notifications_card.dart';
 import '../organisms/profile_card.dart';
+import '../organisms/profile_photo_card.dart';
 import '../templates/centered_panel.dart';
 import '../templates/shell_template.dart';
 
@@ -30,6 +31,7 @@ class ProfilePage extends StatelessWidget {
     required this.onRename,
     this.store,
     this.appearance,
+    this.changeProfile,
   });
 
   final Profile profile;
@@ -42,6 +44,12 @@ class ProfilePage extends StatelessWidget {
   /// A aparência do app, para escolher o tema.
   final AppearanceController? appearance;
 
+  /// Muda o perfil pelo núcleo (a foto, quem vê); devolve a falha, ou nulo.
+  final Future<CoreFailure?> Function(
+    Future<Profile> Function(ProfileStore store) change,
+  )?
+  changeProfile;
+
   /// As seções, na ordem da lista: o ícone, o nome e o conteúdo.
   List<({IconData icon, String label, Widget child})> _sections(
     BuildContext context,
@@ -49,6 +57,7 @@ class ProfilePage extends StatelessWidget {
     final l10n = context.l10n;
     final store = this.store;
     final appearance = this.appearance;
+    final changeProfile = this.changeProfile;
     return [
       (
         icon: Icons.person_outline,
@@ -62,6 +71,12 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
       ),
+      if (changeProfile != null)
+        (
+          icon: Icons.account_circle_outlined,
+          label: l10n.photoTitle,
+          child: ProfilePhotoCard(profile: profile, change: changeProfile),
+        ),
       if (store != null) ...[
         (
           icon: Icons.forum_outlined,
@@ -119,6 +134,10 @@ class ProfilePage extends StatelessWidget {
           appBar: AppBar(title: Text(l10n.profileTitle)),
           children: [
             ProfileCard(profile: profile, onRename: onRename),
+            if (changeProfile case final change?) ...[
+              const SizedBox(height: 16),
+              ProfilePhotoCard(profile: profile, change: change),
+            ],
             if (store case final store?) ...[
               const SizedBox(height: 16),
               ChatSettingsCard(store: store),

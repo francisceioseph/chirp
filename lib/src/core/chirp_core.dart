@@ -89,6 +89,8 @@ class Profile {
     required this.version,
     required this.fingerprint,
     required this.avatarSeed,
+    this.photo,
+    this.photoVisibility = PhotoVisibility.everyone,
   });
 
   final String displayName;
@@ -99,6 +101,23 @@ class Profile {
 
   /// A semente do avatar gerado a partir da chave.
   final int avatarSeed;
+
+  /// A foto do perfil (JPEG quadrado), se houver.
+  final Uint8List? photo;
+
+  /// Quem vê a foto.
+  final PhotoVisibility photoVisibility;
+}
+
+/// Quem vê a foto do perfil.
+enum PhotoVisibility {
+  nobody,
+
+  /// Todos os contatos.
+  everyone,
+
+  /// Só os contatos marcados, um a um.
+  chosen,
 }
 
 /// Um contato.
@@ -111,6 +130,8 @@ class Contact {
     required this.verified,
     required this.established,
     this.reach = ContactReach.unknown,
+    this.photo,
+    this.photoAllowed = false,
   });
 
   final int id;
@@ -125,6 +146,12 @@ class Contact {
 
   /// Por onde foi alcançado da última vez, com a rede ligada.
   final ContactReach reach;
+
+  /// A foto que o contato mostra a este aparelho, se houver.
+  final Uint8List? photo;
+
+  /// Está entre os que veem a minha foto, no modo [PhotoVisibility.chosen].
+  final bool photoAllowed;
 }
 
 /// Por onde um contato foi alcançado da última vez.
@@ -471,6 +498,18 @@ abstract interface class ProfileStore {
 
   Future<Profile> rename(String name);
 
+  /// Uma imagem do aparelho vira a foto do perfil (quadrada, até 512 px, sem
+  /// metadados) e vai a quem deve ver.
+  Future<Profile> setProfilePhoto(String path);
+
+  /// Tira a foto: quem tinha recebe a falta dela.
+  Future<Profile> removeProfilePhoto();
+
+  Future<Profile> setPhotoVisibility(PhotoVisibility visibility);
+
+  /// Marca o contato entre os que veem a foto no modo [PhotoVisibility.chosen].
+  Future<Contact> setPhotoAllowed(int contactId, {required bool allowed});
+
   /// Liga o nó da rede local (precisa do perfil). Chamar de novo não faz nada.
   Future<void> startNetwork();
 
@@ -692,6 +731,32 @@ class _BridgeStore implements ProfileStore {
   @override
   Future<Profile> rename(String name) =>
       _guardAsync(() async => _profile(await _store.rename(name: name))!);
+
+  @override
+  Future<Profile> setProfilePhoto(String path) => _guardAsync(
+    () async => _profile(await _store.setProfilePhoto(path: path))!,
+  );
+
+  @override
+  Future<Profile> removeProfilePhoto() =>
+      _guardAsync(() async => _profile(await _store.removeProfilePhoto())!);
+
+  @override
+  Future<Profile> setPhotoVisibility(PhotoVisibility visibility) => _guardAsync(
+    () async => _profile(
+      await _store.setPhotoVisibility(
+        visibility: bridge.PhotoVisibility.values[visibility.index],
+      ),
+    )!,
+  );
+
+  @override
+  Future<Contact> setPhotoAllowed(int contactId, {required bool allowed}) =>
+      _guardAsync(
+        () async => _contact(
+          await _store.setPhotoAllowed(contactId: contactId, allowed: allowed),
+        ),
+      );
 
   @override
   Future<void> startNetwork() => _guardAsync(_store.startNetwork);
@@ -1042,6 +1107,8 @@ Contact _contact(bridge.ContactView c) => Contact(
   verified: c.verified,
   established: c.established,
   reach: ContactReach.values[c.reach.index],
+  photo: c.photo,
+  photoAllowed: c.photoAllowed,
 );
 
 Profile? _profile(bridge.Profile? p) => p == null
@@ -1051,6 +1118,8 @@ Profile? _profile(bridge.Profile? p) => p == null
         version: p.version,
         fingerprint: p.fingerprint,
         avatarSeed: p.avatarSeed,
+        photo: p.photo,
+        photoVisibility: PhotoVisibility.values[p.photoVisibility.index],
       );
 
 CoreFailure _failure(bridge.CoreError error) => switch (error) {

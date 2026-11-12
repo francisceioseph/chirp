@@ -397,7 +397,11 @@ class _ContactsPageState extends State<ContactsPage> {
         titleSpacing: 16,
         title: Row(
           children: [
-            ReachAvatar(seed: widget.profile.avatarSeed, size: 36),
+            ReachAvatar(
+              seed: widget.profile.avatarSeed,
+              size: 36,
+              photo: widget.profile.photo,
+            ),
             const SizedBox(width: 12),
             Flexible(
               child: Text(

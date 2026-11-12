@@ -842,4 +842,44 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   @override
   String get contactRequestLeft =>
       '对方不在线，所以你的请求已放在对方的信箱中。对方打开 Chirp 后就会成为你的联系人。';
+
+  @override
+  String get photoTitle => '头像';
+
+  @override
+  String get photoHelp =>
+      '只有你允许的联系人能看到，其他人都看不到。照片会裁成正方形，离开此设备时不带位置或原文件的任何其他数据。';
+
+  @override
+  String get photoChoose => '选择照片';
+
+  @override
+  String get photoChange => '更换照片';
+
+  @override
+  String get photoRemove => '移除照片';
+
+  @override
+  String get photoWhoSees => '谁能看到';
+
+  @override
+  String get photoEveryone => '我的所有联系人';
+
+  @override
+  String get photoChosen => '仅我选择的联系人';
+
+  @override
+  String get photoChosenHelp => '在每个联系人的页面上选择。';
+
+  @override
+  String get photoNobody => '没有人';
+
+  @override
+  String get photoRevokeNote => '移除某人后，你的照片会从对方的 Chirp 中删除，但对方可能已经保存了副本。';
+
+  @override
+  String get photoAllowed => '可以看到我的头像';
+
+  @override
+  String get photoAllowedHelp => '关闭后，你的照片会从对方的 Chirp 中删除。';
 }

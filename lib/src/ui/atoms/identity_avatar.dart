@@ -2,17 +2,45 @@
 //
 // O avatar gerado: uma grade 5×5 espelhada, desenhada a partir da semente que o núcleo
 // tira da chave pública. A mesma chave dá sempre o mesmo desenho, e as cores vêm do
-// tema (uma das três famílias do colorScheme). Decorativo: o nome vai no texto ao lado.
+// tema (uma das três famílias do colorScheme). Com a foto do perfil, a foto no lugar.
+// Decorativo: o nome vai no texto ao lado.
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 class IdentityAvatar extends StatelessWidget {
-  const IdentityAvatar({super.key, required this.seed, this.size = 72});
+  const IdentityAvatar({
+    super.key,
+    required this.seed,
+    this.size = 72,
+    this.photo,
+  });
 
   final int seed;
   final double size;
 
+  /// A foto do perfil (JPEG), quando há uma.
+  final Uint8List? photo;
+
   @override
   Widget build(BuildContext context) {
+    if (photo case final photo?) {
+      return ExcludeSemantics(
+        child: ClipOval(
+          child: Image.memory(
+            photo,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            // Uma lista nova a cada leitura não pisca a foto.
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.medium,
+            // O avatar gerado, se a foto não abrir.
+            errorBuilder: (context, _, _) =>
+                IdentityAvatar(seed: seed, size: size),
+          ),
+        ),
+      );
+    }
     final scheme = Theme.of(context).colorScheme;
     final (background, foreground) = switch ((seed >> 15) % 3) {
       0 => (scheme.primaryContainer, scheme.onPrimaryContainer),

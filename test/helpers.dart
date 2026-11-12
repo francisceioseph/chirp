@@ -625,6 +625,7 @@ class FakeStore implements ProfileStore {
       verified: c.verified,
       established: c.established,
       reach: reach,
+      photo: c.photo,
     );
     _events.add(CoreEvent(CoreEventKind.contact, contactId));
   }
@@ -684,8 +685,58 @@ class FakeStore implements ProfileStore {
         verified: _verified[c.id] ?? c.verified,
         established: c.established,
         reach: c.reach,
+        photo: c.photo,
+        photoAllowed: photoAllowed.contains(c.id),
       ),
   ];
+
+  /// Os contatos que veem a foto no modo "só os marcados".
+  final Set<int> photoAllowed = {};
+
+  /// As fotos escolhidas (o caminho), na ordem.
+  final List<String> photoPaths = [];
+
+  /// Um JPEG mínimo, de mentira: a UI só desenha o que o núcleo deu.
+  static final Uint8List fakeJpeg = Uint8List.fromList(_onePixelPng);
+
+  @override
+  Future<Profile> setProfilePhoto(String path) async {
+    if (!path.endsWith('.jpg') && !path.endsWith('.png')) {
+      throw const CoreException(CoreFailure.invalidFile);
+    }
+    photoPaths.add(path);
+    return saved = _withPhoto(saved!, fakeJpeg, saved!.photoVisibility);
+  }
+
+  @override
+  Future<Profile> removeProfilePhoto() async =>
+      saved = _withPhoto(saved!, null, saved!.photoVisibility);
+
+  @override
+  Future<Profile> setPhotoVisibility(PhotoVisibility visibility) async =>
+      saved = _withPhoto(saved!, saved!.photo, visibility);
+
+  @override
+  Future<Contact> setPhotoAllowed(
+    int contactId, {
+    required bool allowed,
+  }) async {
+    allowed ? photoAllowed.add(contactId) : photoAllowed.remove(contactId);
+    return (await contacts()).firstWhere((c) => c.id == contactId);
+  }
+
+  static Profile _withPhoto(
+    Profile p,
+    Uint8List? photo,
+    PhotoVisibility visibility,
+  ) => Profile(
+    displayName: p.displayName,
+    version: p.version,
+    fingerprint: p.fingerprint,
+    avatarSeed: p.avatarSeed,
+    photo: photo,
+    photoVisibility: visibility,
+  );
 
   @override
   Future<String> safetyNumber(int contactId) async =>
@@ -923,3 +974,13 @@ class FakeFilePicker implements FilePicker {
     return save;
   }
 }
+
+/// Um PNG de 1×1 pixel, que o `Image.memory` desenha nos testes.
+const _onePixelPng = <int>[
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, //
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, //
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, //
+  0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0xDA, 0x63, 0x64, 0x60, 0xF8, 0x5F, //
+  0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, //
+  0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82, //
+];

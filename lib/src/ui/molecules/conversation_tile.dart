@@ -120,6 +120,7 @@ class ConversationTile extends StatelessWidget {
           seed: contact.avatarSeed,
           reach: contact.reach,
           size: 52,
+          photo: contact.photo,
         ),
         title: Row(
           children: [

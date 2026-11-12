@@ -19,6 +19,7 @@ mod network;
 mod node;
 mod notifications;
 mod passphrase;
+mod photo;
 mod profile;
 mod random;
 mod session;

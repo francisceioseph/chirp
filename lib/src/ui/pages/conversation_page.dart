@@ -363,6 +363,7 @@ class _ConversationPageState extends State<ConversationPage>
                           seed: contact.avatarSeed,
                           reach: contact.reach,
                           size: 40,
+                          photo: contact.photo,
                         ),
                         const SizedBox(width: 10),
                         Expanded(

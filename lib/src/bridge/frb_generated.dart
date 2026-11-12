@@ -71,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => -1966543162;
+  int get rustContentHash => 943475437;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -210,6 +210,10 @@ abstract class RustLibApi extends BaseApi {
     required int kind,
   });
 
+  Future<Profile> crateApiStoreChirpStoreRemoveProfilePhoto({
+    required ChirpStore that,
+  });
+
   Future<Profile> crateApiStoreChirpStoreRename({
     required ChirpStore that,
     required String name,
@@ -282,6 +286,22 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiStoreChirpStoreSetNotificationMode({
     required ChirpStore that,
     required NotificationMode mode,
+  });
+
+  Future<ContactView> crateApiStoreChirpStoreSetPhotoAllowed({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    required bool allowed,
+  });
+
+  Future<Profile> crateApiStoreChirpStoreSetPhotoVisibility({
+    required ChirpStore that,
+    required PhotoVisibility visibility,
+  });
+
+  Future<Profile> crateApiStoreChirpStoreSetProfilePhoto({
+    required ChirpStore that,
+    required String path,
   });
 
   Future<ContactView> crateApiStoreChirpStoreSetVerified({
@@ -1382,6 +1402,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<Profile> crateApiStoreChirpStoreRemoveProfilePhoto({
+    required ChirpStore that,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 29,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_profile,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreRemoveProfilePhotoConstMeta,
+        argValues: [that],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreRemoveProfilePhotoConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_remove_profile_photo",
+        argNames: ["that"],
+      );
+
+  @override
   Future<Profile> crateApiStoreChirpStoreRename({
     required ChirpStore that,
     required String name,
@@ -1398,7 +1454,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1436,7 +1492,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 30,
+            funcId: 31,
             port: port_,
           );
         },
@@ -1476,7 +1532,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 32,
             port: port_,
           );
         },
@@ -1514,7 +1570,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 33,
             port: port_,
           );
         },
@@ -1554,7 +1610,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 33,
+            funcId: 34,
             port: port_,
           );
         },
@@ -1592,7 +1648,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 34,
+            funcId: 35,
             port: port_,
           );
         },
@@ -1634,7 +1690,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 35,
+            funcId: 36,
             port: port_,
           );
         },
@@ -1672,7 +1728,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 36,
+            funcId: 37,
             port: port_,
           );
         },
@@ -1710,7 +1766,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 37,
+            funcId: 38,
             port: port_,
           );
         },
@@ -1748,7 +1804,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 38,
+            funcId: 39,
             port: port_,
           );
         },
@@ -1786,7 +1842,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 39,
+            funcId: 40,
             port: port_,
           );
         },
@@ -1824,7 +1880,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 40,
+            funcId: 41,
             port: port_,
           );
         },
@@ -1862,7 +1918,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 41,
+            funcId: 42,
             port: port_,
           );
         },
@@ -1900,7 +1956,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 42,
+            funcId: 43,
             port: port_,
           );
         },
@@ -1922,6 +1978,122 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<ContactView> crateApiStoreChirpStoreSetPhotoAllowed({
+    required ChirpStore that,
+    required PlatformInt64 contactId,
+    required bool allowed,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_64(contactId, serializer);
+          sse_encode_bool(allowed, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 44,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_contact_view,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSetPhotoAllowedConstMeta,
+        argValues: [that, contactId, allowed],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSetPhotoAllowedConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_set_photo_allowed",
+        argNames: ["that", "contactId", "allowed"],
+      );
+
+  @override
+  Future<Profile> crateApiStoreChirpStoreSetPhotoVisibility({
+    required ChirpStore that,
+    required PhotoVisibility visibility,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_photo_visibility(visibility, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 45,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_profile,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSetPhotoVisibilityConstMeta,
+        argValues: [that, visibility],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSetPhotoVisibilityConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_set_photo_visibility",
+        argNames: ["that", "visibility"],
+      );
+
+  @override
+  Future<Profile> crateApiStoreChirpStoreSetProfilePhoto({
+    required ChirpStore that,
+    required String path,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerChirpStore(
+            that,
+            serializer,
+          );
+          sse_encode_String(path, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 46,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_profile,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiStoreChirpStoreSetProfilePhotoConstMeta,
+        argValues: [that, path],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreChirpStoreSetProfilePhotoConstMeta =>
+      const TaskConstMeta(
+        debugName: "ChirpStore_set_profile_photo",
+        argNames: ["that", "path"],
+      );
+
+  @override
   Future<ContactView> crateApiStoreChirpStoreSetVerified({
     required ChirpStore that,
     required PlatformInt64 contactId,
@@ -1940,7 +2112,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 43,
+            funcId: 47,
             port: port_,
           );
         },
@@ -1974,7 +2146,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 44,
+            funcId: 48,
             port: port_,
           );
         },
@@ -2008,7 +2180,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 45,
+            funcId: 49,
             port: port_,
           );
         },
@@ -2042,7 +2214,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 46,
+            funcId: 50,
             port: port_,
           );
         },
@@ -2076,7 +2248,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 47,
+            funcId: 51,
             port: port_,
           );
         },
@@ -2114,7 +2286,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 48,
+            funcId: 52,
             port: port_,
           );
         },
@@ -2150,7 +2322,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 49,
+            funcId: 53,
             port: port_,
           );
         },
@@ -2188,7 +2360,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 50,
+            funcId: 54,
             port: port_,
           );
         },
@@ -2227,7 +2399,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 51,
+              funcId: 55,
               port: port_,
             );
           },
@@ -2256,7 +2428,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 52)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 56)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_core_info,
@@ -2281,7 +2453,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 53,
+            funcId: 57,
             port: port_,
           );
         },
@@ -2305,7 +2477,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 54)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 58)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -2327,7 +2499,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 55)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 59)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -2349,7 +2521,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 56)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 60)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_prim_u_8_strict,
@@ -2371,7 +2543,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 57)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 61)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_32,
@@ -2394,7 +2566,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(dir, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 58)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 62)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_store_state,
@@ -2420,7 +2592,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 59,
+            funcId: 63,
             port: port_,
           );
         },
@@ -2606,8 +2778,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ContactView dco_decode_contact_view(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
     return ContactView(
       id: dco_decode_i_64(arr[0]),
       displayName: dco_decode_String(arr[1]),
@@ -2615,6 +2787,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       verified: dco_decode_bool(arr[3]),
       established: dco_decode_bool(arr[4]),
       reach: dco_decode_contact_reach(arr[5]),
+      photo: dco_decode_opt_list_prim_u_8_strict(arr[6]),
+      photoAllowed: dco_decode_bool(arr[7]),
     );
   }
 
@@ -2872,16 +3046,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_prim_u_8_strict(raw);
+  }
+
+  @protected
+  PhotoVisibility dco_decode_photo_visibility(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return PhotoVisibility.values[raw as int];
+  }
+
+  @protected
   Profile dco_decode_profile(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return Profile(
       displayName: dco_decode_String(arr[0]),
       version: dco_decode_u_32(arr[1]),
       fingerprint: dco_decode_String(arr[2]),
       avatarSeed: dco_decode_u_32(arr[3]),
+      photo: dco_decode_opt_list_prim_u_8_strict(arr[4]),
+      photoVisibility: dco_decode_photo_visibility(arr[5]),
     );
   }
 
@@ -3128,6 +3316,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_verified = sse_decode_bool(deserializer);
     var var_established = sse_decode_bool(deserializer);
     var var_reach = sse_decode_contact_reach(deserializer);
+    var var_photo = sse_decode_opt_list_prim_u_8_strict(deserializer);
+    var var_photoAllowed = sse_decode_bool(deserializer);
     return ContactView(
       id: var_id,
       displayName: var_displayName,
@@ -3135,6 +3325,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       verified: var_verified,
       established: var_established,
       reach: var_reach,
+      photo: var_photo,
+      photoAllowed: var_photoAllowed,
     );
   }
 
@@ -3464,17 +3656,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_prim_u_8_strict(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PhotoVisibility sse_decode_photo_visibility(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return PhotoVisibility.values[inner];
+  }
+
+  @protected
   Profile sse_decode_profile(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_displayName = sse_decode_String(deserializer);
     var var_version = sse_decode_u_32(deserializer);
     var var_fingerprint = sse_decode_String(deserializer);
     var var_avatarSeed = sse_decode_u_32(deserializer);
+    var var_photo = sse_decode_opt_list_prim_u_8_strict(deserializer);
+    var var_photoVisibility = sse_decode_photo_visibility(deserializer);
     return Profile(
       displayName: var_displayName,
       version: var_version,
       fingerprint: var_fingerprint,
       avatarSeed: var_avatarSeed,
+      photo: var_photo,
+      photoVisibility: var_photoVisibility,
     );
   }
 
@@ -3751,6 +3965,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.verified, serializer);
     sse_encode_bool(self.established, serializer);
     sse_encode_contact_reach(self.reach, serializer);
+    sse_encode_opt_list_prim_u_8_strict(self.photo, serializer);
+    sse_encode_bool(self.photoAllowed, serializer);
   }
 
   @protected
@@ -4044,12 +4260,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_list_prim_u_8_strict(
+    Uint8List? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_prim_u_8_strict(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_photo_visibility(
+    PhotoVisibility self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
   void sse_encode_profile(Profile self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.displayName, serializer);
     sse_encode_u_32(self.version, serializer);
     sse_encode_String(self.fingerprint, serializer);
     sse_encode_u_32(self.avatarSeed, serializer);
+    sse_encode_opt_list_prim_u_8_strict(self.photo, serializer);
+    sse_encode_photo_visibility(self.photoVisibility, serializer);
   }
 
   @protected
@@ -4253,6 +4493,10 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
         kind: kind,
       );
 
+  /// Tira a foto do perfil: os contatos que tinham recebem a falta dela.
+  Future<Profile> removeProfilePhoto() => RustLib.instance.api
+      .crateApiStoreChirpStoreRemoveProfilePhoto(that: this);
+
   /// Troca o nome e manda o perfil novo a cada contato.
   Future<Profile> rename({required String name}) => RustLib.instance.api
       .crateApiStoreChirpStoreRename(that: this, name: name);
@@ -4346,6 +4590,29 @@ class ChirpStoreImpl extends RustOpaque implements ChirpStore {
       .instance
       .api
       .crateApiStoreChirpStoreSetNotificationMode(that: this, mode: mode);
+
+  /// Marca (ou desmarca) o contato entre os que veem a foto no modo "só os marcados".
+  Future<ContactView> setPhotoAllowed({
+    required PlatformInt64 contactId,
+    required bool allowed,
+  }) => RustLib.instance.api.crateApiStoreChirpStoreSetPhotoAllowed(
+    that: this,
+    contactId: contactId,
+    allowed: allowed,
+  );
+
+  Future<Profile> setPhotoVisibility({required PhotoVisibility visibility}) =>
+      RustLib.instance.api.crateApiStoreChirpStoreSetPhotoVisibility(
+        that: this,
+        visibility: visibility,
+      );
+
+  /// Uma imagem do aparelho vira a foto do perfil (o centro quadrado, até 512 px, sem
+  /// metadados), e vai a quem deve ver.
+  Future<Profile> setProfilePhoto({required String path}) => RustLib
+      .instance
+      .api
+      .crateApiStoreChirpStoreSetProfilePhoto(that: this, path: path);
 
   Future<ContactView> setVerified({
     required PlatformInt64 contactId,

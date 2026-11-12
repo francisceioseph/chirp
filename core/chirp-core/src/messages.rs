@@ -865,6 +865,53 @@ pub fn send_mailbox(store: &mut Store) -> CoreResult<Vec<i64>> {
     Ok(sent)
 }
 
+/// Manda a foto do perfil a quem deve ver e ainda não tem a de agora, e uma vazia a
+/// quem tinha e não deve ver mais. Devolve a quem mandou.
+pub fn send_photos(store: &mut Store) -> CoreResult<Vec<i64>> {
+    let me = session::me(store)?;
+    let tx = store.conn_mut().transaction()?;
+    let own = crate::photo::own(&tx)?;
+    let mut sent = Vec::new();
+    for contact in contacts::list(&tx)? {
+        if contact.state != ContactState::Established {
+            continue;
+        }
+        let before = crate::photo::sent(&tx, contact.id)?;
+        let target = if crate::photo::visible_to(&own, contact.photo_allowed) {
+            own.hash.clone().unwrap_or_default()
+        } else {
+            vec![]
+        };
+        // Quem nunca recebeu nada e não deve ver não precisa saber que não há foto.
+        if before.as_ref() == Some(&target) || (before.is_none() && target.is_empty()) {
+            continue;
+        }
+        let jpeg = if target.is_empty() {
+            vec![]
+        } else {
+            own.jpeg.clone().unwrap_or_default()
+        };
+        let lamport: i64 = tx.query_row(
+            "SELECT lamport FROM contacts WHERE id = ?1",
+            [contact.id],
+            |r| r.get(0),
+        )?;
+        enqueue(
+            &tx,
+            &me,
+            &contact,
+            ContentBody::Photo(wire::PeerPhoto { jpeg }),
+            lamport,
+            now_ms(),
+            false,
+        )?;
+        crate::photo::set_sent(&tx, contact.id, &target)?;
+        sent.push(contact.id);
+    }
+    tx.commit()?;
+    Ok(sent)
+}
+
 /// Avisa o contato de que as mensagens que vieram pela caixa postal chegaram (elas não
 /// tiveram o `Ack`). Vale mesmo sem os recibos de leitura: é o "entregue".
 pub fn send_delivered(store: &mut Store, contact_id: i64, ids: &[Vec<u8>]) -> CoreResult<()> {
@@ -1261,6 +1308,20 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
                 return Ok(Effect::Nothing);
             };
             if crate::mailbox::set_theirs(conn, id, theirs.as_ref())? {
+                Effect::Contact(id)
+            } else {
+                Effect::Nothing
+            }
+        }
+        ContentBody::Photo(photo) => {
+            let jpeg = if photo.jpeg.is_empty() {
+                None
+            } else if crate::photo::check(&photo.jpeg) {
+                Some(photo.jpeg.as_slice())
+            } else {
+                return Ok(Effect::Nothing);
+            };
+            if crate::photo::set_theirs(conn, id, jpeg)? {
                 Effect::Contact(id)
             } else {
                 Effect::Nothing

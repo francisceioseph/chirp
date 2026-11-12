@@ -257,5 +257,18 @@
   "mailboxInvalid": "这个代码无效。请粘贴完整的 chirp://mailbox# 链接。",
   "mailboxRefused": "信箱拒绝了这个代码。代码只能使用一次，24 小时后过期：请生成新的代码。",
   "mailboxUnreachable": "无法连接到信箱。关闭互联网时，只有本地网络上的信箱可用。",
-  "contactRequestLeft": "对方不在线，所以你的请求已放在对方的信箱中。对方打开 Chirp 后就会成为你的联系人。"
+  "contactRequestLeft": "对方不在线，所以你的请求已放在对方的信箱中。对方打开 Chirp 后就会成为你的联系人。",
+  "photoTitle": "头像",
+  "photoHelp": "只有你允许的联系人能看到，其他人都看不到。照片会裁成正方形，离开此设备时不带位置或原文件的任何其他数据。",
+  "photoChoose": "选择照片",
+  "photoChange": "更换照片",
+  "photoRemove": "移除照片",
+  "photoWhoSees": "谁能看到",
+  "photoEveryone": "我的所有联系人",
+  "photoChosen": "仅我选择的联系人",
+  "photoChosenHelp": "在每个联系人的页面上选择。",
+  "photoNobody": "没有人",
+  "photoRevokeNote": "移除某人后，你的照片会从对方的 Chirp 中删除，但对方可能已经保存了副本。",
+  "photoAllowed": "可以看到我的头像",
+  "photoAllowedHelp": "关闭后，你的照片会从对方的 Chirp 中删除。"
 }

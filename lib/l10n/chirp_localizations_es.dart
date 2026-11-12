@@ -891,4 +891,46 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   @override
   String get contactRequestLeft =>
       'La otra persona estaba desconectada, así que tu solicitud quedó en su buzón. Será tu contacto cuando abra Chirp.';
+
+  @override
+  String get photoTitle => 'Foto de perfil';
+
+  @override
+  String get photoHelp =>
+      'Solo la ven los contactos que permitas, nadie más. Queda cuadrada y sale de este dispositivo sin la ubicación ni otros datos del archivo original.';
+
+  @override
+  String get photoChoose => 'Elegir una foto';
+
+  @override
+  String get photoChange => 'Cambiar la foto';
+
+  @override
+  String get photoRemove => 'Quitar la foto';
+
+  @override
+  String get photoWhoSees => 'Quién la ve';
+
+  @override
+  String get photoEveryone => 'Todos mis contactos';
+
+  @override
+  String get photoChosen => 'Solo los contactos que elija';
+
+  @override
+  String get photoChosenHelp => 'Elígelos en la página de cada contacto.';
+
+  @override
+  String get photoNobody => 'Nadie';
+
+  @override
+  String get photoRevokeNote =>
+      'Quitar a alguien borra tu foto de su Chirp, pero puede que ya haya guardado una copia.';
+
+  @override
+  String get photoAllowed => 'Puede ver mi foto';
+
+  @override
+  String get photoAllowedHelp =>
+      'Al desactivarlo, tu foto se borra de su Chirp.';
 }

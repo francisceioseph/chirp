@@ -36,7 +36,11 @@ class ProfileCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ReachAvatar(seed: profile.avatarSeed, size: 104),
+              ReachAvatar(
+                seed: profile.avatarSeed,
+                size: 104,
+                photo: profile.photo,
+              ),
               const SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

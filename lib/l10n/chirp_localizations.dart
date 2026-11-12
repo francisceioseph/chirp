@@ -1655,6 +1655,84 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'They were offline, so your request is waiting in their mailbox. They\'ll appear as a contact once they open Chirp.'**
   String get contactRequestLeft;
+
+  /// No description provided for @photoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo'**
+  String get photoTitle;
+
+  /// No description provided for @photoHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Only contacts you allow see it, never anyone else. It is made square and leaves this device without location or any other data from the original file.'**
+  String get photoHelp;
+
+  /// No description provided for @photoChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo'**
+  String get photoChoose;
+
+  /// No description provided for @photoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change photo'**
+  String get photoChange;
+
+  /// No description provided for @photoRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get photoRemove;
+
+  /// No description provided for @photoWhoSees.
+  ///
+  /// In en, this message translates to:
+  /// **'Who sees it'**
+  String get photoWhoSees;
+
+  /// No description provided for @photoEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'All my contacts'**
+  String get photoEveryone;
+
+  /// No description provided for @photoChosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Only contacts I choose'**
+  String get photoChosen;
+
+  /// No description provided for @photoChosenHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose them on each contact\'s page.'**
+  String get photoChosenHelp;
+
+  /// No description provided for @photoNobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get photoNobody;
+
+  /// No description provided for @photoRevokeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Taking someone off removes your photo from their Chirp, but they may already have saved a copy.'**
+  String get photoRevokeNote;
+
+  /// No description provided for @photoAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can see my photo'**
+  String get photoAllowed;
+
+  /// No description provided for @photoAllowedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning this off removes your photo from their Chirp.'**
+  String get photoAllowedHelp;
 }
 
 class _ChirpLocalizationsDelegate

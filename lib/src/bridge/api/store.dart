@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `photo_changed`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`, `with_photo`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -135,6 +135,9 @@ abstract class ChirpStore implements RustOpaqueInterface {
   /// Reage a uma mensagem ([kind] 0 tira a reação).
   Future<MessageView> react({required PlatformInt64 id, required int kind});
 
+  /// Tira a foto do perfil: os contatos que tinham recebem a falta dela.
+  Future<Profile> removeProfilePhoto();
+
   /// Troca o nome e manda o perfil novo a cada contato.
   Future<Profile> rename({required String name});
 
@@ -186,6 +189,18 @@ abstract class ChirpStore implements RustOpaqueInterface {
   });
 
   Future<void> setNotificationMode({required NotificationMode mode});
+
+  /// Marca (ou desmarca) o contato entre os que veem a foto no modo "só os marcados".
+  Future<ContactView> setPhotoAllowed({
+    required PlatformInt64 contactId,
+    required bool allowed,
+  });
+
+  Future<Profile> setPhotoVisibility({required PhotoVisibility visibility});
+
+  /// Uma imagem do aparelho vira a foto do perfil (o centro quadrado, até 512 px, sem
+  /// metadados), e vai a quem deve ver.
+  Future<Profile> setProfilePhoto({required String path});
 
   Future<ContactView> setVerified({
     required PlatformInt64 contactId,
@@ -301,6 +316,12 @@ class ContactView {
   /// Por onde foi alcançado da última vez, com a rede ligada.
   final ContactReach reach;
 
+  /// A foto que o contato mostra a este aparelho, se houver.
+  final Uint8List? photo;
+
+  /// Está entre os que veem a minha foto, no modo "só os marcados".
+  final bool photoAllowed;
+
   const ContactView({
     required this.id,
     required this.displayName,
@@ -308,6 +329,8 @@ class ContactView {
     required this.verified,
     required this.established,
     required this.reach,
+    this.photo,
+    required this.photoAllowed,
   });
 
   @override
@@ -317,7 +340,9 @@ class ContactView {
       avatarSeed.hashCode ^
       verified.hashCode ^
       established.hashCode ^
-      reach.hashCode;
+      reach.hashCode ^
+      photo.hashCode ^
+      photoAllowed.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -329,7 +354,9 @@ class ContactView {
           avatarSeed == other.avatarSeed &&
           verified == other.verified &&
           established == other.established &&
-          reach == other.reach;
+          reach == other.reach &&
+          photo == other.photo &&
+          photoAllowed == other.photoAllowed;
 }
 
 /// Uma conversa na lista.
@@ -678,6 +705,17 @@ class NetworkStatus {
 /// texto.
 enum NotificationMode { off, hidden, sender, full }
 
+/// Quem vê a foto do perfil.
+enum PhotoVisibility {
+  nobody,
+
+  /// Todos os contatos.
+  everyone,
+
+  /// Só os contatos marcados.
+  chosen,
+}
+
 /// O perfil como a UI mostra.
 class Profile {
   final String displayName;
@@ -689,11 +727,19 @@ class Profile {
   /// A semente do avatar gerado.
   final int avatarSeed;
 
+  /// A foto do perfil (JPEG quadrado), se houver.
+  final Uint8List? photo;
+
+  /// Quem vê a foto.
+  final PhotoVisibility photoVisibility;
+
   const Profile({
     required this.displayName,
     required this.version,
     required this.fingerprint,
     required this.avatarSeed,
+    this.photo,
+    required this.photoVisibility,
   });
 
   @override
@@ -701,7 +747,9 @@ class Profile {
       displayName.hashCode ^
       version.hashCode ^
       fingerprint.hashCode ^
-      avatarSeed.hashCode;
+      avatarSeed.hashCode ^
+      photo.hashCode ^
+      photoVisibility.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -711,7 +759,9 @@ class Profile {
           displayName == other.displayName &&
           version == other.version &&
           fingerprint == other.fingerprint &&
-          avatarSeed == other.avatarSeed;
+          avatarSeed == other.avatarSeed &&
+          photo == other.photo &&
+          photoVisibility == other.photoVisibility;
 }
 
 /// Como abrir o banco desta pasta.

@@ -76,7 +76,8 @@ Content { bytes message_id = 1 (16 aleatórios);
                        Receipt receipt = 5; Edit edit = 6; Delete delete = 7;
                        Reaction reaction = 8; Typing typing = 9; Nudge nudge = 10;
                        PeerProfile profile = 11; Peer addrs = 12;
-                       FileOffer file = 16; MailboxInfo mailbox = 17; };
+                       FileOffer file = 16; MailboxInfo mailbox = 17;
+                       PeerPhoto photo = 18; };
           uint64 sent_at = 13 (ms, relógio de quem manda, só para mostrar);
           uint64 lamport = 14 (a ordem na conversa);
           bytes padding = 15; }
@@ -98,6 +99,10 @@ Typing   {}
 Nudge    {}
 FileOffer { bytes file_id = 1 (16); string name = 2; uint64 size = 3; string mime = 4;
             bytes hash = 5 (BLAKE3, 32); bytes key = 6 (32); bytes thumbnail = 7 (JPEG ou vazio); }
+PeerPhoto { bytes jpeg = 1; }
+            // A foto do perfil: um JPEG inteiro (começa em FF D8 e termina em FF D9), até
+            // 48 KiB, quase quadrado e até 1024 px, que se decodifica; vazio: a foto não é
+            // mais para este contato, e quem recebe apaga a que tinha. Fora disso, ignorado.
 MailboxInfo { bytes endpoint_id = 1 (32, o nó da caixa); repeated string addrs = 2;
               bytes drop = 3 (32, a ficha deste contato); }
             // Tudo vazio: a caixa foi desligada. Fora disso, um campo de tamanho errado
@@ -236,6 +241,13 @@ Na caixa, um convite publicado vale no máximo 7 dias, cada dono publica até 32
 
 **Os limites da caixa** (`Limits`): 20 mil envelopes e 256 MiB no total, 2 mil por ficha, 30 dias guardados, 4096 fichas por dono, 256 itens por `Fetch`. Os arquivos não passam pela caixa: a oferta vai, e as fatias continuam pedindo os dois online.
 
+## A foto do perfil
+
+- Quem usa escolhe uma imagem; o núcleo a decodifica (com a rotação do EXIF aplicada), corta o centro quadrado, reduz a até 512 px e codifica de novo em JPEG, baixando a qualidade e o tamanho até caber em 48 KiB. Nada do arquivo original além dos pixels sai do aparelho.
+- Quem vê: ninguém, todos os contatos (o padrão) ou só os marcados (`contacts.photo_allowed`). A foto vai pela sessão num `Content.photo`, como uma mensagem: passa pela caixa postal e não pede os dois online.
+- Cada contato guarda o que recebeu por último (`contacts.photo_sent`: nada, vazio ou o SHA-256 da foto). A cada mudança, e a cada rodada da caixa postal (ao ligar, a cada 60 segundos e com um contato novo), quem deve ver e não tem a foto de agora a recebe, e quem tinha e não deve mais recebe uma vazia. Quem nunca recebeu nada e não deve ver não recebe nada: não fica sabendo nem que há foto.
+- Tirar alguém apaga a foto do app dele; uma cópia feita fora do app não volta, e o app diz isso.
+
 ## A descoberta na rede local (mDNS)
 
 O serviço é `_chirp._udp.local.`, e o anúncio **não leva id fixo nem nome**. O nome da instância e o do host são um token de época:
@@ -278,4 +290,5 @@ Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._
 - `chirp_mailbox` (fase 7): o frame que vai e volta, o grande demais e a versão errada; o link em cada corte e com um byte a mais; a pasta da caixa (ligar com código vencido ou repetido, as fichas de outro dono, os limites, o prazo); e, sobre QUIC, ligar, depositar, só o dono buscar e apagar.
 - `invite::tests`, `session::tests` e `node::tests` (fase 7, o primeiro contato): o convite com a caixa, com e sem retransmissor, em cada corte; o Hello pela caixa vale pela hora em que chegou e não toma o nó de um contato; e, com uma caixa de verdade, Bob convida e desliga, Alice lê e desliga, Bob volta e aceita, Alice volta e recebe o Welcome e um "oi", sem os dois nunca online juntos.
 - `messages::tests` e `node::tests` (fase 7): a caixa chega aos contatos uma vez, com uma ficha só de cada um, e o desligar também; um `MailboxInfo` fora do formato é ignorado; e, com uma caixa de verdade, uma mensagem a um contato desligado fica "na caixa postal", ele busca ao voltar e o "entregue" chega a quem mandou. O código de ligação serve uma vez só.
+- `photo::tests` e `messages::tests` (a foto): a imagem vira um JPEG quadrado no tamanho; uma foto cortada, em PNG ou comprida é recusada; e a foto chega a quem deve ver uma vez, sai de quem foi tirado, volta quando marcado e some com "ninguém".
 - `wire::tests` e `invite::tests`: frames grandes demais, versões e lixo recusados; o convite truncado em cada posição é recusado; 20 mil entradas aleatórias não derrubam o leitor.

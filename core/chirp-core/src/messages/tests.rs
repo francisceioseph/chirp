@@ -651,3 +651,63 @@ fn a_bad_mailbox_from_a_contact_is_ignored() {
         None
     );
 }
+
+#[test]
+fn the_profile_photo_goes_only_to_who_should_see_it() {
+    use crate::photo::{self, Visibility};
+    let (mut alice, mut bob) = pair();
+    let theirs = |d: &Device| contacts::by_id(d.store.conn(), d.other).unwrap().photo;
+    // Sem foto, ninguém recebe nada.
+    assert!(send_photos(&mut alice.store).unwrap().is_empty());
+
+    let png = {
+        let mut out = Vec::new();
+        image::DynamicImage::new_rgb8(600, 400)
+            .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+            .unwrap();
+        out
+    };
+    let jpeg = photo::prepare(&png).unwrap();
+    photo::set_own(alice.store.conn(), Some(&jpeg)).unwrap();
+    assert_eq!(send_photos(&mut alice.store).unwrap(), vec![alice.other]);
+    assert!(
+        send_photos(&mut alice.store).unwrap().is_empty(),
+        "uma vez só"
+    );
+    assert_eq!(post(&mut alice, &mut bob), vec![Effect::Contact(bob.other)]);
+    assert_eq!(theirs(&bob), Some(jpeg.clone()));
+
+    // Só os marcados, e Bob não está: a foto sai do app dele.
+    photo::set_visibility(alice.store.conn(), Visibility::Chosen).unwrap();
+    assert_eq!(send_photos(&mut alice.store).unwrap(), vec![alice.other]);
+    post(&mut alice, &mut bob);
+    assert_eq!(theirs(&bob), None);
+    // Marcado, volta.
+    photo::set_allowed(alice.store.conn(), alice.other, true).unwrap();
+    send_photos(&mut alice.store).unwrap();
+    post(&mut alice, &mut bob);
+    assert_eq!(theirs(&bob), Some(jpeg));
+    // Ninguém.
+    photo::set_visibility(alice.store.conn(), Visibility::Nobody).unwrap();
+    send_photos(&mut alice.store).unwrap();
+    post(&mut alice, &mut bob);
+    assert_eq!(theirs(&bob), None);
+
+    // Uma foto que não é foto é ignorada.
+    let me = session::me(&bob.store).unwrap();
+    let contact = contacts::by_id(bob.store.conn(), bob.other).unwrap();
+    enqueue(
+        bob.store.conn(),
+        &me,
+        &contact,
+        ContentBody::Photo(wire::PeerPhoto {
+            jpeg: vec![0xFF, 0xD8, 1, 2, 3],
+        }),
+        0,
+        now_ms(),
+        false,
+    )
+    .unwrap();
+    assert_eq!(post(&mut bob, &mut alice), vec![Effect::Nothing]);
+    assert_eq!(theirs(&alice), None);
+}

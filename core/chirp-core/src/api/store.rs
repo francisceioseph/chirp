@@ -53,6 +53,20 @@ pub struct Profile {
     pub fingerprint: String,
     /// A semente do avatar gerado.
     pub avatar_seed: u32,
+    /// A foto do perfil (JPEG quadrado), se houver.
+    pub photo: Option<Vec<u8>>,
+    /// Quem vê a foto.
+    pub photo_visibility: PhotoVisibility,
+}
+
+/// Quem vê a foto do perfil.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PhotoVisibility {
+    Nobody,
+    /// Todos os contatos.
+    Everyone,
+    /// Só os contatos marcados.
+    Chosen,
 }
 
 impl From<StoredProfile> for Profile {
@@ -62,8 +76,24 @@ impl From<StoredProfile> for Profile {
             avatar_seed: avatar_seed(&stored.public_key),
             display_name: stored.display_name,
             version: stored.version,
+            photo: None,
+            photo_visibility: PhotoVisibility::Everyone,
         }
     }
+}
+
+/// O perfil com a foto, que fica em outra tabela.
+fn with_photo(conn: &rusqlite::Connection, stored: StoredProfile) -> CoreResult<Profile> {
+    let own = crate::photo::own(conn)?;
+    Ok(Profile {
+        photo: own.jpeg,
+        photo_visibility: match own.visibility {
+            crate::photo::Visibility::Nobody => PhotoVisibility::Nobody,
+            crate::photo::Visibility::Everyone => PhotoVisibility::Everyone,
+            crate::photo::Visibility::Chosen => PhotoVisibility::Chosen,
+        },
+        ..stored.into()
+    })
 }
 
 #[frb(sync)]
@@ -121,6 +151,10 @@ pub struct ContactView {
     pub established: bool,
     /// Por onde foi alcançado da última vez, com a rede ligada.
     pub reach: ContactReach,
+    /// A foto que o contato mostra a este aparelho, se houver.
+    pub photo: Option<Vec<u8>>,
+    /// Está entre os que veem a minha foto, no modo "só os marcados".
+    pub photo_allowed: bool,
 }
 
 /// Por onde um contato foi alcançado da última vez.
@@ -179,6 +213,8 @@ impl From<Contact> for ContactView {
             verified: contact.verified,
             established: contact.state == ContactState::Established,
             reach: ContactReach::Unknown,
+            photo: contact.photo,
+            photo_allowed: contact.photo_allowed,
         }
     }
 }
@@ -505,11 +541,17 @@ impl ChirpStore {
     }
 
     pub fn profile(&self) -> Result<Option<Profile>, CoreError> {
-        Ok(self.lock()?.profile()?.map(Profile::from))
+        let store = self.lock()?;
+        store
+            .profile()?
+            .map(|p| with_photo(store.conn(), p))
+            .transpose()
     }
 
     pub fn create_profile(&self, name: String) -> Result<Profile, CoreError> {
-        Ok(self.lock()?.create_profile(&name)?.into())
+        let mut store = self.lock()?;
+        let profile = store.create_profile(&name)?;
+        with_photo(store.conn(), profile)
     }
 
     /// Troca o nome e manda o perfil novo a cada contato.
@@ -526,7 +568,7 @@ impl ChirpStore {
         for id in contacts {
             self.flush(id);
         }
-        Ok(profile.into())
+        with_photo(self.lock()?.conn(), profile)
     }
 
     /// Pede a entrega ao contato, se a rede está ligada. Sem ela, fica na caixa de
@@ -702,6 +744,58 @@ impl ChirpStore {
         let contact = crate::contacts::by_id(store.conn(), contact_id)?;
         let own = session::identity_pair(&store)?;
         session::safety_number(&own.identity_key().serialize(), &contact.identity_key)
+    }
+
+    /// Uma imagem do aparelho vira a foto do perfil (o centro quadrado, até 512 px, sem
+    /// metadados), e vai a quem deve ver.
+    pub fn set_profile_photo(&self, path: String) -> Result<Profile, CoreError> {
+        let bytes = std::fs::read(&path).map_err(|_| CoreError::InvalidFile)?;
+        let jpeg = crate::photo::prepare(&bytes)?;
+        crate::photo::set_own(self.lock()?.conn(), Some(&jpeg))?;
+        self.photo_changed()
+    }
+
+    /// Tira a foto do perfil: os contatos que tinham recebem a falta dela.
+    pub fn remove_profile_photo(&self) -> Result<Profile, CoreError> {
+        crate::photo::set_own(self.lock()?.conn(), None)?;
+        self.photo_changed()
+    }
+
+    pub fn set_photo_visibility(&self, visibility: PhotoVisibility) -> Result<Profile, CoreError> {
+        let visibility = match visibility {
+            PhotoVisibility::Nobody => crate::photo::Visibility::Nobody,
+            PhotoVisibility::Everyone => crate::photo::Visibility::Everyone,
+            PhotoVisibility::Chosen => crate::photo::Visibility::Chosen,
+        };
+        crate::photo::set_visibility(self.lock()?.conn(), visibility)?;
+        self.photo_changed()
+    }
+
+    /// Marca (ou desmarca) o contato entre os que veem a foto no modo "só os marcados".
+    pub fn set_photo_allowed(
+        &self,
+        contact_id: i64,
+        allowed: bool,
+    ) -> Result<ContactView, CoreError> {
+        crate::photo::set_allowed(self.lock()?.conn(), contact_id, allowed)?;
+        self.photo_changed()?;
+        let contact = crate::contacts::by_id(self.lock()?.conn(), contact_id)?;
+        Ok(self.view(contact))
+    }
+
+    /// Manda a foto (ou a falta dela) a quem mudou, e devolve o perfil.
+    fn photo_changed(&self) -> CoreResult<Profile> {
+        let (profile, sent) = {
+            let mut store = self.lock()?;
+            // A foto já mudou aqui; se não der para avisar agora, avisa na próxima.
+            let sent = messages::send_photos(&mut store).unwrap_or_default();
+            let profile = store.profile()?.ok_or(CoreError::NoProfile)?;
+            (with_photo(store.conn(), profile)?, sent)
+        };
+        for id in sent {
+            self.flush(id);
+        }
+        Ok(profile)
     }
 
     pub fn set_verified(&self, contact_id: i64, verified: bool) -> Result<ContactView, CoreError> {

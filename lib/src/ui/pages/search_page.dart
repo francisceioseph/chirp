@@ -115,7 +115,11 @@ class _SearchPageState extends State<SearchPage> {
                 return ListTile(
                   leading: contact == null
                       ? null
-                      : IdentityAvatar(seed: contact.avatarSeed, size: 40),
+                      : IdentityAvatar(
+                          seed: contact.avatarSeed,
+                          size: 40,
+                          photo: contact.photo,
+                        ),
                   title: Text(
                     name,
                     maxLines: 1,
