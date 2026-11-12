@@ -2,7 +2,7 @@
 //
 // As opções de uma mensagem, numa folha de baixo: as reações numa fileira e, embaixo,
 // responder, copiar, editar e apagar (para mim, ou para todos enquanto dá).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

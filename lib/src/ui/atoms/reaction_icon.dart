@@ -2,7 +2,7 @@
 //
 // As reações são um conjunto fixo, desenhado com ícones (a UI não tem emojis). O
 // núcleo só conhece o número de cada uma, de 1 a reactionKinds.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 

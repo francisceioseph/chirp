@@ -2,7 +2,7 @@
 //
 // A marca do Chirp num círculo, nas cores do tema. Decorativa: o nome do app vem do
 // texto ao lado, então ela fica fora do leitor de tela.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ChirpMark extends StatelessWidget {
   const ChirpMark({super.key, this.size = 96});

@@ -2,7 +2,7 @@
 //
 // A confirmação de apagar tudo: não tem volta, então pergunta antes, e o botão de
 // apagar não é o padrão.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 

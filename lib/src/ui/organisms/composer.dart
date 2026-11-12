@@ -4,7 +4,7 @@
 // computador, Enter envia e Shift+Enter quebra a linha; no celular, o botão envia.
 // Esc cancela a resposta ou a edição.
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../../../l10n/l10n.dart';

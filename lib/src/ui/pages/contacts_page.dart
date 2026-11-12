@@ -13,7 +13,7 @@
 // escolhido; o clique abre a conversa, e ler tira o aviso.
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import '../../../l10n/l10n.dart';

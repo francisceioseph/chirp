@@ -2,7 +2,7 @@
 //
 // O Chirp sozinho: abre o núcleo em Rust e entrega ao ChirpApp, com o cofre do
 // sistema. Os testes montam o ChirpApp com falsos, sem a biblioteca nativa.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'chirp_app.dart';
 import 'src/core/chirp_core.dart';

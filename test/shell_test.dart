@@ -1,7 +1,7 @@
 // A casca pela largura (fase 4): estreita, a conversa abre por cima; a partir de
 // 840 px, ao lado da lista; a partir de 1200 px, o contato num terceiro painel. E os
 // atalhos da tela principal.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';

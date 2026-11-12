@@ -1,7 +1,7 @@
 // lib/src/ui/molecules/name_field.dart
 //
 // O campo do nome do perfil, no cadastro e no "trocar nome".
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 

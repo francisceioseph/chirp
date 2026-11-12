@@ -4,7 +4,7 @@
 // efeito vidro, se escolhido. Os widgets leem pelo `ChirpStyle.of(context)`.
 import 'dart:ui' show lerpDouble;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 @immutable
 class ChirpStyle extends ThemeExtension<ChirpStyle> {

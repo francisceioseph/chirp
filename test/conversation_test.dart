@@ -1,7 +1,7 @@
 // As conversas da fase 3, com o núcleo falso: mandar e receber, os recibos, o
 // "digitando", responder, editar, apagar, reagir, chamar atenção, a busca e os ajustes.
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';

@@ -3,7 +3,7 @@
 // A casca do app pela largura da janela (docs/PLANO.md, 10.2): no celular e em
 // janelas estreitas, só a lista (a conversa abre por cima); a partir de 840 px, a
 // lista e a conversa lado a lado; a partir de 1200 px, também o painel do contato.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ShellTemplate extends StatelessWidget {
   const ShellTemplate({

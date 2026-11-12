@@ -1,5 +1,5 @@
 // As telas da abertura, montadas no app com o núcleo e o cofre falsos.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 import 'package:psito_chirp/src/ui/atoms/identity_avatar.dart';

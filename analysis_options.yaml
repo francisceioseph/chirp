@@ -7,4 +7,7 @@ analyzer:
     - macos/**
     - linux/**
     - rust_builder/cargokit/**
+    # O gerado pelo gen-l10n, que no Flutter 3.50 ainda escreve os delegates antigos
+    # (o app usa os do material_ui, no chirp_app.dart).
+    - lib/l10n/chirp_localizations.dart
 include: package:flutter_lints/flutter.yaml

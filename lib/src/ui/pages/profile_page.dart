@@ -2,7 +2,7 @@
 //
 // O perfil deste aparelho: o cartão com a chave, a privacidade das conversas, a
 // rede, a aparência e a versão do núcleo.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/appearance_controller.dart';

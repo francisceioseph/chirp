@@ -1,6 +1,6 @@
 // As notas de voz na tela: o microfone no lugar do enviar, gravar, descartar,
 // mandar, curta demais, sem microfone, tocar e parar, com o núcleo falso.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';

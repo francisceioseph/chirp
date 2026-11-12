@@ -46,7 +46,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 
 ## Comandos
 
-- `flutter run -d linux`: o app, com o núcleo compilado pelo cargokit.
+- `flutter run -d linux`: o app, com o núcleo compilado pelo cargokit. Flutter 3.50.0 (Dart 3.14), o mesmo do CI.
 - No Linux, o `libsecret-1-dev` (o cofre) e o `libasound2-dev` (o som das notas de voz, pelo `cpal`) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
 - `flutter_rust_bridge_codegen generate`: depois de mudar `core/chirp-core/src/api/`. Instalado com `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked` (a mesma versão do `flutter_rust_bridge` no `pubspec.yaml` e no `Cargo.toml`).
 - `cd core && cargo test && cargo clippy --all-targets -- -D warnings && cargo fmt --all --check`
@@ -60,6 +60,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 - Campos de senha e de mensagem com `enableIMEPersonalizedLearning: false` e sem sugestões.
 - Logs: no Dart, `debugPrint` atrás do `logging.dart` (em release, só com o ajuste ligado); no Rust, nada de log ligado por padrão. Nunca conteúdo, nome, id, chave ou endereço, nem em desenvolvimento.
 - Widgets em atomic design (`lib/src/ui/`): o que aparece em mais de um lugar sobe de camada. Os papéis de cor, as formas e os componentes estão no `docs/DESIGN.md`.
+- Os widgets do Material vêm do `package:material_ui/material_ui.dart` (o `material.dart` do Flutter ficou obsoleto no 3.50). Os delegates de idioma são os `GlobalMaterialLocalizations.delegates` dele; o `chirp_localizations.dart` gerado fica fora da análise, porque o gen-l10n ainda escreve os antigos.
 - As cores vêm do `Theme.of(context).colorScheme`, sem `Colors.x` nem `Color(0x...)` fora do `theme/` (o `privacy_test` confere). Botão principal `FilledButton`, secundário o tonal, terciário `TextButton`.
 - Nenhum texto que quem usa lê fica no código: vai para os `.arb`, nos sete idiomas (en, pt, es, fr, de, ru, zh). O `l10n_test` confere as chaves e os marcadores. Em português, um plural com `=1` tem também o `=0`; no russo, `one`, `few`, `many` e `other`.
 - Sem emojis em texto fixo da UI.

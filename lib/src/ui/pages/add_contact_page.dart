@@ -2,7 +2,7 @@
 //
 // Adicionar um contato: mostrar o meu convite (QR ou link) ou colar o de outra pessoa.
 // Quando alguém lê o meu QR, a tela fecha sozinha e avisa.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';

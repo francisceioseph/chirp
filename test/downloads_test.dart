@@ -1,5 +1,5 @@
 // O baixar sozinho, no perfil: o limite e o "só de contatos verificados".
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';

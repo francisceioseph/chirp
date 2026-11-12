@@ -2,7 +2,7 @@
 //
 // Uma nota de voz dentro da bolha: tocar ou parar, o progresso e o tempo. Enquanto o
 // arquivo não chega inteiro, a bolha mostra o FileCard (baixar, o progresso).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../file_text.dart';

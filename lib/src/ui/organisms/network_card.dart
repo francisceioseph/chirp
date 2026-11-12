@@ -5,7 +5,7 @@
 // retransmissor que o núcleo recusa volta com o aviso.
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

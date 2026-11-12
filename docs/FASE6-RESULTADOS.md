@@ -204,3 +204,13 @@ Quando o Android fecha a tela do app, o motor do Flutter vai junto, e com ele o 
 
 - O serviço do Android voltar sozinho depois de ligar o celular: precisaria subir o Flutter sem tela, o que só dá para testar num celular. Fica para depois da 1.0.
 - Salvar no iOS pelo "Compartilhar": precisa de um plugin novo e de um iPhone para testar. Fica para depois da 1.0.
+
+## Flutter 3.50 e Dart 3.14
+
+- **Material**: os widgets vêm do `material_ui` 1.11 (pelo `dart fix --code=migrate_design_widgets`), e os delegates de idioma são os dele. O `chirp_localizations.dart` gerado fica fora da análise: o gen-l10n do 3.50 ainda escreve os delegates antigos, e o app não os usa.
+- **Android**: o AGP 9.3.1, o Gradle 9.5.0 e o Kotlin 2.4.20, como no modelo do 3.50. O Kotlin entra pelo plugin do Flutter, com o `builtInKotlin` e a DSL nova ainda desligados, enquanto houver plugins que aplicam o Kotlin à mão. A `MainActivity` não recebe nenhum dos extras que o 3.50 passou a conferir.
+- **iOS**: o mínimo é o 15, que os native assets pedem. O núcleo continua entrando pelo CocoaPods (o cargokit): o Flutter volta a ele sozinho, e o fim das publicações no trunk, em dezembro de 2026, não atinge pods locais.
+- **nativeapi** 0.6: a 0.5.10 não compila na Dart 3.14 (`Isolate.create`), e a 0.5.11 foi retirada. A 0.6 só quebra o `runNativeApp()`, que o Chirp não usa.
+- **Notas de voz no macOS e no iOS**: o núcleo é uma biblioteca estática, então os podspecs ligam os frameworks de áudio da Apple. No iOS, o `AppDelegate` põe a sessão em `playAndRecord`, porque o cpal não escolhe a categoria e, sem ela, o iPhone não deixa gravar.
+- **Fica para depois**: o `flutter_local_notifications` 23 (pede o compileSdk 37, e o 3.50 está no 36), o Kotlin embutido do AGP 9 e o Swift Package Manager.
+- Conferido: 245 testes do Dart (os goldens não mudaram), o build do Linux e o teste de integração da bandeja, todos no 3.50.

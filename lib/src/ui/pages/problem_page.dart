@@ -2,7 +2,7 @@
 //
 // Quando a abertura para: o que houve, em palavras simples, e o que dá para fazer
 // (tentar de novo, ou apagar e começar de novo quando os dados não se abrem mais).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/startup_controller.dart';

@@ -2,7 +2,7 @@
 //
 // Trocar o nome do perfil. O diálogo fica aberto até o núcleo aceitar, e mostra o erro
 // se ele recusar.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

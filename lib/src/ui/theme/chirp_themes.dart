@@ -3,7 +3,7 @@
 // Os temas do Chirp são sementes com personalidade (docs/PLANO.md, 10.1): cada um diz
 // a semente, a variante do M3, uma terciária quando a personalidade pede, os cantos,
 // a densidade e as bolhas. O Material 3 faz o resto, com o contraste garantido.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'chirp_style.dart';
 

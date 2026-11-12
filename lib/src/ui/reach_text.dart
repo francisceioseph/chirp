@@ -2,7 +2,7 @@
 //
 // Por onde um contato foi alcançado, e por que não foi: o texto depende da rede
 // escolhida (só a local, internet sem retransmissor, com retransmissor).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../l10n/l10n.dart';
 import '../core/chirp_core.dart';

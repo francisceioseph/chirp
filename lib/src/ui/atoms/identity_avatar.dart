@@ -3,7 +3,7 @@
 // O avatar gerado: uma grade 5×5 espelhada, desenhada a partir da semente que o núcleo
 // tira da chave pública. A mesma chave dá sempre o mesmo desenho, e as cores vêm do
 // tema (uma das três famílias do colorScheme). Decorativo: o nome vai no texto ao lado.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class IdentityAvatar extends StatelessWidget {
   const IdentityAvatar({super.key, required this.seed, this.size = 72});

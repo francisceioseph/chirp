@@ -2,8 +2,7 @@
 //
 // O app inteiro, recebendo o núcleo e o cofre de fora (como o PlayerView do Psito
 // Player): o main.dart passa os de verdade, e os testes os falsos.
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'l10n/l10n.dart';
 import 'src/application/appearance_controller.dart';
@@ -125,11 +124,10 @@ class _ChirpAppState extends State<ChirpApp> {
             AppearanceMode.light => ThemeMode.light,
             AppearanceMode.dark => ThemeMode.dark,
           },
-          localizationsDelegates: const [
+          // Os do material_ui já trazem os do Cupertino e os dos widgets.
+          localizationsDelegates: [
             ChirpLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
+            ...GlobalMaterialLocalizations.delegates,
           ],
           supportedLocales: ChirpLocalizations.supportedLocales,
           builder: (context, child) => FilePickerScope(

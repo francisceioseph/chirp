@@ -6,7 +6,7 @@
 // começo da lista. Sem vidro, é a AppBar de sempre.
 import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/chirp_style.dart';
 

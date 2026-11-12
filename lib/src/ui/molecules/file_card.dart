@@ -3,7 +3,7 @@
 // Um arquivo dentro da bolha: a miniatura (de quem mandou) ou o ícone do tipo, o nome
 // e o tamanho, e o que dá para fazer agora (baixar, o progresso, salvar, tentar de
 // novo). Numa foto inteira, tocar abre a foto.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

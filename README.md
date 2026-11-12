@@ -29,7 +29,7 @@ What Chirp protects, and what it does not, is in the threat model, [`docs/AMEACA
 
 ## Building
 
-You need Flutter 3.47.4 and a stable Rust toolchain. The Rust core is built automatically by `flutter build`.
+You need Flutter 3.50.0 and a stable Rust toolchain. The Rust core is built automatically by `flutter build`.
 
 ```bash
 flutter run -d linux

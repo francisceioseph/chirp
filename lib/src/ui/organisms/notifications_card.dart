@@ -2,7 +2,7 @@
 //
 // O que as notificações mostram (docs/PLANO.md, 7.6): nada, só "Nova mensagem", o
 // nome, ou o nome e o texto. Ligar pede a permissão onde o sistema pede.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

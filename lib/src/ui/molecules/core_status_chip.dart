@@ -1,7 +1,7 @@
 // lib/src/ui/molecules/core_status_chip.dart
 //
 // A versão do núcleo e do protocolo, ou o aviso de que o núcleo não abriu.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

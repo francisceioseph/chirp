@@ -2,7 +2,7 @@
 //
 // A raiz do app nesta fase: desenha o estado do StartupController (a abertura, a
 // senha, o perfil novo, o perfil pronto ou o problema) e liga cada tela às intenções.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/appearance_controller.dart';

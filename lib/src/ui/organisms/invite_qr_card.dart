@@ -3,7 +3,7 @@
 // O meu convite: o QR (frente a frente, e o contato nasce verificado) e o link para
 // mandar por outro canal (o contato nasce não verificado). Cada um vale uma vez, por
 // 24 horas.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 

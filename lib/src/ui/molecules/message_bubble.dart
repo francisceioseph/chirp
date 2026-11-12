@@ -3,7 +3,7 @@
 // Uma mensagem da conversa: a bolha (as minhas à direita), a citação, o texto, a hora,
 // o "editada", o estado e as reações embaixo. A chamada de atenção é uma linha no meio.
 // Segurar, o botão direito ou Enter com o foco nela abre as opções.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

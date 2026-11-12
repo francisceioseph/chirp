@@ -3,7 +3,7 @@
 // Dígitos para comparar de olho: a impressão digital da chave (6 grupos de 5, em duas
 // linhas de três) e o número de segurança (12 grupos, em três linhas de quatro), em
 // fonte de largura fixa. O leitor de tela lê grupo a grupo.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class FingerprintText extends StatelessWidget {
   const FingerprintText({

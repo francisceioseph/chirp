@@ -3,7 +3,7 @@
 // O tema do Chirp: Material 3 a partir de um ChirpThemeSpec. O theme/ é o único lugar
 // com cor escrita à mão; os widgets pegam tudo do colorScheme e do ChirpStyle (o
 // privacy_test confere).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'chirp_themes.dart';
 

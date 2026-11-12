@@ -2,7 +2,7 @@
 //
 // Um tema para escolher: as cores dele (no claro ou escuro de agora) e o nome. O
 // escolhido ganha a borda e o "selecionado" do leitor de tela.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/chirp_theme.dart';
 

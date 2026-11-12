@@ -2,7 +2,7 @@
 // sair, abrir ao entrar no computador (já escondido) e a notificação que traz a
 // janela de volta. No Android: o serviço com a notificação fixa e o pedido para ficar
 // fora da economia de bateria. No iOS, nada disso aparece.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 

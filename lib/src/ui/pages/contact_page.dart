@@ -2,7 +2,7 @@
 //
 // Um contato: o avatar, o nome, o número de segurança, o "marcar como verificado"
 // e por onde ele foi alcançado.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';

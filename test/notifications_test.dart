@@ -1,6 +1,6 @@
 // As notificações da fase 6: avisa o que chega com a conversa fora de vista, no modo
 // escolhido (o nome por padrão), abre a conversa pelo clique e tira o aviso ao ler.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';

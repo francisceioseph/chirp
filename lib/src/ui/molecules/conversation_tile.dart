@@ -2,7 +2,7 @@
 //
 // Uma conversa na lista: o avatar, o nome, a última mensagem (ou "digitando…"), a
 // hora e as não lidas. Sem mensagens, mostra o estado do contato (verificado ou não).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

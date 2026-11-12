@@ -1,7 +1,7 @@
 // lib/src/ui/organisms/profile_card.dart
 //
 // O perfil deste aparelho: o avatar, o nome (com o botão de trocar) e a chave.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

@@ -2,7 +2,7 @@
 //
 // Colar o convite de outra pessoa (o link que ela mandou). Ler o QR pela câmera vem
 // numa versão seguinte; por enquanto, o link.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

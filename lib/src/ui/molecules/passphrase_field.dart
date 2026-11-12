@@ -2,7 +2,7 @@
 //
 // O campo de senha: escondida por padrão, com o botão de mostrar, e sem o teclado
 // aprender nem sugerir o que se digita.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 

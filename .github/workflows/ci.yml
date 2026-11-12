@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  FLUTTER_VERSION: 3.47.4
+  FLUTTER_VERSION: 3.50.0
 
 jobs:
   # O núcleo em Rust, sozinho: formato, clippy e testes.

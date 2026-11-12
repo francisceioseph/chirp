@@ -2,7 +2,7 @@
 //
 // As telas de uma coluna só (abertura, senha, perfil novo, problema): no meio, com
 // largura máxima, rolando quando a janela é pequena (até 240×160).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class CenteredPanel extends StatelessWidget {
   const CenteredPanel({

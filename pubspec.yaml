@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.9.0+9000
 
 environment:
-  sdk: ^3.13.3
+  sdk: ^3.14.0
 
 dependencies:
   chirp_core:
@@ -19,8 +19,9 @@ dependencies:
   flutter_rust_bridge: 2.13.0
   flutter_secure_storage: ^11.2.0
   intl: any
-  nativeapi: ^0.5.10
-  nativeapi_flutter: ^0.5.10
+  material_ui: ^1.11.0
+  nativeapi: ^0.6.0
+  nativeapi_flutter: ^0.6.0
   path_provider: ^2.1.6
   qr_flutter: ^4.1.0
 dev_dependencies:

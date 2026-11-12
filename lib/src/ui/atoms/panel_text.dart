@@ -1,7 +1,7 @@
 // lib/src/ui/atoms/panel_text.dart
 //
 // O título e o parágrafo das telas de uma coluna (CenteredPanel).
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Um título de tela, centrado.
 class PanelTitle extends StatelessWidget {

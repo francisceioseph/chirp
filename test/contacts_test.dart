@@ -1,6 +1,6 @@
 // Os contatos da fase 2, com o núcleo falso: adicionar por link, o convite em QR,
 // alguém que lê o nosso código, o número de segurança e o "verificado".
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';

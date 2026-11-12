@@ -2,7 +2,7 @@
 //
 // O baixar sozinho (docs/PLANO.md, 6.7): até que tamanho o arquivo de um contato
 // baixa ao chegar, e se só dos contatos verificados. O resto espera o "Baixar".
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

@@ -2,7 +2,7 @@
 //
 // O perfil novo: o que o Chirp promete e o nome. A identidade (a chave) nasce junto,
 // no núcleo, e o avatar sai dela.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';

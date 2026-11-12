@@ -1,6 +1,6 @@
 // A rede da fase 5 na tela: a internet e os retransmissores no perfil, com o que
 // cada um revela, e o porquê de um contato não ser alcançado, na conversa.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';

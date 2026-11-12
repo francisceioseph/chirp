@@ -2,7 +2,7 @@
 //
 // A aparência: claro, escuro ou o do sistema, o tema e o efeito vidro. Muda na hora; se não gravar,
 // volta e avisa.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../application/appearance_controller.dart';
