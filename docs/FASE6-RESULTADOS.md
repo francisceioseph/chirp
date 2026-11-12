@@ -213,4 +213,5 @@ Quando o Android fecha a tela do app, o motor do Flutter vai junto, e com ele o 
 - **nativeapi** 0.6: a 0.5.10 não compila na Dart 3.14 (`Isolate.create`), e a 0.5.11 foi retirada. A 0.6 só quebra o `runNativeApp()`, que o Chirp não usa.
 - **Notas de voz no macOS e no iOS**: o núcleo é uma biblioteca estática, então os podspecs ligam os frameworks de áudio da Apple. No iOS, o `AppDelegate` põe a sessão em `playAndRecord`, porque o cpal não escolhe a categoria e, sem ela, o iPhone não deixa gravar.
 - **Fica para depois**: o `flutter_local_notifications` 23 (pede o compileSdk 37, e o 3.50 está no 36), o Kotlin embutido do AGP 9 e o Swift Package Manager.
+- O lint do AGP 9.3 usa a API do Java 21: o CI do Android instala o JDK 21 (o código continua gerado para o 17).
 - Conferido: 245 testes do Dart (os goldens não mudaram), o build do Linux e o teste de integração da bandeja, todos no 3.50.
