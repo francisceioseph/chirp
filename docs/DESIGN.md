@@ -39,6 +39,9 @@ O resumo do que a UI usa do Material 3, para quem mexe nas telas. O porquê est�
 ## Layout
 
 - O `ShellTemplate`: uma coluna abaixo de 840 px (a conversa abre por cima), duas a partir de 840 px (a lista com 340 px) e três a partir de 1200 px (o contato com 360 px).
+- As telas de uma coluna (o `CenteredPanel`) ganham outra forma a partir dos mesmos 840 px, para não deixar um cartão estreito no meio do vazio:
+  - o perfil vira os ajustes de um app de computador: as seções numa lista à esquerda (260 px) e a escolhida à direita, no topo, com até 640 px;
+  - o convite mostra o código e o colar lado a lado, em dois cartões, sem as abas.
 - Sem navegação embaixo por enquanto: o M3 pede de três a cinco destinos, e hoje há um só (as conversas; o perfil é uma página). Ela chega quando houver "Por perto" (fase 8) e os ajustes virarem uma seção.
 - Tudo cabe em 240×160 no computador e em 320×568 no celular, rolando onde precisar.
 
