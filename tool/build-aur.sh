@@ -13,7 +13,7 @@ REPO=https://github.com/francisceioseph/chirp
 DESC='Private messenger with no servers in the middle'
 SOURCE="psito-chirp-$VERSION.deb::$REPO/releases/download/v$VERSION/psito-chirp_${VERSION}_amd64.deb"
 SHA="$(curl -fsSL "${SOURCE#*::}" | sha256sum | cut -d' ' -f1)"
-DEPENDS=(gtk3 'glib2>=2.80' libsecret alsa-lib libglvnd opengl-driver hicolor-icon-theme)
+DEPENDS=(gtk3 'glib2>=2.80' libsecret alsa-lib dbus libglvnd opengl-driver hicolor-icon-theme)
 
 mkdir -p "$OUT"
 cat > "$OUT/PKGBUILD" <<PKGBUILD

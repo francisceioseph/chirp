@@ -6,6 +6,7 @@
 pub mod api;
 
 mod appearance;
+mod ble;
 mod contacts;
 mod discovery;
 mod downloads;

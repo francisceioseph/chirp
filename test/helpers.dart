@@ -574,7 +574,11 @@ class FakeStore implements ProfileStore {
     if (relays.length > maxRelays) {
       throw const CoreException(CoreFailure.invalidRelay);
     }
-    network = NetworkSettings(internet: settings.internet, relays: relays);
+    network = NetworkSettings(
+      internet: settings.internet,
+      relays: relays,
+      bluetooth: settings.bluetooth,
+    );
     networkRestarts++;
     // Como o núcleo: religar a rede faz a UI reler tudo.
     _events.add(const CoreEvent(CoreEventKind.contact, 0));
@@ -587,7 +591,15 @@ class FakeStore implements ProfileStore {
     internet: network.internet,
     relays: network.internet ? network.relays.length : 0,
     relayConnected: network.internet && relayConnected,
+    bluetooth: !network.bluetooth
+        ? BluetoothState.off
+        : bluetoothWorks
+        ? BluetoothState.on
+        : BluetoothState.unavailable,
   );
+
+  /// Se o rádio de mentira abre quando o Bluetooth é ligado.
+  bool bluetoothWorks = true;
 
   /// A caixa postal ligada, e o código que a caixa de mentira aceita.
   MailboxState? mailboxState;

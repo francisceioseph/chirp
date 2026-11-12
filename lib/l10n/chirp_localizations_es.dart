@@ -520,6 +520,17 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   String get relayStatusWaiting => 'El servidor aún no ha respondido.';
 
   @override
+  String get bluetoothToggle => 'Bluetooth';
+
+  @override
+  String get bluetoothHelp =>
+      'Para hablar con contactos cercanos, hasta unas decenas de metros, sin ninguna red. Mientras esté activo, quien busque cerca sabrá que hay alguien con Chirp, pero no quién: solo tus contactos te reconocen. Gasta más batería.';
+
+  @override
+  String get bluetoothUnavailable =>
+      'El Bluetooth no se activó. Comprueba que esté activado en el sistema.';
+
+  @override
   String get reachTitle => 'Conexión';
 
   @override
@@ -536,6 +547,9 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
 
   @override
   String get reachUnknown => 'Aún no se intentó';
+
+  @override
+  String get reachBluetooth => 'Cerca, por Bluetooth';
 
   @override
   String get unreachableLocalOnly =>

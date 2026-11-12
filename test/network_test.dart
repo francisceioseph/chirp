@@ -85,6 +85,44 @@ void main() {
     expect(store.network.relays, isEmpty);
   });
 
+  testWidgets(
+    'o Bluetooth começa desligado; ligar diz o que revela e se ligou',
+    (tester) async {
+      final store = await profile(tester);
+      await show(tester, find.text(l10n.bluetoothHelp));
+      expect(store.network.bluetooth, isFalse);
+
+      await tapShown(tester, find.text(l10n.bluetoothToggle));
+      expect(store.network.bluetooth, isTrue);
+      expect(store.networkRestarts, 1);
+      expect(find.text(l10n.bluetoothUnavailable), findsNothing);
+
+      // O sistema não deixou (sem adaptador, desligado): o cartão avisa.
+      store.bluetoothWorks = false;
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.bluetoothUnavailable), findsOneWidget);
+
+      await tapShown(tester, find.text(l10n.bluetoothToggle));
+      expect(store.network.bluetooth, isFalse);
+      expect(find.text(l10n.bluetoothUnavailable), findsNothing);
+    },
+  );
+
+  testWidgets('um contato alcançado pelo Bluetooth aparece assim', (
+    tester,
+  ) async {
+    final (core, vault) = await withProfile();
+    final store = core.store!..someoneJoined('Canela');
+    store.reached(1, ContactReach.bluetooth);
+    await pumpChirp(tester, core: core, vault: vault);
+    await tester.tap(find.text('Canela'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('${l10n.contactDetails}: Canela'));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.reachBluetooth), findsOneWidget);
+  });
+
   group('o porquê na conversa', () {
     Future<FakeStore> unreachable(
       WidgetTester tester,
@@ -170,6 +208,8 @@ void main() {
       await tester.tap(find.byTooltip(l10n.profileTitle));
       await tester.pumpAndSettle();
       await show(tester, find.text(l10n.relayAdd));
+      expect(tester.takeException(), isNull);
+      await show(tester, find.text(l10n.bluetoothToggle));
       expect(tester.takeException(), isNull);
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       await expectLater(tester, meetsGuideline(textContrastGuideline));

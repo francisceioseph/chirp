@@ -202,6 +202,8 @@ const MIGRATIONS: &[&str] = &[
      ALTER TABLE contacts ADD COLUMN photo BLOB;
      ALTER TABLE contacts ADD COLUMN photo_allowed INTEGER NOT NULL DEFAULT 0;
      ALTER TABLE contacts ADD COLUMN photo_sent BLOB;",
+    // 13: o Bluetooth (fase 8), desligado por padrão.
+    "ALTER TABLE network ADD COLUMN bluetooth INTEGER NOT NULL DEFAULT 0;",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

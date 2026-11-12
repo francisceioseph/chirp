@@ -1,8 +1,8 @@
 // lib/src/ui/atoms/reach_avatar.dart
 //
 // O avatar com o anel de alcance, como a presença dos mensageiros dos anos 2000: verde
-// quando o contato está ao alcance agora (rede local, internet ou retransmissor),
-// discreto quando não. Decorativo: quem lê a tela ouve o alcance no texto ao lado.
+// quando o contato está ao alcance agora (rede local, internet, retransmissor ou
+// Bluetooth), discreto quando não. Decorativo: quem lê a tela ouve o alcance no texto ao lado.
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -12,7 +12,10 @@ import 'identity_avatar.dart';
 
 /// O contato está ao alcance agora.
 bool isReachable(ContactReach reach) => switch (reach) {
-  ContactReach.lan || ContactReach.direct || ContactReach.relay => true,
+  ContactReach.lan ||
+  ContactReach.direct ||
+  ContactReach.relay ||
+  ContactReach.bluetooth => true,
   ContactReach.unknown || ContactReach.unreachable => false,
 };
 

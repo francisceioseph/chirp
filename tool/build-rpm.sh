@@ -35,6 +35,7 @@ Requires: gtk3
 Requires: glib2 >= 2.80
 Requires: libsecret
 Requires: alsa-lib
+Requires: dbus-libs
 Requires: mesa-libEGL
 Requires: mesa-libGLES
 Recommends: mesa-dri-drivers

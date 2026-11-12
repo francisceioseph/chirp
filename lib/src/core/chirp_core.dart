@@ -170,23 +170,49 @@ enum ContactReach {
 
   /// Não alcançou.
   unreachable,
+
+  /// Pelo Bluetooth, perto.
+  bluetooth,
 }
 
 /// A internet e os servidores de retransmissão (os dois desligados no começo).
 @immutable
 class NetworkSettings {
-  const NetworkSettings({this.internet = false, this.relays = const []});
+  const NetworkSettings({
+    this.internet = false,
+    this.relays = const [],
+    this.bluetooth = false,
+  });
 
   final bool internet;
 
   /// Os endereços dos retransmissores (`https://...`), até três.
   final List<String> relays;
 
-  NetworkSettings copyWith({bool? internet, List<String>? relays}) =>
-      NetworkSettings(
-        internet: internet ?? this.internet,
-        relays: relays ?? this.relays,
-      );
+  /// O Bluetooth: anunciar e procurar os contatos por perto.
+  final bool bluetooth;
+
+  NetworkSettings copyWith({
+    bool? internet,
+    List<String>? relays,
+    bool? bluetooth,
+  }) => NetworkSettings(
+    internet: internet ?? this.internet,
+    relays: relays ?? this.relays,
+    bluetooth: bluetooth ?? this.bluetooth,
+  );
+}
+
+/// O Bluetooth agora.
+enum BluetoothState {
+  /// Desligado nos ajustes.
+  off,
+
+  /// Ligado e funcionando.
+  on,
+
+  /// Ligado nos ajustes, mas o sistema não deixou (sem adaptador, desligado).
+  unavailable,
 }
 
 /// Quantos retransmissores, no máximo (o núcleo recusa mais).
@@ -215,6 +241,7 @@ class NetworkStatus {
     this.internet = false,
     this.relays = 0,
     this.relayConnected = false,
+    this.bluetooth = BluetoothState.off,
   });
 
   /// O nó está ligado.
@@ -226,6 +253,8 @@ class NetworkStatus {
 
   /// Algum retransmissor respondeu.
   final bool relayConnected;
+
+  final BluetoothState bluetooth;
 }
 
 enum MessageKind {
@@ -952,7 +981,11 @@ class _BridgeStore implements ProfileStore {
   @override
   Future<NetworkSettings> networkSettings() => _guardAsync(() async {
     final n = await _store.networkSettings();
-    return NetworkSettings(internet: n.internet, relays: n.relays);
+    return NetworkSettings(
+      internet: n.internet,
+      relays: n.relays,
+      bluetooth: n.bluetooth,
+    );
   });
 
   @override
@@ -962,9 +995,14 @@ class _BridgeStore implements ProfileStore {
           settings: bridge.NetworkSettings(
             internet: settings.internet,
             relays: settings.relays,
+            bluetooth: settings.bluetooth,
           ),
         );
-        return NetworkSettings(internet: n.internet, relays: n.relays);
+        return NetworkSettings(
+          internet: n.internet,
+          relays: n.relays,
+          bluetooth: n.bluetooth,
+        );
       });
 
   @override
@@ -975,6 +1013,7 @@ class _BridgeStore implements ProfileStore {
       internet: n.internet,
       relays: n.relays,
       relayConnected: n.relayConnected,
+      bluetooth: BluetoothState.values[n.bluetooth.index],
     );
   });
 

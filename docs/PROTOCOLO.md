@@ -268,6 +268,24 @@ Vetores: `token(32 zeros, 0) = a9b1226a9e540fb5b7bb` e `token(32 × 0x07, 188888
 
 Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._udp` no `NSBonjourServices`; no iOS, o multicast de verdade ainda pede à Apple o entitlement `com.apple.developer.networking.multicast`. No Android, falta pegar o `MulticastLock` (a permissão já está no manifesto). Sem mDNS, o resto funciona: só não se reencontra quem mudou de IP.
 
+## O Bluetooth LE (fase 8)
+
+Desligado por padrão; liga em Seu perfil, Rede. Hoje só no Linux (o BlueZ); o Android e os outros vêm na parte 2.
+
+- **O anúncio** leva só os dados de serviço do UUID `3200ffb9-0d62-480b-bc00-63ec5fe3365c` (10 bytes), sem nome nem lista de UUIDs:
+
+  ```
+  token = HMAC-SHA256(chave de descoberta, "chirp-ble-v1" || época (u64, big-endian))[0..8]
+  dados = token || PSM (u16, little-endian)
+  ```
+
+  A época é a mesma do mDNS (15 minutos), com outro rótulo, para os dois anúncios não se ligarem. Quem vê confere o token com o de cada contato, na época de agora e nas vizinhas. O PSM é a porta do canal L2CAP CoC que o aparelho abriu (dinâmica, de 0x80 em diante).
+- **O canal**: um L2CAP CoC (um fluxo confiável) e, por cima, o `Noise_NN_25519_ChaChaPoly_BLAKE2s` com o prólogo `chirp-ble/1`. Cada mensagem do Noise vai com o tamanho na frente (u16, big-endian), até 65535 bytes.
+- **Quem é quem**: logo depois do aperto de mão, cada lado manda, já cifrado, a chave do nó (32 bytes) e a assinatura Ed25519 dela sobre `"chirp-ble-auth-v1" || papel || hash do aperto de mão`, com o papel 0 para quem chamou e 1 para quem atendeu. O hash amarra a assinatura às chaves efêmeras desta conexão, e o papel impede devolver a assinatura do outro. Quem chamou confere que a chave é a do contato que procurava; quem atendeu só aceita a chave de um contato.
+- **Por cima**: os mesmos frames das mensagens (`Message`, `PreKeyMessage`, `Ack`, `Refused`), um sentido por conexão, como no iroh. Os arquivos e o aperto de mão de um contato novo não passam pelo Bluetooth.
+- **Quando**: um contato visto há menos de 2 minutos, que não atende pela rede, recebe pelo Bluetooth; se nem assim, a caixa postal. Um anúncio novo de um contato entrega o que esperava por ele.
+- **Um anúncio repetido** (alguém copia o token de um contato) dá numa conexão em que a chave não confere: nada é mandado.
+
 ## O que os testes garantem
 
 - `session::tests`: o aperto de mão inteiro e cada recusa:

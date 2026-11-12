@@ -3189,6 +3189,19 @@ impl SseDecode for crate::api::store::AutoDownload {
     }
 }
 
+impl SseDecode for crate::api::store::BluetoothState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::store::BluetoothState::Off,
+            1 => crate::api::store::BluetoothState::On,
+            2 => crate::api::store::BluetoothState::Unavailable,
+            _ => unreachable!("Invalid variant for BluetoothState: {}", inner),
+        };
+    }
+}
+
 impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3218,6 +3231,7 @@ impl SseDecode for crate::api::store::ContactReach {
             2 => crate::api::store::ContactReach::Direct,
             3 => crate::api::store::ContactReach::Relay,
             4 => crate::api::store::ContactReach::Unreachable,
+            5 => crate::api::store::ContactReach::Bluetooth,
             _ => unreachable!("Invalid variant for ContactReach: {}", inner),
         };
     }
@@ -3545,9 +3559,11 @@ impl SseDecode for crate::api::store::NetworkSettings {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_internet = <bool>::sse_decode(deserializer);
         let mut var_relays = <Vec<String>>::sse_decode(deserializer);
+        let mut var_bluetooth = <bool>::sse_decode(deserializer);
         return crate::api::store::NetworkSettings {
             internet: var_internet,
             relays: var_relays,
+            bluetooth: var_bluetooth,
         };
     }
 }
@@ -3559,11 +3575,13 @@ impl SseDecode for crate::api::store::NetworkStatus {
         let mut var_internet = <bool>::sse_decode(deserializer);
         let mut var_relays = <u32>::sse_decode(deserializer);
         let mut var_relayConnected = <bool>::sse_decode(deserializer);
+        let mut var_bluetooth = <crate::api::store::BluetoothState>::sse_decode(deserializer);
         return crate::api::store::NetworkStatus {
             running: var_running,
             internet: var_internet,
             relays: var_relays,
             relay_connected: var_relayConnected,
+            bluetooth: var_bluetooth,
         };
     }
 }
@@ -4085,6 +4103,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::AutoDownload>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::BluetoothState {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::Off => 0.into_dart(),
+            Self::On => 1.into_dart(),
+            Self::Unavailable => 2.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::BluetoothState
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::BluetoothState>
+    for crate::api::store::BluetoothState
+{
+    fn into_into_dart(self) -> crate::api::store::BluetoothState {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::store::ChatSettings {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -4114,6 +4154,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::ContactReach {
             Self::Direct => 2.into_dart(),
             Self::Relay => 3.into_dart(),
             Self::Unreachable => 4.into_dart(),
+            Self::Bluetooth => 5.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -4442,6 +4483,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::NetworkSettings {
         [
             self.internet.into_into_dart().into_dart(),
             self.relays.into_into_dart().into_dart(),
+            self.bluetooth.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -4465,6 +4507,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::NetworkStatus {
             self.internet.into_into_dart().into_dart(),
             self.relays.into_into_dart().into_dart(),
             self.relay_connected.into_into_dart().into_dart(),
+            self.bluetooth.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -4686,6 +4729,23 @@ impl SseEncode for crate::api::store::AutoDownload {
     }
 }
 
+impl SseEncode for crate::api::store::BluetoothState {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::store::BluetoothState::Off => 0,
+                crate::api::store::BluetoothState::On => 1,
+                crate::api::store::BluetoothState::Unavailable => 2,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
+    }
+}
+
 impl SseEncode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -4711,6 +4771,7 @@ impl SseEncode for crate::api::store::ContactReach {
                 crate::api::store::ContactReach::Direct => 2,
                 crate::api::store::ContactReach::Relay => 3,
                 crate::api::store::ContactReach::Unreachable => 4,
+                crate::api::store::ContactReach::Bluetooth => 5,
                 _ => {
                     unimplemented!("");
                 }
@@ -4989,6 +5050,7 @@ impl SseEncode for crate::api::store::NetworkSettings {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.internet, serializer);
         <Vec<String>>::sse_encode(self.relays, serializer);
+        <bool>::sse_encode(self.bluetooth, serializer);
     }
 }
 
@@ -4999,6 +5061,7 @@ impl SseEncode for crate::api::store::NetworkStatus {
         <bool>::sse_encode(self.internet, serializer);
         <u32>::sse_encode(self.relays, serializer);
         <bool>::sse_encode(self.relay_connected, serializer);
+        <crate::api::store::BluetoothState>::sse_encode(self.bluetooth, serializer);
     }
 }
 

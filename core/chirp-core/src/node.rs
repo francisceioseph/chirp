@@ -24,6 +24,11 @@
 //! A caixa postal (fase 7, o `mailbox`): um contato que não atende e que tem uma
 //! recebe o que esperava na caixa dele, que guarda até ele buscar. A deste aparelho é
 //! lida ao ligar e a cada `MAILBOX_INTERVAL`.
+//!
+//! O Bluetooth (fase 8, o `ble`), se ligado: o nó anuncia o token de época e procura
+//! os dos contatos. Um contato visto há pouco que não atende pelo iroh recebe por um
+//! canal L2CAP com o Noise (`ble::secure`), com os mesmos frames; a caixa postal fica
+//! para quando nem assim.
 
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
@@ -35,6 +40,7 @@ use iroh::endpoint::{presets, Connection, IncomingAddr, RecvStream, RelayMode, S
 use iroh::{Endpoint, EndpointAddr, EndpointId, RelayMap, RelayUrl, SecretKey, TransportAddr};
 use tokio::sync::{broadcast, mpsc};
 
+use crate::ble::{self, Radio};
 use crate::contacts::{self, Contact, ContactState};
 use crate::discovery;
 use crate::error::{CoreError, CoreResult};
@@ -101,6 +107,8 @@ pub enum Reach {
     Relay,
     /// Não alcançou.
     Unreachable,
+    /// Pelo Bluetooth, perto.
+    Bluetooth,
 }
 
 pub type SharedStore = Arc<Mutex<Store>>;
@@ -132,6 +140,12 @@ pub struct Node {
     mailbox_wake: tokio::sync::Notify,
     /// Se a última leitura da caixa postal deu certo (nada: ainda não tentou).
     mailbox_ok: Mutex<Option<bool>>,
+    /// O rádio Bluetooth, se ligado e se o sistema tem um.
+    radio: Option<Arc<dyn Radio>>,
+    /// O rádio não abriu o canal ou a procura.
+    ble_failed: std::sync::atomic::AtomicBool,
+    /// Os contatos vistos pelo Bluetooth há pouco.
+    nearby: Mutex<ble::Nearby>,
 }
 
 /// Um endereço da rede local: IPv4 privado (RFC 1918) ou IPv6 local único (fc00::/7).
@@ -223,6 +237,38 @@ impl Node {
         store: SharedStore,
         events: broadcast::Sender<NodeEvent>,
     ) -> CoreResult<Arc<Node>> {
+        let bluetooth = with_store(&store, |s| network::get(s.conn()))
+            .await?
+            .bluetooth;
+        let radio = if bluetooth {
+            Self::system_radio().await
+        } else {
+            None
+        };
+        Self::start_with(store, events, radio, true).await
+    }
+
+    /// O rádio do sistema, se houver um ligado.
+    async fn system_radio() -> Option<Arc<dyn Radio>> {
+        #[cfg(target_os = "linux")]
+        {
+            ble::bluez::BlueZ::open()
+                .await
+                .ok()
+                .map(|r| Arc::new(r) as Arc<dyn Radio>)
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            None
+        }
+    }
+
+    async fn start_with(
+        store: SharedStore,
+        events: broadcast::Sender<NodeEvent>,
+        radio: Option<Arc<dyn Radio>>,
+        mdns: bool,
+    ) -> CoreResult<Arc<Node>> {
         let (keys, port, settings, files_dir) = with_store(&store, |s| {
             let keys = session::local_keys(s.conn())?;
             let port: u16 =
@@ -298,7 +344,7 @@ impl Node {
             wake,
             flushing: Mutex::new((HashSet::new(), HashSet::new())),
             seen: Mutex::new(HashMap::new()),
-            mdns: mdns_sd::ServiceDaemon::new().ok(),
+            mdns: mdns.then(|| mdns_sd::ServiceDaemon::new().ok()).flatten(),
             announced: Mutex::new(None),
             settings,
             reach: Mutex::new(HashMap::new()),
@@ -306,6 +352,9 @@ impl Node {
             files_dir,
             mailbox_wake: tokio::sync::Notify::new(),
             mailbox_ok: Mutex::new(None),
+            radio,
+            ble_failed: std::sync::atomic::AtomicBool::new(false),
+            nearby: Mutex::new(ble::Nearby::default()),
         });
         tokio::spawn(node.clone().accept_loop());
         tokio::spawn(node.clone().delivery_loop(woken));
@@ -314,6 +363,7 @@ impl Node {
         tokio::spawn(node.clone().addrs_loop());
         tokio::spawn(node.clone().download_loop(fetching));
         tokio::spawn(node.clone().mailbox_loop());
+        tokio::spawn(node.clone().ble_loop());
         Ok(node)
     }
 
@@ -620,7 +670,14 @@ impl Node {
     }
 
     async fn deliver_to(&self, contact: &Contact) -> CoreResult<()> {
-        let conn = self.connect(contact).await?;
+        let conn = match self.connect(contact).await {
+            Ok(conn) => conn,
+            // Não atendeu pela rede: se está perto, pelo Bluetooth.
+            Err(CoreError::Unreachable) if self.near(contact.id).is_some() => {
+                return self.deliver_by_ble(contact).await;
+            }
+            Err(e) => return Err(e),
+        };
         self.saw(contact.id);
         let result = self.send_all(&conn, contact.id).await;
         conn.close(0u32.into(), b"");
@@ -735,6 +792,18 @@ impl Node {
 
     async fn send_all(&self, conn: &Connection, contact_id: i64) -> CoreResult<()> {
         let (mut send, mut recv) = conn.open_bi().await.map_err(|_| CoreError::Unreachable)?;
+        self.send_over(&mut send, &mut recv, contact_id).await?;
+        let _ = send.finish();
+        Ok(())
+    }
+
+    /// Manda a caixa de saída do contato por um fluxo, na ordem, cada envelope
+    /// esperando o `Ack`.
+    async fn send_over<W, R>(&self, send: &mut W, recv: &mut R, contact_id: i64) -> CoreResult<()>
+    where
+        W: tokio::io::AsyncWrite + Unpin,
+        R: tokio::io::AsyncRead + Unpin,
+    {
         for _ in 0..MAX_MESSAGES {
             let Some(out) = with_store(&self.store, move |s| {
                 messages::next_out(s.conn(), contact_id)
@@ -748,8 +817,11 @@ impl Node {
             } else {
                 Body::Message(out.ciphertext)
             };
-            wire::write_frame(&mut send, &wire::frame(body)).await?;
-            let reply = tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(&mut recv))
+            wire::write_frame(send, &wire::frame(body)).await?;
+            tokio::io::AsyncWriteExt::flush(send)
+                .await
+                .map_err(|_| CoreError::Unreachable)?;
+            let reply = tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(recv))
                 .await
                 .map_err(|_| CoreError::Unreachable)??;
             match reply {
@@ -763,7 +835,6 @@ impl Node {
                 _ => return Err(CoreError::Protocol),
             }
         }
-        let _ = send.finish();
         Ok(())
     }
 
@@ -1159,16 +1230,34 @@ impl Node {
                 .await
                 .map_err(|_| CoreError::Unreachable)?
                 .map_err(|_| CoreError::Unreachable)?;
+        if let Some(request) = self.receive_over(&mut send, &mut recv, remote).await? {
+            return self.serve_file(conn, send, remote, request).await;
+        }
+        let _ = send.finish();
+        let _ = tokio::time::timeout(Duration::from_secs(2), conn.closed()).await;
+        Ok(())
+    }
+
+    /// Recebe as mensagens de um contato por um fluxo, até ele terminar. Um pedido de
+    /// arquivo vem sozinho, no começo, e volta para quem chamou atender.
+    async fn receive_over<W, R>(
+        &self,
+        send: &mut W,
+        recv: &mut R,
+        remote: [u8; 32],
+    ) -> CoreResult<Option<wire::FileRequest>>
+    where
+        W: tokio::io::AsyncWrite + Unpin,
+        R: tokio::io::AsyncRead + Unpin,
+    {
         for count in 0..MAX_MESSAGES {
-            let frame = match tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(&mut recv)).await
-            {
+            let frame = match tokio::time::timeout(IDLE_TIMEOUT, wire::read_frame(recv)).await {
                 Ok(Ok(frame)) => frame,
                 // O outro lado terminou (ou sumiu).
                 _ => break,
             };
-            // Um pedido de arquivo vem sozinho, no começo da conexão.
             if let (0, Body::FileRequest(request)) = (count, &frame) {
-                return self.serve_file(conn, send, remote, request.clone()).await;
+                return Ok(Some(request.clone()));
             }
             let (prekey, bytes) = match frame {
                 Body::Message(bytes) => (false, bytes),
@@ -1195,11 +1284,12 @@ impl Node {
                 }
                 Err(_) => Body::Refused(wire::Refused {}),
             };
-            wire::write_frame(&mut send, &wire::frame(reply)).await?;
+            wire::write_frame(send, &wire::frame(reply)).await?;
+            tokio::io::AsyncWriteExt::flush(send)
+                .await
+                .map_err(|_| CoreError::Unreachable)?;
         }
-        let _ = send.finish();
-        let _ = tokio::time::timeout(Duration::from_secs(2), conn.closed()).await;
-        Ok(())
+        Ok(None)
     }
 
     /// Manda as fatias de um arquivo que oferecemos a esse contato, a partir de onde
@@ -1638,7 +1728,163 @@ impl Node {
             }
             let _ = daemon.shutdown();
         }
+        if let Some(radio) = self.radio.as_ref() {
+            radio.stop().await;
+        }
         self.endpoint.close().await;
+    }
+
+    /// Se o Bluetooth está ligado e funcionando: nada se desligado nos ajustes, falso
+    /// se o sistema não deixou (sem adaptador, desligado, sem o BlueZ).
+    pub fn bluetooth(&self) -> Option<bool> {
+        if !self.settings.bluetooth {
+            return None;
+        }
+        Some(self.radio.is_some() && !self.ble_failed.load(std::sync::atomic::Ordering::Relaxed))
+    }
+
+    /// Onde o contato foi visto pelo Bluetooth, se há pouco.
+    fn near(&self, contact_id: i64) -> Option<(String, u16)> {
+        self.radio.as_ref()?;
+        self.nearby.lock().ok()?.get(contact_id)
+    }
+
+    /// Anuncia, procura e atende pelo Bluetooth, enquanto o nó estiver ligado.
+    async fn ble_loop(self: Arc<Self>) {
+        let Some(radio) = self.radio.clone() else {
+            return;
+        };
+        let failed = || {
+            self.ble_failed
+                .store(true, std::sync::atomic::Ordering::Relaxed)
+        };
+        let Ok((psm, mut incoming)) = radio.listen().await else {
+            return failed();
+        };
+        let Ok(mut sightings) = radio.scan().await else {
+            return failed();
+        };
+        let mut tick = tokio::time::interval(ANNOUNCE_CHECK);
+        let mut advertised: Option<ble::Token> = None;
+        loop {
+            tokio::select! {
+                _ = tick.tick() => {
+                    if self.endpoint.is_closed() {
+                        return;
+                    }
+                    let token = ble::token(
+                        &self.discovery_key,
+                        discovery::epoch(Self::now_secs()),
+                    );
+                    if advertised != Some(token)
+                        && radio.advertise(ble::advert(&token, psm)).await.is_ok()
+                    {
+                        advertised = Some(token);
+                    }
+                }
+                sighting = sightings.recv() => match sighting {
+                    Some(sighting) => {
+                        let _ = self.sighted(sighting).await;
+                    }
+                    None => return,
+                },
+                link = incoming.recv() => match link {
+                    Some(link) => {
+                        let node = self.clone();
+                        tokio::spawn(async move {
+                            let _ = node.serve_ble(link).await;
+                        });
+                    }
+                    None => return,
+                },
+            }
+        }
+    }
+
+    /// Um anúncio do Chirp: se o token é de um contato, ele está perto, e o que
+    /// esperava por ele pode sair.
+    async fn sighted(&self, sighting: ble::Sighting) -> CoreResult<()> {
+        let Some((token, psm)) = ble::parse_advert(&sighting.data) else {
+            return Ok(());
+        };
+        let now = Self::now_secs();
+        let contact = with_store(&self.store, move |s| {
+            let contacts = contacts::list(s.conn())?;
+            Ok(ble::owner(
+                contacts
+                    .iter()
+                    .filter(|c| c.state == ContactState::Established)
+                    .map(|c| (c.id, c.discovery_key.as_slice())),
+                &token,
+                now,
+            ))
+        })
+        .await?;
+        let Some(id) = contact else {
+            return Ok(());
+        };
+        let fresh = {
+            let Ok(mut nearby) = self.nearby.lock() else {
+                return Ok(());
+            };
+            let fresh = nearby.get(id).is_none();
+            nearby.saw(id, sighting.peer, psm);
+            fresh
+        };
+        // Visto agora: entrega o que esperava (um anúncio repetido não refaz).
+        if fresh {
+            self.flush(id);
+        }
+        Ok(())
+    }
+
+    /// Entrega pelo Bluetooth: conecta, confere que do outro lado está o contato e
+    /// manda a caixa de saída.
+    async fn deliver_by_ble(&self, contact: &Contact) -> CoreResult<()> {
+        let (Some(radio), Some((peer, psm))) = (self.radio.as_ref(), self.near(contact.id)) else {
+            return Err(CoreError::Unreachable);
+        };
+        let link = match radio.connect(&peer, psm).await {
+            Ok(link) => link,
+            Err(e) => {
+                if let Ok(mut nearby) = self.nearby.lock() {
+                    nearby.forget(contact.id);
+                }
+                return Err(e);
+            }
+        };
+        let (channel, remote) = ble::secure::initiate(link, self.endpoint.secret_key()).await?;
+        if remote[..] != contact.endpoint_id[..] {
+            // Outro aparelho com o token do contato (um anúncio repetido): não é ele.
+            return Err(CoreError::Unreachable);
+        }
+        self.reached(contact.id, Reach::Bluetooth);
+        self.saw(contact.id);
+        let (mut recv, mut send) = tokio::io::split(channel);
+        let result = self.send_over(&mut send, &mut recv, contact.id).await;
+        let _ = tokio::io::AsyncWriteExt::shutdown(&mut send).await;
+        result
+    }
+
+    /// Uma conexão pelo Bluetooth: só de contatos, e só mensagens (os arquivos ficam
+    /// para a rede).
+    async fn serve_ble(&self, link: ble::Link) -> CoreResult<()> {
+        let (channel, remote) = ble::secure::respond(link, self.endpoint.secret_key()).await?;
+        let contact = with_store(&self.store, move |s| {
+            contacts::by_endpoint(s.conn(), &remote)
+        })
+        .await?
+        .ok_or(CoreError::UnknownContact)?;
+        self.saw(contact.id);
+        self.reached(contact.id, Reach::Bluetooth);
+        let (mut recv, mut send) = tokio::io::split(channel);
+        let result = self.receive_over(&mut send, &mut recv, remote).await;
+        let _ = tokio::io::AsyncWriteExt::shutdown(&mut send).await;
+        self.flush(contact.id);
+        match result? {
+            Some(_) => Err(CoreError::Protocol),
+            None => Ok(()),
+        }
     }
 }
 
@@ -1856,6 +2102,7 @@ mod tests {
             &network::Settings {
                 internet: true,
                 relays: vec![relay.to_owned()],
+                ..Default::default()
             },
         )
         .unwrap();
@@ -2225,6 +2472,181 @@ mod tests {
         assert_eq!(texts(&alice_store, bob_at_alice).len(), 1);
         alice.close().await;
         bob.close().await;
+    }
+
+    /// Os dois ficam sem caminho pela rede (sem mDNS e com um endereço que não serve)
+    /// e com um rádio no mesmo ar.
+    async fn ble_pair(
+        air: &ble::memory::Air,
+    ) -> (SharedStore, SharedStore, Arc<Node>, Arc<Node>, i64, i64) {
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        let (bob_at_alice, alice_at_bob) = befriend(&alice_store, &alice, &bob).await;
+        alice.close().await;
+        bob.close().await;
+        for store in [&alice_store, &bob_store] {
+            store
+                .lock()
+                .unwrap()
+                .conn()
+                .execute_batch(
+                    "UPDATE contacts SET addrs = '192.0.2.1:9';
+                     UPDATE network SET bluetooth = 1;",
+                )
+                .unwrap();
+        }
+        let radio = |name: &str| Some(air.radio(name) as Arc<dyn Radio>);
+        let events = || broadcast::channel(256).0;
+        let alice = Node::start_with(alice_store.clone(), events(), radio("alice"), false)
+            .await
+            .unwrap();
+        let bob = Node::start_with(bob_store.clone(), events(), radio("bob"), false)
+            .await
+            .unwrap();
+        (
+            alice_store,
+            bob_store,
+            alice,
+            bob,
+            bob_at_alice,
+            alice_at_bob,
+        )
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn messages_go_by_bluetooth_with_no_network() {
+        use crate::messages::{self, Status};
+        let air = ble::memory::Air::default();
+        let (alice_store, bob_store, alice, bob, bob_at_alice, alice_at_bob) = ble_pair(&air).await;
+        messages::send_text(
+            &mut alice_store.lock().unwrap(),
+            bob_at_alice,
+            "perto",
+            None,
+        )
+        .unwrap();
+        alice.flush(bob_at_alice);
+        until("Bob gets it by Bluetooth", || {
+            texts(&bob_store, alice_at_bob)
+                .iter()
+                .map(|(t, _)| t.as_str())
+                .eq(["perto"])
+        })
+        .await;
+        until("Alice sees it delivered", || {
+            texts(&alice_store, bob_at_alice) == [("perto".to_owned(), Status::Delivered)]
+        })
+        .await;
+        assert_eq!(alice.reach(bob_at_alice), Reach::Bluetooth);
+        assert_eq!(bob.reach(alice_at_bob), Reach::Bluetooth);
+        assert_eq!(alice.bluetooth(), Some(true));
+
+        // E de volta.
+        messages::send_text(&mut bob_store.lock().unwrap(), alice_at_bob, "oi", None).unwrap();
+        bob.flush(alice_at_bob);
+        until("Alice gets the answer", || {
+            texts(&alice_store, bob_at_alice)
+                .iter()
+                .any(|(t, _)| t == "oi")
+        })
+        .await;
+        alice.close().await;
+        bob.close().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn messages_wait_until_the_contact_comes_near() {
+        use crate::messages::{self, Status};
+        let air = ble::memory::Air::default();
+        air.radio("bob");
+        air.set_on("bob", false);
+        let (alice_store, bob_store, alice, bob, bob_at_alice, alice_at_bob) = {
+            let pair = ble_pair(&air).await;
+            air.set_on("bob", false);
+            pair
+        };
+        messages::send_text(
+            &mut alice_store.lock().unwrap(),
+            bob_at_alice,
+            "longe",
+            None,
+        )
+        .unwrap();
+        alice.flush(bob_at_alice);
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        assert_eq!(
+            texts(&alice_store, bob_at_alice),
+            [("longe".to_owned(), Status::Pending)]
+        );
+        // Bob chega perto: o anúncio dele aparece, e o que esperava sai.
+        air.set_on("bob", true);
+        until("Bob gets it when near", || {
+            texts(&bob_store, alice_at_bob).len() == 1
+        })
+        .await;
+        alice.close().await;
+        bob.close().await;
+    }
+
+    /// Eve repete o anúncio de Bob: Alice conecta, vê que a chave não é a de Bob e não
+    /// manda nada.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_copied_advert_gets_nothing() {
+        use crate::messages::{self, Status};
+        let air = ble::memory::Air::default();
+        let (alice_store, _bob_store, alice, bob, bob_at_alice, _) = ble_pair(&air).await;
+        let bob_advert = {
+            let key: Vec<u8> = contacts(&alice_store)[0].discovery_key.clone();
+            ble::advert(
+                &ble::token(&key, discovery::epoch(Node::now_secs())),
+                0x0081,
+            )
+        };
+        bob.close().await;
+        air.set_on("bob", false);
+
+        let eve = air.radio("eve");
+        let (_, mut incoming) = eve.listen().await.unwrap();
+        let tried = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let eve_tried = tried.clone();
+        tokio::spawn(async move {
+            let mut bytes = [0u8; 32];
+            getrandom::fill(&mut bytes).unwrap();
+            let eve_key = SecretKey::from_bytes(&bytes);
+            while let Some(link) = incoming.recv().await {
+                eve_tried.store(true, std::sync::atomic::Ordering::Relaxed);
+                if let Ok((mut channel, _)) = ble::secure::respond(link, &eve_key).await {
+                    let mut buf = Vec::new();
+                    let _ = tokio::time::timeout(
+                        Duration::from_secs(2),
+                        tokio::io::AsyncReadExt::read_to_end(&mut channel, &mut buf),
+                    )
+                    .await;
+                    assert!(buf.is_empty(), "nothing goes to Eve");
+                }
+            }
+        });
+        eve.advertise(bob_advert).await.unwrap();
+        messages::send_text(
+            &mut alice_store.lock().unwrap(),
+            bob_at_alice,
+            "segredo",
+            None,
+        )
+        .unwrap();
+        alice.flush(bob_at_alice);
+        until("Alice tries Eve", || {
+            tried.load(std::sync::atomic::Ordering::Relaxed)
+        })
+        .await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        assert_eq!(
+            texts(&alice_store, bob_at_alice),
+            [("segredo".to_owned(), Status::Pending)]
+        );
+        assert_ne!(alice.reach(bob_at_alice), Reach::Bluetooth);
+        alice.close().await;
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

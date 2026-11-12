@@ -518,6 +518,17 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
   String get relayStatusWaiting => 'The relay has not answered yet.';
 
   @override
+  String get bluetoothToggle => 'Bluetooth';
+
+  @override
+  String get bluetoothHelp =>
+      'To talk with contacts nearby, up to a few tens of meters, with no network at all. While it is on, anyone scanning nearby can tell that someone with Chirp is around, but not who: only your contacts recognize you. Uses more battery.';
+
+  @override
+  String get bluetoothUnavailable =>
+      'Bluetooth did not start. Check that it is on in the system.';
+
+  @override
   String get reachTitle => 'Connection';
 
   @override
@@ -534,6 +545,9 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
 
   @override
   String get reachUnknown => 'Not tried yet';
+
+  @override
+  String get reachBluetooth => 'Nearby, by Bluetooth';
 
   @override
   String get unreachableLocalOnly =>

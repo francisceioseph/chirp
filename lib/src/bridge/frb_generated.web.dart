@@ -68,6 +68,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AutoDownload dco_decode_auto_download(dynamic raw);
 
   @protected
+  BluetoothState dco_decode_bluetooth_state(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
@@ -268,6 +271,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AutoDownload sse_decode_auto_download(SseDeserializer deserializer);
+
+  @protected
+  BluetoothState sse_decode_bluetooth_state(SseDeserializer deserializer);
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
@@ -495,6 +501,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_auto_download(AutoDownload self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bluetooth_state(
+    BluetoothState self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);

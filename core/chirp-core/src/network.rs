@@ -19,6 +19,8 @@ const MAX_URL: usize = 200;
 pub struct Settings {
     pub internet: bool,
     pub relays: Vec<String>,
+    /// O Bluetooth (fase 8): anunciar e procurar os contatos por perto.
+    pub bluetooth: bool,
 }
 
 impl Settings {
@@ -75,7 +77,7 @@ pub fn clean_addrs(addrs: Vec<String>) -> Vec<String> {
 
 pub fn get(conn: &Connection) -> CoreResult<Settings> {
     Ok(conn.query_row(
-        "SELECT internet, relays FROM network WHERE id = 1",
+        "SELECT internet, relays, bluetooth FROM network WHERE id = 1",
         [],
         |r| {
             let relays: String = r.get(1)?;
@@ -86,6 +88,7 @@ pub fn get(conn: &Connection) -> CoreResult<Settings> {
                     .filter(|l| !l.is_empty())
                     .map(str::to_owned)
                     .collect(),
+                bluetooth: r.get(2)?,
             })
         },
     )?)
@@ -104,12 +107,13 @@ pub fn set(conn: &Connection, settings: &Settings) -> CoreResult<Settings> {
         return Err(CoreError::InvalidRelay);
     }
     conn.execute(
-        "UPDATE network SET internet = ?1, relays = ?2 WHERE id = 1",
-        (settings.internet, relays.join("\n")),
+        "UPDATE network SET internet = ?1, relays = ?2, bluetooth = ?3 WHERE id = 1",
+        (settings.internet, relays.join("\n"), settings.bluetooth),
     )?;
     Ok(Settings {
         internet: settings.internet,
         relays,
+        bluetooth: settings.bluetooth,
     })
 }
 
@@ -158,6 +162,7 @@ mod tests {
                     "https://relay.example.org".into(),
                     "http://192.168.0.10:3340".into(),
                 ],
+                bluetooth: true,
             },
         )
         .unwrap();
@@ -171,6 +176,7 @@ mod tests {
         let s = Settings {
             internet: false,
             relays: vec!["https://relay.example.org/".into()],
+            ..Default::default()
         };
         assert!(s.relay_urls().is_empty());
     }
@@ -201,7 +207,8 @@ mod tests {
                 &conn(),
                 &Settings {
                     internet: true,
-                    relays
+                    relays,
+                    ..Default::default()
                 }
             ),
             Err(CoreError::InvalidRelay)

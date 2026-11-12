@@ -9,7 +9,7 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `done_file`, `flush`, `lock`, `open`, `photo_changed`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`, `with_photo`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -264,6 +264,18 @@ class AppearanceView {
 /// Até que tamanho o arquivo de um contato baixa sozinho: nunca, 4, 32 ou 256 MiB.
 enum AutoDownload { never, small, medium, large }
 
+/// O Bluetooth agora.
+enum BluetoothState {
+  /// Desligado nos ajustes.
+  off,
+
+  /// Ligado e funcionando.
+  on_,
+
+  /// Ligado nos ajustes, mas o sistema não deixou (sem adaptador, desligado).
+  unavailable,
+}
+
 /// Os recibos de leitura e o "digitando": desligar vale para os dois lados.
 class ChatSettings {
   final bool readReceipts;
@@ -299,6 +311,9 @@ enum ContactReach {
 
   /// Não alcançou.
   unreachable,
+
+  /// Pelo Bluetooth, perto.
+  bluetooth,
 }
 
 /// Um contato como a UI mostra.
@@ -650,10 +665,17 @@ class NetworkSettings {
   /// Os endereços dos retransmissores (`https://...`), até três.
   final List<String> relays;
 
-  const NetworkSettings({required this.internet, required this.relays});
+  /// O Bluetooth: anunciar e procurar os contatos por perto (desligado no começo).
+  final bool bluetooth;
+
+  const NetworkSettings({
+    required this.internet,
+    required this.relays,
+    required this.bluetooth,
+  });
 
   @override
-  int get hashCode => internet.hashCode ^ relays.hashCode;
+  int get hashCode => internet.hashCode ^ relays.hashCode ^ bluetooth.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -661,7 +683,8 @@ class NetworkSettings {
       other is NetworkSettings &&
           runtimeType == other.runtimeType &&
           internet == other.internet &&
-          relays == other.relays;
+          relays == other.relays &&
+          bluetooth == other.bluetooth;
 }
 
 /// Como a rede está agora, para a tela de Rede.
@@ -675,12 +698,14 @@ class NetworkStatus {
 
   /// Algum retransmissor respondeu.
   final bool relayConnected;
+  final BluetoothState bluetooth;
 
   const NetworkStatus({
     required this.running,
     required this.internet,
     required this.relays,
     required this.relayConnected,
+    required this.bluetooth,
   });
 
   @override
@@ -688,7 +713,8 @@ class NetworkStatus {
       running.hashCode ^
       internet.hashCode ^
       relays.hashCode ^
-      relayConnected.hashCode;
+      relayConnected.hashCode ^
+      bluetooth.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -698,7 +724,8 @@ class NetworkStatus {
           running == other.running &&
           internet == other.internet &&
           relays == other.relays &&
-          relayConnected == other.relayConnected;
+          relayConnected == other.relayConnected &&
+          bluetooth == other.bluetooth;
 }
 
 /// O que as notificações mostram: nada, só "Nova mensagem", o nome, ou o nome e o

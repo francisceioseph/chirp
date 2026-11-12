@@ -1020,6 +1020,24 @@ abstract class ChirpLocalizations {
   /// **'The relay has not answered yet.'**
   String get relayStatusWaiting;
 
+  /// No description provided for @bluetoothToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth'**
+  String get bluetoothToggle;
+
+  /// No description provided for @bluetoothHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'To talk with contacts nearby, up to a few tens of meters, with no network at all. While it is on, anyone scanning nearby can tell that someone with Chirp is around, but not who: only your contacts recognize you. Uses more battery.'**
+  String get bluetoothHelp;
+
+  /// No description provided for @bluetoothUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth did not start. Check that it is on in the system.'**
+  String get bluetoothUnavailable;
+
   /// No description provided for @reachTitle.
   ///
   /// In en, this message translates to:
@@ -1055,6 +1073,12 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Not tried yet'**
   String get reachUnknown;
+
+  /// No description provided for @reachBluetooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby, by Bluetooth'**
+  String get reachBluetooth;
 
   /// No description provided for @unreachableLocalOnly.
   ///

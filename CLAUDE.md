@@ -15,6 +15,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
     - `files.rs`: os arquivos (fatias de 60 KiB em AES-256-GCM, o blob cifrado em `files/` ao lado do banco, a oferta conferida, as fotos sem EXIF e a miniatura) e a tabela deles; o nó serve e baixa as fatias.
     - `mailbox.rs`: a caixa postal (fase 7) do lado do banco (migração 10): a deste aparelho, a ficha de cada contato (só o SHA-256 vai para a caixa), a caixa de cada contato e o "na caixa postal" das mensagens. O `node.rs` deposita a caixa de saída de quem não atende e tem caixa, e lê a deste aparelho ao ligar e a cada 60 segundos; o `messages::send_mailbox` avisa os contatos, e o `Receipt.delivered` fecha o "entregue".
     - `photo.rs`: a foto do perfil (migração 12): refeita no aparelho (quadrada, até 512 px, JPEG de até 48 KiB, sem metadados), quem vê (ninguém, todos ou só os marcados) e a de cada contato. O `messages::send_photos` manda a quem deve ver e uma vazia a quem foi tirado; roda quando a foto muda e em cada rodada da caixa postal do nó.
+    - `ble/`: o Bluetooth LE (fase 8, desligado por padrão): o anúncio (o token de época e a porta L2CAP nos dados de serviço do UUID do Chirp), o `Radio` (o contrato do rádio de cada sistema; `bluez.rs` no Linux, pelo `bluer`, e `memory.rs` nos testes) e o canal (`secure.rs`: o Noise NN pelo `snow`, e cada lado assina o hash do aperto de mão com a chave do nó). O `node.rs` anuncia, procura e entrega pelo Bluetooth a um contato visto há pouco que não atende pela rede.
     - `network.rs`: a internet e os retransmissores (desligados por padrão), a conferência dos endereços que um contato manda e os últimos anunciados.
     - `notifications.rs`: o que as notificações mostram (desligadas, sem conteúdo, o nome, ou o nome e o texto; o padrão é o nome) e o continuar recebendo com a janela fechada (ligado por padrão).
     - `downloads.rs`: o baixar sozinho (o limite: nunca, 4, 32 ou 256 MiB, e se só dos contatos verificados).
@@ -51,7 +52,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 ## Comandos
 
 - `flutter run -d linux`: o app, com o núcleo compilado pelo cargokit. Flutter 3.50.0 (Dart 3.14), o mesmo do CI.
-- No Linux, o `libsecret-1-dev` (o cofre) e o `libasound2-dev` (o som das notas de voz, pelo `cpal`) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
+- No Linux, o `libsecret-1-dev` (o cofre), o `libasound2-dev` (o som das notas de voz, pelo `cpal`) e o `libdbus-1-dev` (o Bluetooth, pelo BlueZ) além do que o Flutter pede, e o `protobuf-compiler` (o `protoc`, que o libsignal pede para compilar).
 - `flutter_rust_bridge_codegen generate`: depois de mudar `core/chirp-core/src/api/`. Instalado com `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked` (a mesma versão do `flutter_rust_bridge` no `pubspec.yaml` e no `Cargo.toml`).
 - `cd core && cargo test -j 2 && cargo clippy --all-targets -j 2 -- -D warnings && cargo fmt --all --check` (o workspace inteiro: o núcleo e a caixa postal; sem o `-j`, a compilação pode estourar a memória do host)
 - `flutter analyze` e `flutter test -j 2` (o host tem pouca memória: não rode sem o `-j`). Mudou a UI de propósito: `flutter test test/golden_test.dart --update-goldens`, e olhe as imagens em `test/goldens/` antes de comitar.

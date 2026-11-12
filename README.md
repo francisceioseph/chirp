@@ -35,7 +35,7 @@ You need Flutter 3.50.0 and a stable Rust toolchain. The Rust core is built auto
 flutter run -d linux
 ```
 
-Building the core needs `protoc` (`protobuf-compiler`). On Linux you also need `libgtk-3-dev`, `libsecret-1-dev`, `libasound2-dev`, `ninja-build`, `cmake`, `clang` and `pkg-config`.
+Building the core needs `protoc` (`protobuf-compiler`). On Linux you also need `libgtk-3-dev`, `libsecret-1-dev`, `libasound2-dev`, `libdbus-1-dev`, `ninja-build`, `cmake`, `clang` and `pkg-config`.
 
 ## License
 

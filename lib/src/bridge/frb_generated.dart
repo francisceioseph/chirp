@@ -2691,6 +2691,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BluetoothState dco_decode_bluetooth_state(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return BluetoothState.values[raw as int];
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
@@ -2981,11 +2987,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   NetworkSettings dco_decode_network_settings(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
     return NetworkSettings(
       internet: dco_decode_bool(arr[0]),
       relays: dco_decode_list_String(arr[1]),
+      bluetooth: dco_decode_bool(arr[2]),
     );
   }
 
@@ -2993,13 +3000,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   NetworkStatus dco_decode_network_status(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return NetworkStatus(
       running: dco_decode_bool(arr[0]),
       internet: dco_decode_bool(arr[1]),
       relays: dco_decode_u_32(arr[2]),
       relayConnected: dco_decode_bool(arr[3]),
+      bluetooth: dco_decode_bluetooth_state(arr[4]),
     );
   }
 
@@ -3212,6 +3220,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return AutoDownload.values[inner];
+  }
+
+  @protected
+  BluetoothState sse_decode_bluetooth_state(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return BluetoothState.values[inner];
   }
 
   @protected
@@ -3560,7 +3575,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_internet = sse_decode_bool(deserializer);
     var var_relays = sse_decode_list_String(deserializer);
-    return NetworkSettings(internet: var_internet, relays: var_relays);
+    var var_bluetooth = sse_decode_bool(deserializer);
+    return NetworkSettings(
+      internet: var_internet,
+      relays: var_relays,
+      bluetooth: var_bluetooth,
+    );
   }
 
   @protected
@@ -3570,11 +3590,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_internet = sse_decode_bool(deserializer);
     var var_relays = sse_decode_u_32(deserializer);
     var var_relayConnected = sse_decode_bool(deserializer);
+    var var_bluetooth = sse_decode_bluetooth_state(deserializer);
     return NetworkStatus(
       running: var_running,
       internet: var_internet,
       relays: var_relays,
       relayConnected: var_relayConnected,
+      bluetooth: var_bluetooth,
     );
   }
 
@@ -3849,6 +3871,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void sse_encode_auto_download(AutoDownload self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_bluetooth_state(
+    BluetoothState self,
+    SseSerializer serializer,
+  ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
   }
@@ -4164,6 +4195,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_bool(self.internet, serializer);
     sse_encode_list_String(self.relays, serializer);
+    sse_encode_bool(self.bluetooth, serializer);
   }
 
   @protected
@@ -4173,6 +4205,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.internet, serializer);
     sse_encode_u_32(self.relays, serializer);
     sse_encode_bool(self.relayConnected, serializer);
+    sse_encode_bluetooth_state(self.bluetooth, serializer);
   }
 
   @protected

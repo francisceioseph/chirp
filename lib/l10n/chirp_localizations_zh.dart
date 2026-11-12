@@ -496,6 +496,16 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String get relayStatusWaiting => '中继还没有响应。';
 
   @override
+  String get bluetoothToggle => '蓝牙';
+
+  @override
+  String get bluetoothHelp =>
+      '无需任何网络，与附近（几十米内）的联系人交谈。开启期间，附近扫描的人能知道这里有人在用 Chirp，但不知道是谁：只有你的联系人能认出你。会更耗电。';
+
+  @override
+  String get bluetoothUnavailable => '蓝牙没有启动。请检查系统中蓝牙是否已打开。';
+
+  @override
   String get reachTitle => '连接';
 
   @override
@@ -512,6 +522,9 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get reachUnknown => '尚未尝试';
+
+  @override
+  String get reachBluetooth => '在附近，通过蓝牙';
 
   @override
   String get unreachableLocalOnly =>

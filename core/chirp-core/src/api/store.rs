@@ -170,6 +170,8 @@ pub enum ContactReach {
     Relay,
     /// Não alcançou.
     Unreachable,
+    /// Pelo Bluetooth, perto.
+    Bluetooth,
 }
 
 impl From<Reach> for ContactReach {
@@ -180,6 +182,7 @@ impl From<Reach> for ContactReach {
             Reach::Direct => ContactReach::Direct,
             Reach::Relay => ContactReach::Relay,
             Reach::Unreachable => ContactReach::Unreachable,
+            Reach::Bluetooth => ContactReach::Bluetooth,
         }
     }
 }
@@ -190,6 +193,19 @@ pub struct NetworkSettings {
     pub internet: bool,
     /// Os endereços dos retransmissores (`https://...`), até três.
     pub relays: Vec<String>,
+    /// O Bluetooth: anunciar e procurar os contatos por perto (desligado no começo).
+    pub bluetooth: bool,
+}
+
+/// O Bluetooth agora.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BluetoothState {
+    /// Desligado nos ajustes.
+    Off,
+    /// Ligado e funcionando.
+    On,
+    /// Ligado nos ajustes, mas o sistema não deixou (sem adaptador, desligado).
+    Unavailable,
 }
 
 /// Como a rede está agora, para a tela de Rede.
@@ -202,6 +218,7 @@ pub struct NetworkStatus {
     pub relays: u32,
     /// Algum retransmissor respondeu.
     pub relay_connected: bool,
+    pub bluetooth: BluetoothState,
 }
 
 impl From<Contact> for ContactView {
@@ -606,6 +623,7 @@ impl ChirpStore {
         Ok(NetworkSettings {
             internet: s.internet,
             relays: s.relays,
+            bluetooth: s.bluetooth,
         })
     }
 
@@ -620,6 +638,7 @@ impl ChirpStore {
             &network::Settings {
                 internet: settings.internet,
                 relays: settings.relays,
+                bluetooth: settings.bluetooth,
             },
         )?;
         if self.running().is_some() {
@@ -631,6 +650,7 @@ impl ChirpStore {
         Ok(NetworkSettings {
             internet: saved.internet,
             relays: saved.relays,
+            bluetooth: saved.bluetooth,
         })
     }
 
@@ -643,6 +663,11 @@ impl ChirpStore {
             internet: settings.internet,
             relays: settings.relay_urls().len() as u32,
             relay_connected,
+            bluetooth: match node.as_ref().and_then(|n| n.bluetooth()) {
+                Some(true) => BluetoothState::On,
+                Some(false) => BluetoothState::Unavailable,
+                None => BluetoothState::Off,
+            },
         })
     }
 
@@ -1272,6 +1297,7 @@ mod tests {
                 internet: false,
                 relays: 0,
                 relay_connected: false,
+                bluetooth: BluetoothState::Off,
             }
         );
         store.start_network().unwrap();
@@ -1281,6 +1307,7 @@ mod tests {
                 internet: true,
                 // No loopback: o teste não procura nenhum servidor de verdade.
                 relays: vec![" http://127.0.0.1:9 ".into()],
+                bluetooth: false,
             })
             .unwrap();
         assert_eq!(saved.relays, ["http://127.0.0.1:9/"]);
@@ -1295,6 +1322,7 @@ mod tests {
             store.set_network_settings(NetworkSettings {
                 internet: true,
                 relays: vec!["ftp://x".into()],
+                bluetooth: false,
             }),
             Err(CoreError::InvalidRelay)
         );

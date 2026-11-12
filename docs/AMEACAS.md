@@ -12,6 +12,7 @@ O que o Chirp protege, contra quem, e o que fica de fora. Vale para a versão 1.
 
   Tudo num banco SQLCipher, com o `secure_delete` ligado. A chave do banco são 32 bytes aleatórios no cofre do sistema (Keychain, Credential Manager, Keystore, Secret Service). Sem cofre, ela vem de uma senha, pelo Argon2id. Ela nunca fica em claro no disco. Os arquivos recebidos ficam na pasta do app, e o Android não faz backup dela (`allowBackup=false`).
 - **Na rede**: o envelope cifrado, dentro de uma conexão QUIC autenticada pela chave do nó (o `iroh`). Na rede local, também um anúncio mDNS.
+- **No Bluetooth, se você ligar** (desligado por padrão): um anúncio com o UUID do Chirp e um token que muda a cada 15 minutos, e, com um contato por perto, o mesmo envelope cifrado dentro de um canal Noise, em que cada lado prova a chave do nó.
 - **A foto do perfil, se você puser uma**: só para os contatos que você deixar, pela sessão, refeita no aparelho (quadrada, até 512 px, sem a localização nem outros dados do arquivo).
 - **Na caixa postal, se você ligar uma** (um servidor seu, ou de quem você confia, rodando o `chirp-mailbox`): o que os contatos mandaram com o seu aparelho desligado, no mesmo envelope cifrado, até você buscar (no máximo 30 dias). A caixa não tem chave de nada.
 - **Em servidor nosso**: nada. Não há conta, número de telefone, registro nem telemetria. O app não verifica atualizações sozinho.
@@ -28,6 +29,7 @@ O que o Chirp protege, contra quem, e o que fica de fora. Vale para a versão 1.
 | Quem se passa por um contato | Conversar no lugar dele | A primeira troca é por QR ou por um convite que vale uma vez e por 24 horas. Depois, a identidade fica presa ao contato: outra chave com o mesmo nome é recusada. O código de segurança de cada contato serve para conferir pessoalmente. |
 | Quem opera a caixa postal (ou a invade) | Ver o nó do dono, os IPs de quem deposita, os horários, os tamanhos e quantos contatos diferentes mandam; apagar ou segurar envelopes; encher a caixa; ver as prekeys públicas dos convites publicados e quando alguém as busca | O conteúdo é o mesmo envelope do Double Ratchet, e o que não decifra com a sessão do contato é jogado fora: a caixa não lê nem inventa mensagens. Cada contato tem uma ficha própria, e a caixa só guarda o SHA-256 delas. Um convite publicado é achado por um hash do token, e a caixa não vê o token: não consegue usar o convite nem trocar as prekeys (a assinatura é conferida com a identidade do convite). Apagar ou segurar aparece como "na caixa postal" que não vira "entregue". Nenhuma caixa é padrão. |
 | Um contato que quer atrapalhar | Encher a sua caixa | Cada ficha tem um teto (2 mil envelopes), e a caixa inteira outro (20 mil e 256 MiB). |
+| Alguém com um rádio Bluetooth por perto (dezenas de metros) | Ver que há um Chirp ali, seguir o aparelho enquanto o token não muda, repetir um anúncio, escutar e mexer no canal | O Bluetooth vem desligado. O anúncio não leva nome nem id fixo, e só os contatos reconhecem o token. O canal é cifrado pelo Noise e cada lado prova a chave do nó: um anúncio copiado dá numa conexão em que nada é mandado, e um byte mudado derruba o canal. Por dentro, o mesmo Double Ratchet. |
 | Um estranho por perto | Mandar pedidos em massa | Ninguém vira contato sem um convite, e há um teto de 8 apertos de mão ao mesmo tempo. |
 
 ## O que fica de fora
@@ -35,7 +37,7 @@ O que o Chirp protege, contra quem, e o que fica de fora. Vale para a versão 1.
 Estes limites estão declarados também na página do projeto.
 
 - **Um aparelho com malware ou com root do adversário.** Quem controla o sistema lê a tela, o teclado e a memória.
-- **Esconder *que* você usa o Chirp.** Quem observa a rede local vê o mDNS (`_chirp._udp`) e o tráfego QUIC.
+- **Esconder *que* você usa o Chirp.** Quem observa a rede local vê o mDNS (`_chirp._udp`) e o tráfego QUIC. Com o Bluetooth ligado, quem procura por perto vê o UUID do Chirp; e, enquanto um token vale (até 15 minutos), pode seguir o aparelho, se o sistema não trocar o endereço Bluetooth nesse meio.
 - **O seu IP.**
   - Com a internet ligada, os contatos veem o seu IP público, porque a conexão é direta.
   - Um retransmissor que você configurou vê os IPs e os horários das conversas, mas não o conteúdo.

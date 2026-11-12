@@ -120,11 +120,7 @@ void main() {
   });
 
   testWidgets('computador, perfil', (tester) async {
-    await conversations(
-      tester,
-      size: const Size(1300, 800),
-      appearance: light,
-    );
+    await conversations(tester, size: const Size(1300, 800), appearance: light);
     await tester.tap(find.byTooltip(l10n.profileTitle));
     await tester.pumpAndSettle();
     await expectLater(
@@ -134,11 +130,7 @@ void main() {
   });
 
   testWidgets('computador, convite', (tester) async {
-    await conversations(
-      tester,
-      size: const Size(1300, 800),
-      appearance: light,
-    );
+    await conversations(tester, size: const Size(1300, 800), appearance: light);
     await tester.tap(find.text(l10n.addContact).first);
     await tester.pumpAndSettle();
     await expectLater(

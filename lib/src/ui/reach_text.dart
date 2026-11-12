@@ -14,6 +14,7 @@ String reachText(ChirpLocalizations l10n, ContactReach reach) =>
       ContactReach.direct => l10n.reachDirect,
       ContactReach.relay => l10n.reachRelay,
       ContactReach.unreachable => l10n.reachUnreachable,
+      ContactReach.bluetooth => l10n.reachBluetooth,
     };
 
 IconData reachIcon(ContactReach reach) => switch (reach) {
@@ -22,6 +23,7 @@ IconData reachIcon(ContactReach reach) => switch (reach) {
   ContactReach.direct => Icons.public,
   ContactReach.relay => Icons.dns_outlined,
   ContactReach.unreachable => Icons.cloud_off_outlined,
+  ContactReach.bluetooth => Icons.bluetooth,
 };
 
 /// Por que o contato não foi alcançado, e o que dá para fazer.

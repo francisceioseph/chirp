@@ -1,9 +1,11 @@
 // lib/src/ui/organisms/network_card.dart
 //
 // A rede (docs/PLANO.md, 7.3): a local sempre ligada, a internet e os servidores de
-// retransmissão, cada um com o que revela. Mudar religa a rede com o novo; um
-// retransmissor que o núcleo recusa volta com o aviso.
+// retransmissão, cada um com o que revela, e o Bluetooth (fase 8, por enquanto só no
+// Linux). Mudar religa a rede com o novo; um retransmissor que o núcleo recusa volta
+// com o aviso.
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:material_ui/material_ui.dart';
 
@@ -12,9 +14,13 @@ import '../../core/chirp_core.dart';
 import '../failure_text.dart';
 
 class NetworkCard extends StatefulWidget {
-  const NetworkCard({super.key, required this.store});
+  NetworkCard({super.key, required this.store, bool? bluetooth})
+    : bluetooth = bluetooth ?? Platform.isLinux;
 
   final ProfileStore store;
+
+  /// Se o sistema tem o Bluetooth do Chirp (hoje, o Linux).
+  final bool bluetooth;
 
   @override
   State<NetworkCard> createState() => _NetworkCardState();
@@ -206,6 +212,28 @@ class _NetworkCardState extends State<NetworkCard> {
                   ],
                 ),
               ),
+            if (widget.bluetooth) ...[
+              SwitchListTile(
+                secondary: const Icon(Icons.bluetooth),
+                title: Text(l10n.bluetoothToggle),
+                subtitle: Text(l10n.bluetoothHelp),
+                value: settings.bluetooth,
+                onChanged: _busy
+                    ? null
+                    : (on) => _save(settings.copyWith(bluetooth: on)),
+              ),
+              if (settings.bluetooth &&
+                  _status.bluetooth == BluetoothState.unavailable)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    l10n.bluetoothUnavailable,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+            ],
           ],
         ),
       ),

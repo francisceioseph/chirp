@@ -30,7 +30,7 @@ Architecture: amd64
 Maintainer: Francisco Souza <francisceioseph@users.noreply.github.com>
 Homepage: https://github.com/francisceioseph/chirp
 Installed-Size: $(du -sk "$ROOT/usr" | cut -f1)
-Depends: libc6 (>= 2.38), libgtk-3-0 | libgtk-3-0t64, libglib2.0-0t64 (>= 2.80) | libglib2.0-0 (>= 2.80), libsecret-1-0, libasound2t64 | libasound2, libegl1, libgles2
+Depends: libc6 (>= 2.38), libgtk-3-0 | libgtk-3-0t64, libglib2.0-0t64 (>= 2.80) | libglib2.0-0 (>= 2.80), libsecret-1-0, libasound2t64 | libasound2, libdbus-1-3, libegl1, libgles2
 Recommends: libgl1-mesa-dri, gnome-keyring | kwalletmanager | keepassxc
 Description: Private messenger with no servers in the middle
  Conversations go straight from one device to the other, over the local
