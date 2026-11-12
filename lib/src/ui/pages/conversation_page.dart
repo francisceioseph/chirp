@@ -271,6 +271,8 @@ class _ConversationPageState extends State<ConversationPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    // Ao lado da lista, sem o botão de voltar (o desktop, em duas colunas).
+    final wide = ModalRoute.of(context)?.impliesAppBarDismissal != true;
     return ListenableBuilder(
       listenable: _conversation,
       builder: (context, _) {
@@ -303,6 +305,9 @@ class _ConversationPageState extends State<ConversationPage>
                 padding: EdgeInsets.only(
                   top: ChirpAppBar.topInset(context) + 8,
                   bottom: 8,
+                  // Ao lado da lista (desktop), as bolhas não encostam na divisa.
+                  left: wide ? 8 : 0,
+                  right: wide ? 8 : 0,
                 ),
                 // Depois da mensagem mais antiga, a nota de segurança da conversa.
                 itemCount: messages.length + (_conversation.hasOlder ? 0 : 1),
@@ -347,7 +352,9 @@ class _ConversationPageState extends State<ConversationPage>
           child: Scaffold(
             extendBodyBehindAppBar: ChirpAppBar.extendsBody(context),
             appBar: ChirpAppBar(
-              titleSpacing: 0,
+              // Sem o botão de voltar (ao lado da lista), o avatar não encosta na
+              // borda.
+              titleSpacing: wide ? 16 : 0,
               title: Semantics(
                 button: true,
                 label: '${l10n.contactDetails}: $name',

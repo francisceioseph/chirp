@@ -119,8 +119,12 @@ ThemeData chirpTheme(
       shape: RoundedRectangleBorder(borderRadius: big),
     ),
     chipTheme: ChipThemeData(shape: rounded),
+    // Um retângulo de cantos arredondados, mesmo nos temas mais redondos: a pílula
+    // num item de duas linhas fica larga demais.
     listTileTheme: ListTileThemeData(
-      shape: spec.radius >= 12 ? const StadiumBorder() : rounded,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(spec.radius.clamp(4, 12)),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
     textButtonTheme: TextButtonThemeData(style: buttonStyle),
