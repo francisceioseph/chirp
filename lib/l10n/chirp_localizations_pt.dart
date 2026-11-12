@@ -888,4 +888,8 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
   @override
   String get mailboxUnreachable =>
       'Não deu para falar com a caixa. Com a internet desligada, só uma caixa na rede local funciona.';
+
+  @override
+  String get contactRequestLeft =>
+      'A pessoa estava desligada, então o pedido ficou na caixa postal dela. Ela vira contato quando abrir o Chirp.';
 }

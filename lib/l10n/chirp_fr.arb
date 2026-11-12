@@ -256,5 +256,6 @@
   "mailboxUnpairBody": "Ce qui y attend est perdu, et vos contacts cessent d’y déposer. Vous pourrez l’associer de nouveau avec un autre code.",
   "mailboxInvalid": "Ce code ne fonctionne pas. Collez le lien chirp://mailbox# en entier.",
   "mailboxRefused": "La boîte a refusé le code. Il ne sert qu’une fois et expire au bout de 24 heures : créez-en un autre.",
-  "mailboxUnreachable": "Impossible de joindre la boîte. Sans internet, seule une boîte sur le réseau local fonctionne."
+  "mailboxUnreachable": "Impossible de joindre la boîte. Sans internet, seule une boîte sur le réseau local fonctionne.",
+  "contactRequestLeft": "La personne était hors ligne : votre demande attend dans sa boîte aux lettres. Elle deviendra un contact à l’ouverture de Chirp."
 }

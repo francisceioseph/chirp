@@ -838,4 +838,8 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get mailboxUnreachable => '无法连接到信箱。关闭互联网时，只有本地网络上的信箱可用。';
+
+  @override
+  String get contactRequestLeft =>
+      '对方不在线，所以你的请求已放在对方的信箱中。对方打开 Chirp 后就会成为你的联系人。';
 }

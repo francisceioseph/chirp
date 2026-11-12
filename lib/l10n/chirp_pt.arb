@@ -256,5 +256,6 @@
   "mailboxUnpairBody": "O que estiver esperando nela se perde, e os contatos deixam de mandar para lá. Dá para ligar de novo com outro código.",
   "mailboxInvalid": "Esse código não serve. Cole o link chirp://mailbox# inteiro.",
   "mailboxRefused": "A caixa recusou o código. Ele vale uma vez só e vence em 24 horas: gere outro.",
-  "mailboxUnreachable": "Não deu para falar com a caixa. Com a internet desligada, só uma caixa na rede local funciona."
+  "mailboxUnreachable": "Não deu para falar com a caixa. Com a internet desligada, só uma caixa na rede local funciona.",
+  "contactRequestLeft": "A pessoa estava desligada, então o pedido ficou na caixa postal dela. Ela vira contato quando abrir o Chirp."
 }

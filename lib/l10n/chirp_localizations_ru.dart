@@ -892,4 +892,8 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   @override
   String get mailboxUnreachable =>
       'Не удалось связаться с ящиком. Без интернета работает только ящик в локальной сети.';
+
+  @override
+  String get contactRequestLeft =>
+      'Собеседник был не в сети, поэтому запрос ждёт в его почтовом ящике. Он появится в контактах, когда откроет Chirp.';
 }

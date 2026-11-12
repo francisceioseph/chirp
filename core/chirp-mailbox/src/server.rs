@@ -201,6 +201,16 @@ impl Server {
                     self.with(|b| b.unpair(&remote))?;
                     true
                 }
+                Body::Publish(publish) if owner => {
+                    self.with(|b| b.publish(&remote, &publish, now()))?
+                }
+                Body::GetBundle(get) => match self.with(|b| b.bundle(&get.lookup, now()))? {
+                    Some(bundle) => {
+                        proto::write(&mut send, Body::Bundle(proto::Bundle { bundle })).await?;
+                        continue;
+                    }
+                    None => false,
+                },
                 _ => false,
             };
             let reply = if ok {

@@ -143,6 +143,22 @@ pub fn by_endpoint(conn: &Connection, endpoint_id: &[u8]) -> CoreResult<Option<C
     .transpose()
 }
 
+/// O contato pendente que fala por este nó (o que leu um convite pela caixa postal e
+/// espera o Welcome).
+pub fn pending_by_endpoint(conn: &Connection, endpoint_id: &[u8]) -> CoreResult<Option<Contact>> {
+    conn.query_row(
+        &format!(
+            "SELECT {COLUMNS} FROM contacts WHERE endpoint_id = ?1 AND state = ?2
+             ORDER BY id LIMIT 1"
+        ),
+        (endpoint_id, ContactState::Pending as i64),
+        from_row,
+    )
+    .optional()?
+    .map(finish)
+    .transpose()
+}
+
 /// O endereço de onde o contato acabou de falar vai para a frente da lista: é o mais
 /// provável de servir na próxima vez.
 pub fn learn_addr(conn: &Connection, id: i64, addr: &str) -> CoreResult<()> {

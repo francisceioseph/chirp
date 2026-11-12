@@ -893,4 +893,8 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
   @override
   String get mailboxUnreachable =>
       'Impossible de joindre la boîte. Sans internet, seule une boîte sur le réseau local fonctionne.';
+
+  @override
+  String get contactRequestLeft =>
+      'La personne était hors ligne : votre demande attend dans sa boîte aux lettres. Elle deviendra un contact à l’ouverture de Chirp.';
 }

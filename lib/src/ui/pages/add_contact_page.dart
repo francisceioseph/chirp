@@ -80,7 +80,10 @@ class _AddContactPageState extends State<AddContactPage> {
   void _done(Contact contact) {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    final text = context.l10n.contactAdded(contact.displayName);
+    // Quem convidou estava desligado: o pedido ficou na caixa postal dele.
+    final text = contact.established
+        ? context.l10n.contactAdded(contact.displayName)
+        : context.l10n.contactRequestLeft;
     Navigator.of(context).maybePop();
     messenger.showSnackBar(SnackBar(content: Text(text)));
   }

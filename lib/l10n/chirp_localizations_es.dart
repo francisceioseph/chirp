@@ -887,4 +887,8 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   @override
   String get mailboxUnreachable =>
       'No se pudo contactar con el buzón. Con internet apagado, solo funciona un buzón en la red local.';
+
+  @override
+  String get contactRequestLeft =>
+      'La otra persona estaba desconectada, así que tu solicitud quedó en su buzón. Será tu contacto cuando abra Chirp.';
 }

@@ -256,5 +256,6 @@
   "mailboxUnpairBody": "其中等待的内容将会丢失，联系人也不会再往那里留言。你可以用新的代码重新连接。",
   "mailboxInvalid": "这个代码无效。请粘贴完整的 chirp://mailbox# 链接。",
   "mailboxRefused": "信箱拒绝了这个代码。代码只能使用一次，24 小时后过期：请生成新的代码。",
-  "mailboxUnreachable": "无法连接到信箱。关闭互联网时，只有本地网络上的信箱可用。"
+  "mailboxUnreachable": "无法连接到信箱。关闭互联网时，只有本地网络上的信箱可用。",
+  "contactRequestLeft": "对方不在线，所以你的请求已放在对方的信箱中。对方打开 Chirp 后就会成为你的联系人。"
 }

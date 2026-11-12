@@ -253,6 +253,10 @@ pub struct Hello {
     pub profile: Option<PeerProfile>,
     #[prost(message, optional, tag = "3")]
     pub peer: Option<Peer>,
+    /// A caixa postal de quem leu o convite (fase 7), com a ficha de quem convidou:
+    /// a resposta chega mesmo com ele desligado.
+    #[prost(message, optional, tag = "4")]
+    pub mailbox: Option<MailboxInfo>,
 }
 
 #[derive(Clone, PartialEq, Message)]

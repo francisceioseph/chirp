@@ -891,4 +891,8 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
   @override
   String get mailboxUnreachable =>
       'Das Postfach war nicht erreichbar. Ohne Internet funktioniert nur ein Postfach im lokalen Netz.';
+
+  @override
+  String get contactRequestLeft =>
+      'Die Person war offline, deshalb wartet deine Anfrage in ihrem Postfach. Sie wird zum Kontakt, sobald sie Chirp öffnet.';
 }

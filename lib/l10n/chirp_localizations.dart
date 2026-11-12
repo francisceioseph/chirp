@@ -1649,6 +1649,12 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Could not reach the mailbox. With the internet off, only a mailbox on the local network works.'**
   String get mailboxUnreachable;
+
+  /// No description provided for @contactRequestLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'They were offline, so your request is waiting in their mailbox. They\'ll appear as a contact once they open Chirp.'**
+  String get contactRequestLeft;
 }
 
 class _ChirpLocalizationsDelegate

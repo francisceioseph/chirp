@@ -661,12 +661,14 @@ class FakeStore implements ProfileStore {
     final name = trimmed.substring('chirp://invite#'.length);
     if (name == 'refused') throw const CoreException(CoreFailure.inviteRefused);
     if (name == 'away') throw const CoreException(CoreFailure.unreachable);
+    // Quem convidou está desligado e tem caixa postal: o pedido fica lá, pendente.
+    final mailbox = name == 'mailbox';
     final contact = Contact(
       id: people.length + 1,
-      displayName: name,
+      displayName: mailbox ? '' : name,
       avatarSeed: people.length * 7919,
       verified: scanned,
-      established: true,
+      established: !mailbox,
     );
     people.add(contact);
     return contact;

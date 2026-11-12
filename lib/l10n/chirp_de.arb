@@ -256,5 +256,6 @@
   "mailboxUnpairBody": "Was darin wartet, geht verloren, und deine Kontakte hinterlegen dort nichts mehr. Mit einem neuen Code kannst du es wieder verbinden.",
   "mailboxInvalid": "Dieser Code funktioniert nicht. Füge den ganzen chirp://mailbox#-Link ein.",
   "mailboxRefused": "Das Postfach hat den Code abgelehnt. Er gilt nur einmal und läuft nach 24 Stunden ab: Erzeuge einen neuen.",
-  "mailboxUnreachable": "Das Postfach war nicht erreichbar. Ohne Internet funktioniert nur ein Postfach im lokalen Netz."
+  "mailboxUnreachable": "Das Postfach war nicht erreichbar. Ohne Internet funktioniert nur ein Postfach im lokalen Netz.",
+  "contactRequestLeft": "Die Person war offline, deshalb wartet deine Anfrage in ihrem Postfach. Sie wird zum Kontakt, sobald sie Chirp öffnet."
 }

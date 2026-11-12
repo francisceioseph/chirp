@@ -39,7 +39,7 @@ use crate::contacts::{self, Contact, ContactState};
 use crate::discovery;
 use crate::error::{CoreError, CoreResult};
 use crate::files;
-use crate::invite::Invite;
+use crate::invite::{Invite, InviteMailbox};
 use crate::mailbox::{self, proto as mproto, PairLink};
 use crate::messages::{self, Effect};
 use crate::network;
@@ -70,6 +70,8 @@ const ONLINE_FOR: Duration = Duration::from_secs(90);
 const ANNOUNCE_CHECK: Duration = Duration::from_secs(60);
 /// De quanto em quanto tempo a caixa postal deste aparelho é lida.
 const MAILBOX_INTERVAL: Duration = Duration::from_secs(60);
+/// Quanto um convite novo espera a caixa postal publicar as prekeys dele.
+const PUBLISH_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// O que muda no núcleo sem a UI pedir.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -149,6 +151,53 @@ fn is_unroutable(addr: &SocketAddr) -> bool {
             ip.is_loopback() || ip.is_unspecified() || (ip.segments()[0] & 0xffc0) == 0xfe80
         }
     }
+}
+
+/// O que um envelope da caixa postal fez.
+enum Opened {
+    Nothing,
+    /// Uma mensagem de um contato: o efeito, e o id para o "entregue".
+    Message(i64, Effect, Option<Vec<u8>>),
+    /// O Hello de um convite publicado: o contato novo, com o Welcome na caixa de saída.
+    NewContact(i64),
+    /// O Welcome de quem convidou: o contato pendente ficou estabelecido.
+    Established(i64),
+}
+
+/// Abre um envelope da caixa postal pela ficha com que chegou: a de um contato, a de
+/// um contato pendente (o Welcome) ou a de um convite publicado (o Hello).
+fn open_item(s: &mut Store, item: &mailbox::proto::Item, me: Peer) -> CoreResult<Opened> {
+    let (prekey, bytes) = match wire::decode_frame(&item.envelope) {
+        Ok(Body::Message(bytes)) => (false, bytes),
+        Ok(Body::PreKeyMessage(bytes)) => (true, bytes),
+        _ => return Ok(Opened::Nothing),
+    };
+    if let Some(contact) = mailbox::contact_by_drop(s.conn(), &item.drop)? {
+        if contact.state == ContactState::Pending {
+            let remote: [u8; 32] = contact
+                .endpoint_id
+                .as_slice()
+                .try_into()
+                .map_err(|_| CoreError::Storage)?;
+            if prekey {
+                return Ok(Opened::Nothing);
+            }
+            let contact = session::accept_welcome(s, contact.id, &remote, &bytes)?;
+            return Ok(Opened::Established(contact.id));
+        }
+        let (effect, shown) = messages::receive_from(s, &contact, prekey, &bytes)?;
+        return Ok(Opened::Message(contact.id, effect, shown));
+    }
+    if !prekey || !session::invite_has_drop(s.conn(), &item.drop)? {
+        return Ok(Opened::Nothing);
+    }
+    let (contact, welcome, theirs) =
+        session::accept_hello(s, session::HelloFrom::Mailbox(item.stored_at), &bytes, me)?;
+    messages::queue_raw(s.conn(), contact.id, &welcome)?;
+    if let Some(Ok(theirs)) = theirs.map(mailbox::theirs_from_info) {
+        mailbox::set_theirs(s.conn(), contact.id, theirs.as_ref())?;
+    }
+    Ok(Opened::NewContact(contact.id))
 }
 
 fn lock(store: &SharedStore) -> CoreResult<std::sync::MutexGuard<'_, Store>> {
@@ -775,10 +824,64 @@ impl Node {
 
     pub async fn create_invite(&self, kind: InviteKind) -> CoreResult<Invite> {
         let (id, addrs, relay) = (self.id(), self.addrs(), self.relay());
-        with_store(&self.store, move |s| {
+        let mut invite = with_store(&self.store, move |s| {
             session::create_invite(s, kind, id, addrs, relay)
         })
+        .await?;
+        // Com a caixa postal, as prekeys ficam lá também: quem ler o convite com este
+        // aparelho desligado deixa o pedido nela. Sem resposta logo, vai sem.
+        invite.mailbox = tokio::time::timeout(PUBLISH_TIMEOUT, self.publish_invite(&invite))
+            .await
+            .ok()
+            .flatten();
+        Ok(invite)
+    }
+
+    /// Publica as prekeys do convite na caixa postal deste aparelho.
+    async fn publish_invite(&self, invite: &Invite) -> Option<InviteMailbox> {
+        let token = invite.token;
+        let drop_hash = mproto::hash(&mproto::invite_drop(&token));
+        let (paired, bundle) = with_store(&self.store, move |s| {
+            let Some(paired) = mailbox::get(s.conn())? else {
+                return Ok(None);
+            };
+            session::set_invite_drop(s.conn(), &token, &drop_hash)?;
+            Ok(Some((paired, session::bundle_for(s, &token)?)))
+        })
         .await
+        .ok()
+        .flatten()?;
+        let conn = self
+            .dial(&paired.endpoint_id, &paired.addrs, mproto::ALPN)
+            .await
+            .ok()?;
+        let published = async {
+            let (mut send, mut recv) = conn.open_bi().await.ok()?;
+            let publish = mproto::Publish {
+                lookup: mproto::invite_lookup(&token).to_vec(),
+                bundle: prost::Message::encode_to_vec(&bundle),
+                drop: drop_hash.to_vec(),
+                expires_at: Self::now_secs() + session::INVITE_TTL.as_secs(),
+            };
+            mproto::write(&mut send, mproto::Body::Publish(publish))
+                .await
+                .ok()?;
+            let reply = Self::mailbox_reply(&mut recv).await.ok()?;
+            let _ = send.finish();
+            matches!(reply, mproto::Body::Done(_)).then_some(())
+        }
+        .await;
+        conn.close(0u32.into(), b"");
+        published?;
+        let (ips, relay): (Vec<&String>, Vec<&String>) = paired
+            .addrs
+            .iter()
+            .partition(|a| a.parse::<SocketAddr>().is_ok());
+        Some(InviteMailbox {
+            endpoint_id: paired.endpoint_id,
+            addrs: ips.iter().filter_map(|a| a.parse().ok()).collect(),
+            relay: relay.first().map(|r| (*r).clone()),
+        })
     }
 
     /// Avisa os contatos, pela sessão, quando os endereços mudam (a rede trocou, o
@@ -830,10 +933,21 @@ impl Node {
         addrs.extend(invite.relay.clone());
         let addr = EndpointAddr::from_parts(remote, self.usable(&addrs));
         self.lookup.add_endpoint_info(addr.clone());
-        let conn = tokio::time::timeout(HANDSHAKE_TIMEOUT, self.endpoint.connect(addr, ALPN))
-            .await
-            .map_err(|_| CoreError::Unreachable)?
-            .map_err(|_| CoreError::Unreachable)?;
+        // Com a caixa postal no convite, não vale esperar muito por quem convidou.
+        let wait = if invite.mailbox.is_some() {
+            self.connect_timeout()
+        } else {
+            HANDSHAKE_TIMEOUT
+        };
+        let conn = match tokio::time::timeout(wait, self.endpoint.connect(addr, ALPN)).await {
+            Ok(Ok(conn)) => conn,
+            _ => {
+                return match invite.mailbox.clone() {
+                    Some(mailbox) => self.join_by_mailbox(invite, mailbox, verified).await,
+                    None => Err(CoreError::Unreachable),
+                };
+            }
+        };
         let result = tokio::time::timeout(HANDSHAKE_TIMEOUT, self.join_on(&conn, invite, verified))
             .await
             .unwrap_or(Err(CoreError::Unreachable));
@@ -859,7 +973,7 @@ impl Node {
         };
         let me = self.me();
         let (pending, hello) = with_store(&self.store, move |s| {
-            session::join(s, &invite, &bundle, me, verified)
+            session::join(s, &invite, &bundle, me, verified, None)
         })
         .await?;
         let remote = *conn.remote_id().as_bytes();
@@ -893,6 +1007,94 @@ impl Node {
         }
     }
 
+    /// O primeiro contato com quem convidou e está desligado: as prekeys vêm da caixa
+    /// postal dele, e o Hello fica lá. O contato fica pendente até o Welcome, que vem
+    /// direto ou pela caixa postal deste aparelho, se houver.
+    async fn join_by_mailbox(
+        &self,
+        invite: Invite,
+        mailbox: InviteMailbox,
+        verified: bool,
+    ) -> CoreResult<Contact> {
+        let conn = self
+            .dial(&mailbox.endpoint_id, &mailbox.addr_strings(), mproto::ALPN)
+            .await?;
+        let result = tokio::time::timeout(
+            HANDSHAKE_TIMEOUT,
+            self.join_on_mailbox(&conn, invite, verified),
+        )
+        .await
+        .unwrap_or(Err(CoreError::Unreachable));
+        conn.close(0u32.into(), b"");
+        result
+    }
+
+    async fn join_on_mailbox(
+        &self,
+        conn: &Connection,
+        invite: Invite,
+        verified: bool,
+    ) -> CoreResult<Contact> {
+        let (mut send, mut recv) = conn.open_bi().await.map_err(|_| CoreError::Unreachable)?;
+        let token = invite.token;
+        let get = mproto::Body::GetBundle(mproto::GetBundle {
+            lookup: mproto::invite_lookup(&token).to_vec(),
+        });
+        mproto::write(&mut send, get)
+            .await
+            .map_err(|_| CoreError::Unreachable)?;
+        let bundle = match Self::mailbox_reply(&mut recv).await? {
+            mproto::Body::Bundle(b) => {
+                <wire::Bundle as prost::Message>::decode(b.bundle.as_slice())
+                    .map_err(|_| CoreError::Protocol)?
+            }
+            _ => return Err(CoreError::InviteRefused),
+        };
+        // A caixa deste aparelho vai no Hello, com a ficha de quem convidou.
+        let drop_token = *crate::random::secret_bytes::<32>()?;
+        let me = self.me();
+        let pending = with_store(&self.store, move |s| {
+            let mine = mailbox::get(s.conn())?;
+            let info = mine.as_ref().map(|p| wire::MailboxInfo {
+                endpoint_id: p.endpoint_id.to_vec(),
+                addrs: p.addrs.clone(),
+                drop: drop_token.to_vec(),
+            });
+            let (pending, hello) = session::join(s, &invite, &bundle, me, verified, info)?;
+            if let Some(paired) = mine {
+                mailbox::set_drop_token(s.conn(), pending.id, &drop_token)?;
+                mailbox::set_told(s.conn(), pending.id, Some(paired.endpoint_id.as_slice()))?;
+            }
+            Ok((pending, hello))
+        })
+        .await;
+        let (pending, hello) = pending?;
+        let deposit = mproto::Body::Deposit(mproto::Deposit {
+            drop: mproto::invite_drop(&token).to_vec(),
+            envelope: prost::Message::encode_to_vec(&wire::frame(Body::PreKeyMessage(hello))),
+        });
+        let left = async {
+            mproto::write(&mut send, deposit)
+                .await
+                .map_err(|_| CoreError::Unreachable)?;
+            match Self::mailbox_reply(&mut recv).await? {
+                mproto::Body::Done(_) => Ok(()),
+                _ => Err(CoreError::InviteRefused),
+            }
+        }
+        .await;
+        let _ = send.finish();
+        if let Err(error) = left {
+            let id = pending.id;
+            let _ = with_store(&self.store, move |s| session::forget(s, id)).await;
+            return Err(error);
+        }
+        self.emit(NodeEvent::ContactChanged(pending.id));
+        // A caixa deste aparelho passa a aceitar a ficha de quem convidou.
+        self.check_mailbox();
+        Ok(pending)
+    }
+
     async fn accept_loop(self: Arc<Self>) {
         let slots = Arc::new(tokio::sync::Semaphore::new(MAX_INCOMING));
         while let Some(incoming) = self.endpoint.accept().await {
@@ -916,7 +1118,11 @@ impl Node {
     async fn serve(&self, conn: &Connection, from: Option<SocketAddr>) -> CoreResult<()> {
         let remote = *conn.remote_id().as_bytes();
         let contact = with_store(&self.store, move |s| {
-            contacts::by_endpoint(s.conn(), &remote)
+            match contacts::by_endpoint(s.conn(), &remote)? {
+                Some(contact) => Ok(Some(contact)),
+                // Um contato pendente pela caixa postal: o Welcome vem por aqui.
+                None => contacts::pending_by_endpoint(s.conn(), &remote),
+            }
         })
         .await?;
         match contact {
@@ -970,7 +1176,16 @@ impl Node {
                 _ => return Err(CoreError::Protocol),
             };
             let result = with_store(&self.store, move |s| {
-                messages::receive(s, &remote, prekey, &bytes)
+                if contacts::by_endpoint(s.conn(), &remote)?.is_some() {
+                    return messages::receive(s, &remote, prekey, &bytes);
+                }
+                match contacts::pending_by_endpoint(s.conn(), &remote)? {
+                    Some(pending) if !prekey => {
+                        session::accept_welcome(s, pending.id, &remote, &bytes)
+                            .map(|c| Effect::Contact(c.id))
+                    }
+                    _ => Err(CoreError::UnknownContact),
+                }
             })
             .await;
             let reply = match result {
@@ -1148,11 +1363,11 @@ impl Node {
                 Body::PreKeyMessage(hello) => {
                     let me = self.me();
                     match with_store(&self.store, move |s| {
-                        session::accept_hello(s, &remote, &hello, me)
+                        session::accept_hello(s, session::HelloFrom::Node(&remote), &hello, me)
                     })
                     .await
                     {
-                        Ok((contact, welcome)) => {
+                        Ok((contact, welcome, _)) => {
                             wire::write_frame(&mut send, &wire::frame(Body::Message(welcome)))
                                 .await?;
                             let _ = send.finish();
@@ -1287,31 +1502,31 @@ impl Node {
         let mut read = None;
         let mut delivered: HashMap<i64, Vec<Vec<u8>>> = HashMap::new();
         for item in items {
-            let result = with_store(&self.store, move |s| {
-                let Some(contact) = mailbox::contact_by_drop(s.conn(), &item.drop)? else {
-                    return Ok(None);
-                };
-                let (prekey, bytes) = match wire::decode_frame(&item.envelope) {
-                    Ok(Body::Message(bytes)) => (false, bytes),
-                    Ok(Body::PreKeyMessage(bytes)) => (true, bytes),
-                    _ => return Ok(None),
-                };
-                match messages::receive_from(s, &contact, prekey, &bytes) {
-                    Ok(done) => Ok(Some((contact.id, done))),
-                    Err(CoreError::Storage) => Err(CoreError::Storage),
-                    Err(_) => Ok(None),
-                }
+            let (seq, me) = (item.seq, self.me());
+            let result = with_store(&self.store, move |s| match open_item(s, &item, me) {
+                Err(CoreError::Storage) => Err(CoreError::Storage),
+                Err(_) => Ok(Opened::Nothing),
+                opened => opened,
             })
             .await;
             match result {
-                Ok(Some((contact_id, (effect, shown)))) => {
+                Ok(Opened::Message(contact_id, effect, shown)) => {
                     self.saw_effect(effect);
                     delivered.entry(contact_id).or_default().extend(shown);
                 }
-                Ok(None) => {}
+                Ok(Opened::NewContact(contact_id)) => {
+                    self.emit(NodeEvent::ContactChanged(contact_id));
+                    // O Welcome sai já, e o contato novo fica sabendo da caixa.
+                    self.flush(contact_id);
+                    self.check_mailbox();
+                }
+                Ok(Opened::Established(contact_id)) => {
+                    self.emit(NodeEvent::ContactChanged(contact_id));
+                }
+                Ok(Opened::Nothing) => {}
                 Err(_) => break,
             }
-            read = Some(item.seq);
+            read = Some(seq);
         }
         for (contact_id, ids) in delivered {
             let sent = with_store(&self.store, move |s| {
@@ -1871,6 +2086,97 @@ mod tests {
         for node in [alice, bob] {
             node.close().await;
         }
+        mailbox_server.close().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn first_contact_through_the_mailboxes_with_nobody_online_together() {
+        use crate::messages;
+        use chirp_mailbox::server::{self, Config, Server};
+        let dir = tempfile::tempdir().unwrap();
+        // Uma caixa de verdade, com Bob e Alice como donos.
+        let mailbox_server = Server::start(Config {
+            dir: dir.path().to_path_buf(),
+            port: 0,
+            public: vec![],
+            relay: None,
+            limits: Default::default(),
+        })
+        .await
+        .unwrap();
+        let link = |code: u8| {
+            chirp_mailbox::store::create_pairing(dir.path(), [code; 32], server::now()).unwrap();
+            PairLink {
+                endpoint_id: *mailbox_server.endpoint.id().as_bytes(),
+                token: [code; 32],
+                addrs: mailbox_server.endpoint.addr().ip_addrs().copied().collect(),
+                relay: None,
+            }
+        };
+        let (alice_store, bob_store) = (device("Alice"), device("Bob"));
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        bob.pair_mailbox(link(1)).await.unwrap();
+        alice.pair_mailbox(link(2)).await.unwrap();
+
+        // Bob manda o link e desliga.
+        let invite = bob.create_invite(InviteKind::Link).await.unwrap();
+        assert!(invite.mailbox.is_some(), "as prekeys foram para a caixa");
+        let invite = Invite::from_link(&invite.to_link()).unwrap();
+        bob.close().await;
+
+        // Alice lê com Bob desligado: o pedido fica na caixa dele.
+        let pending = alice.join(invite.clone(), false).await.unwrap();
+        assert_eq!(pending.state, ContactState::Pending);
+        assert_eq!(
+            alice.join(invite, false).await.err(),
+            Some(CoreError::AlreadyExists)
+        );
+        until("Alice's mailbox takes Bob's drop", || {
+            let store = alice_store.lock().unwrap();
+            let synced = mailbox::get(store.conn()).unwrap().unwrap().synced;
+            synced == Some(mailbox::digest(&mailbox::drops(store.conn()).unwrap()))
+        })
+        .await;
+        alice.close().await;
+
+        // Bob volta: aceita o pedido, e a resposta e um "oi" vão para a caixa de Alice.
+        let bob = Node::start_test(bob_store.clone()).await.unwrap();
+        until("Bob gets Alice's request", || {
+            contacts(&bob_store)
+                .iter()
+                .any(|c| c.display_name == "Alice" && c.state == ContactState::Established)
+        })
+        .await;
+        let alice_at_bob = contacts(&bob_store)[0].id;
+        messages::send_text(
+            &mut bob_store.lock().unwrap(),
+            alice_at_bob,
+            "oi, Alice",
+            None,
+        )
+        .unwrap();
+        bob.flush(alice_at_bob);
+        until("Bob's outbox goes to Alice's mailbox", || {
+            messages::waiting(bob_store.lock().unwrap().conn())
+                .unwrap()
+                .is_empty()
+        })
+        .await;
+        bob.close().await;
+
+        // Alice volta: o contato fecha e o "oi" chega, sem os dois nunca juntos.
+        let alice = Node::start_test(alice_store.clone()).await.unwrap();
+        until("Alice gets Bob's welcome and text", || {
+            let bob_at_alice = contacts(&alice_store)[0].clone();
+            bob_at_alice.state == ContactState::Established
+                && bob_at_alice.display_name == "Bob"
+                && texts(&alice_store, bob_at_alice.id)
+                    .iter()
+                    .any(|(t, _)| t == "oi, Alice")
+        })
+        .await;
+        alice.close().await;
         mailbox_server.close().await;
     }
 

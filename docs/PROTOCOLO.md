@@ -32,12 +32,15 @@ Vetor: para a chave `0x05` seguida de 32 zeros, a impressão é `00474 20068 940
 versão (1, = 1) || identidade (33) || nó (32) || token (32) ||
 n (1, até 8) || n × [ 4 || IPv4 (4) || porta (2)  |  6 || IPv6 (16) || porta (2) ]
 [ || m (1, de 1 a 200) || retransmissor (m, URL em UTF-8) ]      (fase 5, opcional)
+[ || 0xFF || nó da caixa (32) || n (1, até 8) || n × endereço ||
+     r (1, até 200) || retransmissor da caixa (r) ]              (fase 7, opcional)
 ```
 
 - O link é `chirp://invite#` e os bytes em base64url sem preenchimento. O QR é o mesmo link. Fica em torno de 180 caracteres.
 - O token tem 32 bytes aleatórios, vale uma vez, por 24 horas, e o banco guarda só o SHA-256 dele.
 - Com a internet desligada (o padrão), os endereços são só os da rede local (IPv4 privado e IPv6 `fc00::/7`): o link mandado por outro canal não leva IP público. Com ela ligada, vêm também os públicos (os da interface e o que o retransmissor viu), os locais primeiro.
 - O retransmissor de quem convida, se houver, vai no fim (`https://`, ou `http://` para uma rede própria, sem usuário, senha, consulta nem fragmento). Sem ele, os bytes são os de antes; uma versão anterior recusa um convite com retransmissor como "convite inválido".
+- A caixa postal de quem convida vai por último, só quando as prekeys do convite foram publicadas nela (a seguir, "O primeiro contato pela caixa"). O `0xFF` não se confunde com o tamanho de um retransmissor. O link aceita até 1024 caracteres.
 - As prekeys **não** vão no convite: a Kyber1024 sozinha tem 1568 bytes, e o QR ficaria ilegível. Quem lê pede pela rede e confere as assinaturas com a identidade do convite, o que dá a mesma garantia.
 - Qualquer byte a mais, a menos ou fora do formato recusa o convite inteiro (`invite::tests`).
 
@@ -77,7 +80,8 @@ Content { bytes message_id = 1 (16 aleatórios);
           uint64 sent_at = 13 (ms, relógio de quem manda, só para mostrar);
           uint64 lamport = 14 (a ordem na conversa);
           bytes padding = 15; }
-Hello    { bytes token = 1; PeerProfile profile = 2; Peer peer = 3; }
+Hello    { bytes token = 1; PeerProfile profile = 2; Peer peer = 3;
+           MailboxInfo mailbox = 4 (fase 7: a caixa de quem leu, com a ficha de quem convidou); }
 Welcome  { PeerProfile profile = 1; Peer peer = 2; }
 PeerProfile { string display_name = 1; uint32 version = 2; }
 Peer     { bytes endpoint_id = 1; repeated string addrs = 2; bytes discovery_key = 3; }
@@ -202,6 +206,10 @@ Frame { version = 1; oneof body {
                           //   uint64 stored_at = 4 }
   Remove remove = 9;      // { uint64 up_to = 1 }                só o dono: apaga até o seq
   Unpair unpair = 10;     // {}                                  só o dono: esquece tudo
+  Publish publish = 11;   // { bytes lookup = 1; bytes bundle = 2; bytes drop = 3 (o SHA-256);
+                          //   uint64 expires_at = 4 }          só o dono
+  GetBundle get_bundle = 12; // { bytes lookup = 1 }             qualquer um
+  Bundle bundle = 13;     // { bytes bundle = 1 }                a resposta ao GetBundle
 }}
 ```
 
@@ -212,6 +220,19 @@ Frame { version = 1; oneof body {
 **Receber**: ao ligar o nó, a cada 60 segundos e quando um contato novo fecha o aperto de mão, o nó avisa os contatos que ainda não sabem da caixa (`contacts.mailbox_told`), manda o `SetDrops` se as fichas mudaram e busca: `Fetch { after }`, abre cada `Item` como se tivesse chegado direto (`messages::receive_from`) e manda `Remove` até o último lido. Uma falha do banco para antes e deixa o resto na caixa. Para o que é da conversa (texto, atenção, arquivo), um `Receipt.delivered` volta pela sessão: quem mandou passa de "na caixa postal" a "entregue".
 
 **Desligar**: o app manda `Unpair` (se a caixa atender), apaga a caixa do banco e manda um `MailboxInfo` vazio a quem sabia dela.
+
+**O primeiro contato pela caixa** (a parte assíncrona do PQXDH): com a caixa ligada, um convite novo publica nela o `Bundle` dele (o mesmo do `BundleRequest`), com
+
+```
+lookup = SHA-256("chirp-invite-lookup" || token)
+drop   = SHA-256("chirp-invite-drop" || token)       (a ficha do Hello; a caixa recebe o SHA-256 dela)
+```
+
+e o convite ganha a parte da caixa. A caixa não vê o token, então não consegue montar um Hello (ele leva o token dentro da sessão). Quem lê o convite e não alcança quem convidou pede `GetBundle { lookup }` à caixa, confere as assinaturas das prekeys com a identidade do convite, como sempre, e deposita o Hello (um `PreKeyMessage`) com a ficha `drop`. No Hello vai a caixa de quem leu, se houver, com uma ficha para quem convidou. O contato fica pendente.
+
+Quem convidou acha o Hello pela ficha (`invites.drop_hash`) e o aceita como um que chegou pela rede, com duas diferenças: o convite vale pela hora em que o Hello chegou à caixa (`stored_at`, nunca depois de agora), e o nó que o Hello diz não pode ser o de um contato que já existe (ninguém o autenticou). O Welcome vai para a caixa de saída: sai direto ou pela caixa de quem leu. Do outro lado, o Welcome chega por uma conexão do nó de quem convidou (o contato pendente é aceito nela) ou pela caixa, com a ficha do contato pendente. Um convite publicado fica no banco por mais 30 dias depois de vencer, para um Hello guardado antes ainda valer.
+
+Na caixa, um convite publicado vale no máximo 7 dias, cada dono publica até 32, e o pacote de prekeys tem até 8 KiB.
 
 **Os limites da caixa** (`Limits`): 20 mil envelopes e 256 MiB no total, 2 mil por ficha, 30 dias guardados, 4096 fichas por dono, 256 itens por `Fetch`. Os arquivos não passam pela caixa: a oferta vai, e as fatias continuam pedindo os dois online.
 
@@ -255,5 +276,6 @@ Por sistema: no iOS e no macOS, o `NSLocalNetworkUsageDescription` e o `_chirp._
 - `node::tests`: mensagens nos dois sentidos com os recibos, sobre QUIC de verdade, e a fila de quem estava desligado, entregue na ordem quando ele volta. E um contato que "mudou de endereço" (porta nova, e os dois com o endereço errado um do outro), achado só pelo mDNS: com o mDNS desligado, o mesmo teste falha.
 - `discovery::tests`: o token muda com a época e com a chave, os vetores, as épocas vizinhas, um estranho que não casa com ninguém e os endereços que servem.
 - `chirp_mailbox` (fase 7): o frame que vai e volta, o grande demais e a versão errada; o link em cada corte e com um byte a mais; a pasta da caixa (ligar com código vencido ou repetido, as fichas de outro dono, os limites, o prazo); e, sobre QUIC, ligar, depositar, só o dono buscar e apagar.
+- `invite::tests`, `session::tests` e `node::tests` (fase 7, o primeiro contato): o convite com a caixa, com e sem retransmissor, em cada corte; o Hello pela caixa vale pela hora em que chegou e não toma o nó de um contato; e, com uma caixa de verdade, Bob convida e desliga, Alice lê e desliga, Bob volta e aceita, Alice volta e recebe o Welcome e um "oi", sem os dois nunca online juntos.
 - `messages::tests` e `node::tests` (fase 7): a caixa chega aos contatos uma vez, com uma ficha só de cada um, e o desligar também; um `MailboxInfo` fora do formato é ignorado; e, com uma caixa de verdade, uma mensagem a um contato desligado fica "na caixa postal", ele busca ao voltar e o "entregue" chega a quem mandou. O código de ligação serve uma vez só.
 - `wire::tests` e `invite::tests`: frames grandes demais, versões e lixo recusados; o convite truncado em cada posição é recusado; 20 mil entradas aleatórias não derrubam o leitor.

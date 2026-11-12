@@ -885,4 +885,8 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
   @override
   String get mailboxUnreachable =>
       'Could not reach the mailbox. With the internet off, only a mailbox on the local network works.';
+
+  @override
+  String get contactRequestLeft =>
+      'They were offline, so your request is waiting in their mailbox. They\'ll appear as a contact once they open Chirp.';
 }

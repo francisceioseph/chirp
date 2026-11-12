@@ -50,6 +50,21 @@ void main() {
     expect(store.people.single.verified, isFalse);
   });
 
+  testWidgets('com quem convidou desligado, o pedido fica na caixa postal', (
+    tester,
+  ) async {
+    final store = await ready(tester);
+    await openPaste(tester);
+    await tester.enterText(find.byType(TextField), 'chirp://invite#mailbox');
+    await tester.pump();
+    await tester.tap(find.text(l10n.pasteAdd));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.contactRequestLeft), findsOneWidget);
+    expect(store.people.single.established, isFalse);
+    expect(find.text(l10n.contactPending), findsOneWidget);
+    expect(find.text(l10n.contactUnnamed), findsOneWidget);
+  });
+
   testWidgets('cada falha do convite tem a mensagem dela', (tester) async {
     await ready(tester);
     await openPaste(tester);

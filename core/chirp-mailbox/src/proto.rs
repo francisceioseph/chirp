@@ -21,6 +21,12 @@ pub const MAX_FRAME: usize = MAX_ENVELOPE + 1024;
 pub const MAX_DROPS: usize = 4096;
 /// Quantos itens vão numa resposta ao `Fetch`; o resto vem no próximo.
 pub const FETCH_BATCH: usize = 256;
+/// O maior pacote de prekeys publicado (o da Kyber sozinho tem 1568 bytes).
+pub const MAX_BUNDLE: usize = 8 * 1024;
+/// Quantos convites um dono publica ao mesmo tempo.
+pub const MAX_INVITES: usize = 32;
+/// Um convite publicado vale no máximo isso, mesmo que o dono peça mais.
+pub const MAX_INVITE_SECS: u64 = 7 * 24 * 60 * 60;
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum ProtoError {
@@ -34,7 +40,7 @@ pub enum ProtoError {
 pub struct Frame {
     #[prost(uint32, tag = "1")]
     pub version: u32,
-    #[prost(oneof = "Body", tags = "2, 3, 4, 5, 6, 7, 8, 9, 10")]
+    #[prost(oneof = "Body", tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13")]
     pub body: Option<Body>,
 }
 
@@ -69,6 +75,42 @@ pub enum Body {
     /// Só o dono: desliga a caixa dele, com tudo o que estava guardado.
     #[prost(message, tag = "10")]
     Unpair(Unpair),
+    /// Só o dono: publica as prekeys de um convite (o primeiro contato por aqui). Quem
+    /// tem o convite acha pelo `lookup` e deixa o Hello com a ficha cujo SHA-256 é o
+    /// `drop`; os dois saem do token do convite, que a caixa não vê.
+    #[prost(message, tag = "11")]
+    Publish(Publish),
+    /// Qualquer um: as prekeys publicadas com esse `lookup`, ou `Refused`.
+    #[prost(message, tag = "12")]
+    GetBundle(GetBundle),
+    /// A resposta ao `GetBundle`.
+    #[prost(message, tag = "13")]
+    Bundle(Bundle),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Publish {
+    #[prost(bytes = "vec", tag = "1")]
+    pub lookup: Vec<u8>,
+    #[prost(bytes = "vec", tag = "2")]
+    pub bundle: Vec<u8>,
+    #[prost(bytes = "vec", tag = "3")]
+    pub drop: Vec<u8>,
+    /// Até quando vale, em segundos desde 1970.
+    #[prost(uint64, tag = "4")]
+    pub expires_at: u64,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct GetBundle {
+    #[prost(bytes = "vec", tag = "1")]
+    pub lookup: Vec<u8>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct Bundle {
+    #[prost(bytes = "vec", tag = "1")]
+    pub bundle: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -129,6 +171,24 @@ pub struct Unpair {}
 /// O SHA-256 de uma ficha (ou de um código de ligação): é o que a caixa guarda.
 pub fn hash(token: &[u8]) -> [u8; 32] {
     Sha256::digest(token).into()
+}
+
+/// Por onde se acha um convite publicado: sai do token, e não leva a ele.
+pub fn invite_lookup(token: &[u8]) -> [u8; 32] {
+    Sha256::new()
+        .chain_update(b"chirp-invite-lookup")
+        .chain_update(token)
+        .finalize()
+        .into()
+}
+
+/// A ficha com que quem leu o convite deixa o Hello. A caixa recebe o SHA-256 dela.
+pub fn invite_drop(token: &[u8]) -> [u8; 32] {
+    Sha256::new()
+        .chain_update(b"chirp-invite-drop")
+        .chain_update(token)
+        .finalize()
+        .into()
 }
 
 pub fn frame(body: Body) -> Frame {
@@ -199,6 +259,16 @@ mod tests {
         .encode_to_vec();
         assert_eq!(decode(&other), Err(ProtoError::Invalid));
         assert_eq!(decode(&[0xff, 0xff, 0xff]), Err(ProtoError::Invalid));
+    }
+
+    #[test]
+    fn invite_keys_are_apart_from_each_other_and_from_the_token() {
+        let token = [3; 32];
+        let (lookup, drop) = (invite_lookup(&token), invite_drop(&token));
+        assert_ne!(lookup, drop);
+        assert_ne!(lookup, hash(&token));
+        assert_ne!(hash(&drop), lookup);
+        assert_ne!(invite_lookup(&[4; 32]), lookup);
     }
 
     #[test]

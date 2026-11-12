@@ -186,6 +186,10 @@ const MIGRATIONS: &[&str] = &[
      ALTER TABLE contacts ADD COLUMN their_drop BLOB;
      CREATE INDEX contacts_drop ON contacts (drop_hash);
      ALTER TABLE messages ADD COLUMN in_mailbox INTEGER NOT NULL DEFAULT 0;",
+    // 11: o primeiro contato pela caixa postal (fase 7): o SHA-256 da ficha com que o
+    // Hello de um convite publicado chega.
+    "ALTER TABLE invites ADD COLUMN drop_hash BLOB;
+     CREATE INDEX invites_drop ON invites (drop_hash);",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

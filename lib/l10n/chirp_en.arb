@@ -414,5 +414,6 @@
   "mailboxUnpairBody": "Whatever is waiting in it is lost, and your contacts stop leaving messages there. You can link it again with a new code.",
   "mailboxInvalid": "That code does not work. Paste the whole chirp://mailbox# link.",
   "mailboxRefused": "The mailbox refused the code. It works only once and expires in 24 hours: make a new one.",
-  "mailboxUnreachable": "Could not reach the mailbox. With the internet off, only a mailbox on the local network works."
+  "mailboxUnreachable": "Could not reach the mailbox. With the internet off, only a mailbox on the local network works.",
+  "contactRequestLeft": "They were offline, so your request is waiting in their mailbox. They'll appear as a contact once they open Chirp."
 }

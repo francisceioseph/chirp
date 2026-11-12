@@ -41,6 +41,8 @@ pub use store::ProtocolStore;
 
 /// Quanto tempo um convite vale (docs/PLANO.md, 6.2).
 pub const INVITE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
+/// Quanto a caixa postal guarda um envelope: um convite publicado fica isso a mais.
+const MAILBOX_KEEP: Duration = Duration::from_secs(30 * 24 * 60 * 60);
 
 /// Como o convite foi mostrado: o QR é frente a frente, e o contato nasce verificado.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -233,13 +235,18 @@ pub fn create_invite(
         token: *token,
         addrs,
         relay,
+        mailbox: None,
     })
 }
 
 /// Tira os convites vencidos ou usados, e as prekeys que sobraram deles.
 fn forget_dead_invites(conn: &Connection) -> CoreResult<()> {
-    let dead = "SELECT {col} FROM invites WHERE used = 1 OR expires_at <= ?1";
+    // Um convite publicado na caixa postal fica mais: o Hello guardado lá antes de
+    // vencer ainda vale quando for lido (`HelloFrom::Mailbox`).
+    const DEAD: &str = "used = 1 OR (expires_at <= ?1 AND (drop_hash IS NULL OR expires_at <= ?2))";
+    let dead = format!("SELECT {{col}} FROM invites WHERE {DEAD}");
     let now = now_secs() as i64;
+    let kept = now - MAILBOX_KEEP.as_secs() as i64;
     for (table, col) in [
         ("prekeys", "prekey_id"),
         ("signed_prekeys", "signed_prekey_id"),
@@ -250,13 +257,10 @@ fn forget_dead_invites(conn: &Connection) -> CoreResult<()> {
                 "DELETE FROM {table} WHERE id IN ({})",
                 dead.replace("{col}", col)
             ),
-            [now],
+            [now, kept],
         )?;
     }
-    conn.execute(
-        "DELETE FROM invites WHERE used = 1 OR expires_at <= ?1",
-        [now],
-    )?;
+    conn.execute(&format!("DELETE FROM invites WHERE {DEAD}"), [now, kept])?;
     Ok(())
 }
 
@@ -266,8 +270,32 @@ struct InviteRow {
     kyber_id: u32,
 }
 
+/// O convite foi publicado numa caixa postal: o Hello dele chega com essa ficha.
+pub fn set_invite_drop(conn: &Connection, token: &[u8], drop_hash: &[u8]) -> CoreResult<()> {
+    conn.execute(
+        "UPDATE invites SET drop_hash = ?2 WHERE token_hash = ?1",
+        (token_hash(token), drop_hash),
+    )?;
+    Ok(())
+}
+
+/// Se há um convite publicado (vivo ou não) com essa ficha.
+pub fn invite_has_drop(conn: &Connection, drop_hash: &[u8]) -> CoreResult<bool> {
+    Ok(conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM invites WHERE drop_hash = ?1)",
+        [drop_hash],
+        |r| r.get(0),
+    )?)
+}
+
 /// O convite vivo deste token, ou `InviteRefused`.
 fn live_invite(conn: &Connection, token: &[u8]) -> CoreResult<InviteRow> {
+    live_invite_at(conn, token, now_secs())
+}
+
+/// O mesmo, numa hora dada: o Hello que esperou na caixa postal vale pela hora em que
+/// chegou lá.
+fn live_invite_at(conn: &Connection, token: &[u8], at: u64) -> CoreResult<InviteRow> {
     let row: Option<(i64, u32, u32, u32, bool)> = conn
         .query_row(
             "SELECT expires_at, prekey_id, signed_prekey_id, kyber_prekey_id, used
@@ -277,7 +305,7 @@ fn live_invite(conn: &Connection, token: &[u8]) -> CoreResult<InviteRow> {
         )
         .optional()?;
     match row {
-        Some((expires, prekey_id, signed_id, kyber_id, false)) if expires as u64 > now_secs() => {
+        Some((expires, prekey_id, signed_id, kyber_id, false)) if expires as u64 > at => {
             Ok(InviteRow {
                 prekey_id,
                 signed_id,
@@ -323,6 +351,7 @@ pub fn join(
     bundle: &wire::Bundle,
     me: Peer,
     verified: bool,
+    mailbox: Option<wire::MailboxInfo>,
 ) -> CoreResult<(Contact, Vec<u8>)> {
     let own = identity_pair(store)?;
     if own.identity_key().serialize().as_ref() == invite.identity_key.as_slice() {
@@ -359,6 +388,7 @@ pub fn join(
                 version: profile.version,
             }),
             peer: Some(me),
+            mailbox,
         })),
         sent_at: 0,
         lamport: 0,
@@ -420,14 +450,24 @@ pub fn join(
     Ok((contact, message.serialized().to_vec()))
 }
 
+/// De onde veio um Hello.
+#[derive(Debug, Clone, Copy)]
+pub enum HelloFrom<'a> {
+    /// Pela rede, deste nó (autenticado pelo QUIC).
+    Node(&'a [u8; 32]),
+    /// Pela caixa postal, guardado nessa hora (segundos desde 1970). O nó é o que o
+    /// Hello diz, e não pode ser o de um contato que já existe.
+    Mailbox(u64),
+}
+
 /// Passo 4: decifra o Hello de quem leu nosso convite, confere tudo, grava o contato e
-/// devolve o Welcome cifrado.
+/// devolve o Welcome cifrado, e a caixa postal de quem leu, se veio.
 pub fn accept_hello(
     store: &mut Store,
-    remote_endpoint: &[u8; 32],
+    from: HelloFrom,
     message: &[u8],
     me: Peer,
-) -> CoreResult<(Contact, Vec<u8>)> {
+) -> CoreResult<(Contact, Vec<u8>, Option<wire::MailboxInfo>)> {
     let own = identity_pair(store)?;
     let profile = store.profile()?.ok_or(CoreError::NoProfile)?;
     let keys = local_keys(store.conn())?;
@@ -460,16 +500,34 @@ pub fn accept_hello(
         return Err(CoreError::Protocol);
     };
     // O token tem de ser o de um convite vivo, e as prekeys usadas as daquele convite.
-    let invite = live_invite(&tx, &hello.token)?;
+    let at = match from {
+        HelloFrom::Node(_) => now_secs(),
+        HelloFrom::Mailbox(stored_at) => stored_at.min(now_secs()),
+    };
+    let invite = live_invite_at(&tx, &hello.token, at)?;
     if message.pre_key_id().map(u32::from) != Some(invite.prekey_id)
         || u32::from(message.signed_pre_key_id()) != invite.signed_id
     {
         return Err(CoreError::InviteRefused);
     }
     let peer = sanitize(hello.peer.ok_or(CoreError::Protocol)?)?;
-    // Quem fala pela rede tem de ser o nó que o Hello diz.
-    if peer.endpoint_id.as_slice() != remote_endpoint.as_slice() {
-        return Err(CoreError::Protocol);
+    match from {
+        // Quem fala pela rede tem de ser o nó que o Hello diz.
+        HelloFrom::Node(remote) if peer.endpoint_id.as_slice() != remote.as_slice() => {
+            return Err(CoreError::Protocol);
+        }
+        // Pela caixa, ninguém autentica o nó: ele não pode tomar o de um contato.
+        HelloFrom::Mailbox(_) => {
+            let taken: bool = tx.query_row(
+                "SELECT EXISTS (SELECT 1 FROM contacts WHERE endpoint_id = ?1)",
+                [&peer.endpoint_id],
+                |r| r.get(0),
+            )?;
+            if taken {
+                return Err(CoreError::Protocol);
+            }
+        }
+        HelloFrom::Node(_) => {}
     }
     let their_profile = hello.profile.ok_or(CoreError::Protocol)?;
     let name = crate::profile::validate_name(&their_profile.display_name)
@@ -526,7 +584,7 @@ pub fn accept_hello(
         ))?
     };
     tx.commit()?;
-    Ok((contact, reply.serialize().to_vec()))
+    Ok((contact, reply.serialize().to_vec(), hello.mailbox))
 }
 
 /// Passo 5: o Welcome de quem convidou fecha o contato pendente.

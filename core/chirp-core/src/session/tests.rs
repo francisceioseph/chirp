@@ -63,12 +63,18 @@ fn handshake(host: &mut Device, guest: &mut Device, kind: InviteKind) -> (Contac
         &bundle,
         guest_peer,
         kind == InviteKind::Qr,
+        None,
     )
     .unwrap();
     assert_eq!(pending.state, ContactState::Pending);
     let host_peer = host.peer.clone();
-    let (at_host, welcome) =
-        accept_hello(&mut host.store, &guest.endpoint, &hello, host_peer).unwrap();
+    let (at_host, welcome, _) = accept_hello(
+        &mut host.store,
+        crate::session::HelloFrom::Node(&guest.endpoint),
+        &hello,
+        host_peer,
+    )
+    .unwrap();
     let at_guest = accept_welcome(&mut guest.store, pending.id, &host.endpoint, &welcome).unwrap();
     (at_host, at_guest)
 }
@@ -121,11 +127,30 @@ fn a_replayed_hello_is_refused_and_leaves_nothing() {
     let mut bob = Device::new("Bob", 2);
     let invite = alice.invite(InviteKind::Qr);
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
-    let (_, hello) = join(&mut bob.store, &invite, &bundle, bob.peer.clone(), true).unwrap();
+    let (_, hello) = join(
+        &mut bob.store,
+        &invite,
+        &bundle,
+        bob.peer.clone(),
+        true,
+        None,
+    )
+    .unwrap();
     let peer = alice.peer.clone();
-    accept_hello(&mut alice.store, &bob.endpoint, &hello, peer.clone()).unwrap();
+    accept_hello(
+        &mut alice.store,
+        crate::session::HelloFrom::Node(&bob.endpoint),
+        &hello,
+        peer.clone(),
+    )
+    .unwrap();
     assert_eq!(
-        accept_hello(&mut alice.store, &bob.endpoint, &hello, peer),
+        accept_hello(
+            &mut alice.store,
+            crate::session::HelloFrom::Node(&bob.endpoint),
+            &hello,
+            peer
+        ),
         Err(CoreError::AlreadyExists)
     );
     assert_eq!(alice.contacts().len(), 1);
@@ -150,10 +175,22 @@ fn a_spent_or_unknown_token_gets_no_bundle() {
 
 fn handshake_with(host: &mut Device, guest: &mut Device, invite: &Invite) {
     let bundle = bundle_for(&host.store, &invite.token).unwrap();
-    let (pending, hello) =
-        join(&mut guest.store, invite, &bundle, guest.peer.clone(), true).unwrap();
-    let (_, welcome) =
-        accept_hello(&mut host.store, &guest.endpoint, &hello, host.peer.clone()).unwrap();
+    let (pending, hello) = join(
+        &mut guest.store,
+        invite,
+        &bundle,
+        guest.peer.clone(),
+        true,
+        None,
+    )
+    .unwrap();
+    let (_, welcome, _) = accept_hello(
+        &mut host.store,
+        crate::session::HelloFrom::Node(&guest.endpoint),
+        &hello,
+        host.peer.clone(),
+    )
+    .unwrap();
     accept_welcome(&mut guest.store, pending.id, &host.endpoint, &welcome).unwrap();
 }
 
@@ -179,18 +216,36 @@ fn a_hello_from_another_node_is_refused_and_rolled_back() {
     let mut bob = Device::new("Bob", 2);
     let invite = alice.invite(InviteKind::Qr);
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
-    let (_, hello) = join(&mut bob.store, &invite, &bundle, bob.peer.clone(), true).unwrap();
+    let (_, hello) = join(
+        &mut bob.store,
+        &invite,
+        &bundle,
+        bob.peer.clone(),
+        true,
+        None,
+    )
+    .unwrap();
     let mallory_node = [66u8; 32];
     assert_eq!(
-        accept_hello(&mut alice.store, &mallory_node, &hello, alice.peer.clone()),
+        accept_hello(
+            &mut alice.store,
+            crate::session::HelloFrom::Node(&mallory_node),
+            &hello,
+            alice.peer.clone()
+        ),
         Err(CoreError::Protocol)
     );
     assert!(alice.contacts().is_empty());
     assert_eq!(alice.count("sessions"), 0);
     assert_eq!(alice.count("identities"), 0);
     // E o convite continua valendo para o Bob de verdade.
-    let (_, welcome) =
-        accept_hello(&mut alice.store, &bob.endpoint, &hello, alice.peer.clone()).unwrap();
+    let (_, welcome, _) = accept_hello(
+        &mut alice.store,
+        crate::session::HelloFrom::Node(&bob.endpoint),
+        &hello,
+        alice.peer.clone(),
+    )
+    .unwrap();
     assert!(!welcome.is_empty());
 }
 
@@ -205,13 +260,29 @@ fn a_tampered_bundle_is_caught_by_the_signature() {
     let fake_invite = mallory.invite(InviteKind::Qr);
     let fake = bundle_for(&mallory.store, &fake_invite.token).unwrap();
     bundle.signed_prekey = fake.signed_prekey;
-    assert!(join(&mut bob.store, &invite, &bundle, bob.peer.clone(), true).is_err());
+    assert!(join(
+        &mut bob.store,
+        &invite,
+        &bundle,
+        bob.peer.clone(),
+        true,
+        None
+    )
+    .is_err());
     assert!(bob.contacts().is_empty());
     assert_eq!(bob.count("sessions"), 0);
     // A Kyber também é assinada.
     let mut bundle = bundle_for(&alice.store, &invite.token).unwrap();
     bundle.kyber_prekey = fake.kyber_prekey.clone();
-    assert!(join(&mut bob.store, &invite, &bundle, bob.peer.clone(), true).is_err());
+    assert!(join(
+        &mut bob.store,
+        &invite,
+        &bundle,
+        bob.peer.clone(),
+        true,
+        None
+    )
+    .is_err());
     assert!(bob.contacts().is_empty());
 }
 
@@ -224,10 +295,18 @@ fn a_hello_for_someone_else_cannot_be_read() {
     mallory.invite(InviteKind::Qr);
     let invite = alice.invite(InviteKind::Qr);
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
-    let (_, hello) = join(&mut bob.store, &invite, &bundle, bob.peer.clone(), true).unwrap();
+    let (_, hello) = join(
+        &mut bob.store,
+        &invite,
+        &bundle,
+        bob.peer.clone(),
+        true,
+        None,
+    )
+    .unwrap();
     assert!(accept_hello(
         &mut mallory.store,
-        &bob.endpoint,
+        crate::session::HelloFrom::Node(&bob.endpoint),
         &hello,
         mallory.peer.clone()
     )
@@ -241,9 +320,22 @@ fn a_welcome_from_another_node_or_a_stranger_is_refused() {
     let mut bob = Device::new("Bob", 2);
     let invite = alice.invite(InviteKind::Qr);
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
-    let (pending, hello) = join(&mut bob.store, &invite, &bundle, bob.peer.clone(), true).unwrap();
-    let (_, welcome) =
-        accept_hello(&mut alice.store, &bob.endpoint, &hello, alice.peer.clone()).unwrap();
+    let (pending, hello) = join(
+        &mut bob.store,
+        &invite,
+        &bundle,
+        bob.peer.clone(),
+        true,
+        None,
+    )
+    .unwrap();
+    let (_, welcome, _) = accept_hello(
+        &mut alice.store,
+        crate::session::HelloFrom::Node(&bob.endpoint),
+        &hello,
+        alice.peer.clone(),
+    )
+    .unwrap();
     // Pela conexão de outro nó.
     assert_eq!(
         accept_welcome(&mut bob.store, pending.id, &[66; 32], &welcome),
@@ -270,14 +362,22 @@ fn reading_your_own_invite_or_a_known_contact_is_refused() {
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
     let peer = alice.peer.clone();
     assert_eq!(
-        join(&mut alice.store, &invite, &bundle, peer, true).err(),
+        join(&mut alice.store, &invite, &bundle, peer, true, None).err(),
         Some(CoreError::OwnInvite)
     );
     handshake(&mut alice, &mut bob, InviteKind::Qr);
     let again = alice.invite(InviteKind::Qr);
     let bundle = bundle_for(&alice.store, &again.token).unwrap();
     assert_eq!(
-        join(&mut bob.store, &again, &bundle, bob.peer.clone(), true).err(),
+        join(
+            &mut bob.store,
+            &again,
+            &bundle,
+            bob.peer.clone(),
+            true,
+            None
+        )
+        .err(),
         Some(CoreError::AlreadyExists)
     );
 }
@@ -324,14 +424,97 @@ fn bad_peer_data_is_dropped_or_refused() {
     carol.peer.discovery_key = vec![1, 2, 3];
     let invite = alice.invite(InviteKind::Qr);
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
-    let (_, hello) = join(&mut carol.store, &invite, &bundle, carol.peer.clone(), true).unwrap();
+    let (_, hello) = join(
+        &mut carol.store,
+        &invite,
+        &bundle,
+        carol.peer.clone(),
+        true,
+        None,
+    )
+    .unwrap();
     assert_eq!(
         accept_hello(
             &mut alice.store,
-            &carol.endpoint,
+            crate::session::HelloFrom::Node(&carol.endpoint),
             &hello,
             alice.peer.clone()
         ),
         Err(CoreError::Protocol)
     );
+}
+
+#[test]
+fn a_hello_from_the_mailbox_counts_from_when_it_arrived_and_takes_no_known_node() {
+    let mut alice = Device::new("Alice", 1);
+    let mut bob = Device::new("Bob", 2);
+    let mut carol = Device::new("Carol", 3);
+    // Carol já é contato de Alice.
+    handshake(&mut alice, &mut carol, InviteKind::Qr);
+
+    let invite = alice.invite(InviteKind::Link);
+    let bundle = bundle_for(&alice.store, &invite.token).unwrap();
+    let info = wire::MailboxInfo {
+        endpoint_id: vec![8; 32],
+        addrs: vec![],
+        drop: vec![9; 32],
+    };
+    let (_, hello) = join(
+        &mut bob.store,
+        &invite,
+        &bundle,
+        bob.peer.clone(),
+        false,
+        Some(info.clone()),
+    )
+    .unwrap();
+    // O convite venceu há pouco: o Hello guardado na caixa depois disso é recusado.
+    let now = now_secs() as i64;
+    alice
+        .store
+        .conn()
+        .execute("UPDATE invites SET expires_at = ?1", [now - 10])
+        .unwrap();
+    assert!(matches!(
+        accept_hello(
+            &mut alice.store,
+            HelloFrom::Mailbox(now as u64),
+            &hello,
+            alice.peer.clone()
+        ),
+        Err(CoreError::InviteRefused)
+    ));
+    // Guardado antes de vencer, vale mesmo lido depois, e traz a caixa de quem leu.
+    let (contact, _, theirs) = accept_hello(
+        &mut alice.store,
+        HelloFrom::Mailbox(now as u64 - 100),
+        &hello,
+        alice.peer.clone(),
+    )
+    .unwrap();
+    assert_eq!(contact.display_name, "Bob");
+    assert_eq!(theirs, Some(info));
+
+    // Um Hello pela caixa que diz ser o nó de Carol é recusado, sem deixar nada.
+    let mut mallory = Device::new("Mallory", 3);
+    let invite = alice.invite(InviteKind::Link);
+    let bundle = bundle_for(&alice.store, &invite.token).unwrap();
+    let (_, hello) = join(
+        &mut mallory.store,
+        &invite,
+        &bundle,
+        mallory.peer.clone(),
+        false,
+        None,
+    )
+    .unwrap();
+    let before = alice.contacts().len();
+    assert!(accept_hello(
+        &mut alice.store,
+        HelloFrom::Mailbox(now_secs()),
+        &hello,
+        alice.peer.clone()
+    )
+    .is_err());
+    assert_eq!(alice.contacts().len(), before);
 }

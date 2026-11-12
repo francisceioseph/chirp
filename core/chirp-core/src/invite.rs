@@ -13,6 +13,11 @@
 //!
 //! Com um retransmissor (fase 5), vem depois dos endereços `m (1) || URL (m)`, com
 //! 1 ≤ m ≤ 200. Sem ele, o convite é o mesmo de antes.
+//!
+//! Com uma caixa postal que publicou as prekeys do convite (fase 7), vem por último
+//! `0xFF || nó da caixa (32) || n (1) || n × endereço || r (1, até 200) ||
+//! retransmissor da caixa (r)`. O 0xFF não confunde com o tamanho de um retransmissor
+//! (até 200). Quem lê e não acha quem convidou busca as prekeys na caixa.
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 
@@ -24,6 +29,68 @@ use crate::error::{CoreError, CoreResult};
 pub const LINK_PREFIX: &str = "chirp://invite#";
 const VERSION: u8 = 1;
 const MAX_ADDRS: usize = 8;
+/// O começo da parte da caixa postal.
+const MAILBOX_MARK: u8 = 0xFF;
+
+/// A caixa postal de quem convida, onde as prekeys do convite estão publicadas.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InviteMailbox {
+    pub endpoint_id: [u8; 32],
+    pub addrs: Vec<SocketAddr>,
+    pub relay: Option<String>,
+}
+
+impl InviteMailbox {
+    /// Os endereços como o nó usa: os IPs e o retransmissor.
+    pub fn addr_strings(&self) -> Vec<String> {
+        let mut out: Vec<String> = self.addrs.iter().map(|a| a.to_string()).collect();
+        out.extend(self.relay.clone());
+        out
+    }
+}
+
+fn write_addrs(out: &mut Vec<u8>, addrs: &[SocketAddr]) {
+    let addrs = &addrs[..addrs.len().min(MAX_ADDRS)];
+    out.push(addrs.len() as u8);
+    for addr in addrs {
+        match addr.ip() {
+            IpAddr::V4(ip) => {
+                out.push(4);
+                out.extend_from_slice(&ip.octets());
+            }
+            IpAddr::V6(ip) => {
+                out.push(6);
+                out.extend_from_slice(&ip.octets());
+            }
+        }
+        out.extend_from_slice(&addr.port().to_be_bytes());
+    }
+}
+
+fn read_addrs(r: &mut Reader) -> CoreResult<Vec<SocketAddr>> {
+    let count = usize::from(r.take(1)?[0]);
+    if count > MAX_ADDRS {
+        return Err(CoreError::InvalidInvite);
+    }
+    let mut addrs = Vec::with_capacity(count);
+    for _ in 0..count {
+        let ip = match r.take(1)?[0] {
+            4 => IpAddr::V4(Ipv4Addr::from(r.array::<4>()?)),
+            6 => IpAddr::V6(Ipv6Addr::from(r.array::<16>()?)),
+            _ => return Err(CoreError::InvalidInvite),
+        };
+        let port = u16::from_be_bytes(r.array()?);
+        addrs.push(SocketAddr::new(ip, port));
+    }
+    Ok(addrs)
+}
+
+fn read_relay(r: &mut Reader, len: usize) -> CoreResult<String> {
+    let text = std::str::from_utf8(r.take(len)?)
+        .map_err(|_| CoreError::InvalidInvite)?
+        .to_owned();
+    crate::network::relay_url(&text).map_err(|_| CoreError::InvalidInvite)
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Invite {
@@ -33,6 +100,8 @@ pub struct Invite {
     pub addrs: Vec<SocketAddr>,
     /// O retransmissor de quem convida, se houver.
     pub relay: Option<String>,
+    /// A caixa postal com as prekeys deste convite, se houver.
+    pub mailbox: Option<InviteMailbox>,
 }
 
 impl Invite {
@@ -42,26 +111,24 @@ impl Invite {
         out.extend_from_slice(&self.identity_key);
         out.extend_from_slice(&self.endpoint_id);
         out.extend_from_slice(&self.token);
-        let addrs = &self.addrs[..self.addrs.len().min(MAX_ADDRS)];
-        out.push(addrs.len() as u8);
-        for addr in addrs {
-            match addr.ip() {
-                IpAddr::V4(ip) => {
-                    out.push(4);
-                    out.extend_from_slice(&ip.octets());
-                }
-                IpAddr::V6(ip) => {
-                    out.push(6);
-                    out.extend_from_slice(&ip.octets());
-                }
-            }
-            out.extend_from_slice(&addr.port().to_be_bytes());
-        }
+        write_addrs(&mut out, &self.addrs);
         if let Some(relay) = self
             .relay
             .as_deref()
             .filter(|r| (1..=200).contains(&r.len()))
         {
+            out.push(relay.len() as u8);
+            out.extend_from_slice(relay.as_bytes());
+        }
+        if let Some(mailbox) = &self.mailbox {
+            out.push(MAILBOX_MARK);
+            out.extend_from_slice(&mailbox.endpoint_id);
+            write_addrs(&mut out, &mailbox.addrs);
+            let relay = mailbox
+                .relay
+                .as_deref()
+                .filter(|r| r.len() <= 200)
+                .unwrap_or_default();
             out.push(relay.len() as u8);
             out.extend_from_slice(relay.as_bytes());
         }
@@ -79,38 +146,47 @@ impl Invite {
         }
         let endpoint_id = r.array()?;
         let token = r.array()?;
-        let count = usize::from(r.take(1)?[0]);
-        if count > MAX_ADDRS {
-            return Err(CoreError::InvalidInvite);
-        }
-        let mut addrs = Vec::with_capacity(count);
-        for _ in 0..count {
-            let ip = match r.take(1)?[0] {
-                4 => IpAddr::V4(Ipv4Addr::from(r.array::<4>()?)),
-                6 => IpAddr::V6(Ipv6Addr::from(r.array::<16>()?)),
-                _ => return Err(CoreError::InvalidInvite),
-            };
-            let port = u16::from_be_bytes(r.array()?);
-            addrs.push(SocketAddr::new(ip, port));
-        }
-        let relay = if r.0.is_empty() {
+        let addrs = read_addrs(&mut r)?;
+        let relay = match r.0.first() {
+            None | Some(&MAILBOX_MARK) => None,
+            Some(_) => {
+                let len = usize::from(r.take(1)?[0]);
+                if len == 0 {
+                    return Err(CoreError::InvalidInvite);
+                }
+                Some(read_relay(&mut r, len)?)
+            }
+        };
+        let mailbox = if r.0.is_empty() {
             None
         } else {
-            let len = usize::from(r.take(1)?[0]);
-            let text = std::str::from_utf8(r.take(len)?)
-                .map_err(|_| CoreError::InvalidInvite)?
-                .to_owned();
-            if len == 0 || !r.0.is_empty() {
+            if r.take(1)?[0] != MAILBOX_MARK {
                 return Err(CoreError::InvalidInvite);
             }
-            Some(crate::network::relay_url(&text).map_err(|_| CoreError::InvalidInvite)?)
+            let endpoint_id = r.array()?;
+            let addrs = read_addrs(&mut r)?;
+            let len = usize::from(r.take(1)?[0]);
+            let relay = match len {
+                0 => None,
+                201.. => return Err(CoreError::InvalidInvite),
+                len => Some(read_relay(&mut r, len)?),
+            };
+            Some(InviteMailbox {
+                endpoint_id,
+                addrs,
+                relay,
+            })
         };
+        if !r.0.is_empty() {
+            return Err(CoreError::InvalidInvite);
+        }
         Ok(Self {
             identity_key,
             endpoint_id,
             token,
             addrs,
             relay,
+            mailbox,
         })
     }
 
@@ -124,7 +200,7 @@ impl Invite {
         let payload = link
             .strip_prefix(LINK_PREFIX)
             .ok_or(CoreError::InvalidInvite)?;
-        if payload.len() > 512 {
+        if payload.len() > 1024 {
             return Err(CoreError::InvalidInvite);
         }
         let bytes = URL_SAFE_NO_PAD
@@ -167,7 +243,49 @@ mod tests {
                 "[fe80::1]:41641".parse().unwrap(),
             ],
             relay: None,
+            mailbox: None,
         }
+    }
+
+    fn with_mailbox() -> Invite {
+        Invite {
+            mailbox: Some(InviteMailbox {
+                endpoint_id: [6; 32],
+                addrs: vec!["203.0.113.7:47474".parse().unwrap()],
+                relay: Some("https://relay.example.org/".into()),
+            }),
+            ..with_relay()
+        }
+    }
+
+    #[test]
+    fn the_mailbox_rides_last_with_or_without_a_relay() {
+        let invite = with_mailbox();
+        assert_eq!(Invite::from_link(&invite.to_link()).unwrap(), invite);
+        assert!(invite.to_link().len() < 500);
+        let bare = Invite {
+            relay: None,
+            mailbox: Some(InviteMailbox {
+                relay: None,
+                addrs: vec![],
+                ..with_mailbox().mailbox.unwrap()
+            }),
+            ..sample()
+        };
+        assert_eq!(Invite::from_bytes(&bare.to_bytes()).unwrap(), bare);
+        let plain = with_relay().to_bytes();
+        let bytes = invite.to_bytes();
+        assert_eq!(&bytes[..plain.len()], plain.as_slice());
+        for cut in plain.len() + 1..bytes.len() {
+            assert_eq!(
+                Invite::from_bytes(&bytes[..cut]),
+                Err(CoreError::InvalidInvite),
+                "{cut}"
+            );
+        }
+        let mut longer = bytes.clone();
+        longer.push(0);
+        assert_eq!(Invite::from_bytes(&longer), Err(CoreError::InvalidInvite));
     }
 
     fn with_relay() -> Invite {

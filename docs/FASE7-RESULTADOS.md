@@ -51,4 +51,28 @@ A saída pedida: mandar mensagem a quem está offline e ela chegar quando a pess
 
 ## Parte 2: o primeiro contato pela caixa
 
-A fazer: a caixa publica as prekeys PQXDH do dono, e quem tem só o link do convite manda a primeira mensagem sem os dois estarem online.
+### Feito
+
+- **A caixa**: o dono publica as prekeys de um convite (`Publish`), achadas por um hash do token (`GetBundle`), e aceita o Hello pela ficha que também sai do token. A caixa não vê o token. Até 32 convites por dono, 7 dias no máximo, 8 KiB cada; vencidos saem na varredura.
+- **Núcleo**:
+  - um convite novo, com a caixa ligada, publica as prekeys e leva o endereço da caixa (um trecho novo no fim do convite, `0xFF`); se a caixa não responde em 5 segundos, sai sem;
+  - quem lê e não alcança quem convidou busca as prekeys na caixa, deposita o Hello e fica com o contato pendente. O Hello leva a caixa de quem leu, com uma ficha para quem convidou;
+  - quem convidou aceita o Hello que chega pela caixa (o convite vale pela hora em que ele chegou lá, e o nó dito no Hello não pode ser o de um contato), e o Welcome vai pela caixa de saída: direto, ou pela caixa de quem leu;
+  - o Welcome é aceito por uma conexão do contato pendente ou pela caixa postal; o que vier depois, no mesmo lote, já entra como mensagem;
+  - um convite publicado fica no banco 30 dias depois de vencer, para o Hello guardado antes ainda valer.
+- **App**: adicionar alguém que estava desligado avisa que o pedido ficou na caixa postal dele, e o contato aparece como pendente; um texto novo nos sete idiomas.
+
+### Conferido
+
+- Rust: os novos testes cobrem o convite com a caixa em cada corte, as chaves do convite separadas do token, publicar, achar, usar, abrir de novo e vencer na caixa, o Hello pela caixa no prazo e fora dele, o nó de um contato recusado, e, de ponta a ponta com uma caixa de verdade e os dois como donos, Bob convida e desliga, Alice lê e desliga, Bob volta e aceita, e Alice volta e recebe o Welcome e um "oi", sem os dois nunca online juntos.
+- Dart: o pedido que fica na caixa postal, com o contato pendente na lista.
+
+### Revisão
+
+- O teste do prazo esperava recusar um Hello "guardado no futuro"; a hora da caixa é limitada a agora, de propósito (uma caixa não estica o convite para a frente). O teste passou a vencer o convite no banco.
+- O convite vencido saía do banco no próximo convite criado, levando as prekeys: um Hello guardado a tempo na caixa seria recusado. Os publicados ficam mais 30 dias.
+
+### Falta (da parte 2)
+
+- Um pedido que nunca é aceito deixa o contato pendente para sempre; falta um "cancelar pedido".
+- O convite por QR também publica (é o mesmo convite), mas frente a frente quase nunca precisa.

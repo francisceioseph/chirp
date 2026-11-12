@@ -65,10 +65,15 @@ fn pair_with(mut bob: Device) -> (Device, Device) {
     .unwrap();
     let bundle = bundle_for(&alice.store, &invite.token).unwrap();
     let bob_peer = bob.peer();
-    let (pending, hello) = join(&mut bob.store, &invite, &bundle, bob_peer, true).unwrap();
+    let (pending, hello) = join(&mut bob.store, &invite, &bundle, bob_peer, true, None).unwrap();
     let alice_peer = alice.peer();
-    let (at_alice, welcome) =
-        accept_hello(&mut alice.store, &bob.endpoint, &hello, alice_peer).unwrap();
+    let (at_alice, welcome, _) = accept_hello(
+        &mut alice.store,
+        crate::session::HelloFrom::Node(&bob.endpoint),
+        &hello,
+        alice_peer,
+    )
+    .unwrap();
     let at_bob = accept_welcome(&mut bob.store, pending.id, &alice.endpoint, &welcome).unwrap();
     alice.other = at_alice.id;
     bob.other = at_bob.id;

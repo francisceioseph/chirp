@@ -5,6 +5,7 @@ O Chirp manda as mensagens direto de um aparelho ao outro. Quando o contato est�
 - A caixa recebe as mensagens já cifradas pela sessão do Signal e não tem chave de nada. Ela vê quem deixa algo (o IP), quando e o tamanho, nunca o conteúdo.
 - Cada contato recebe uma ficha só dele; a caixa só guarda o SHA-256 das fichas, e não aceita nada sem uma.
 - O que fica guardado sai depois de buscado, ou depois de 30 dias.
+- Com a caixa ligada, os convites que você cria levam o endereço dela, e as chaves públicas do convite ficam lá: quem receber o seu link com o seu aparelho desligado deixa o pedido na caixa, e vira contato quando você abrir o Chirp.
 - Os arquivos não passam pela caixa: a mensagem com o arquivo chega, e o arquivo baixa quando os dois estiverem online.
 
 O protocolo está no [`PROTOCOLO.md`](PROTOCOLO.md), e o que ela vê, no [`AMEACAS.md`](AMEACAS.md).

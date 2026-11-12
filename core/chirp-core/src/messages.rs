@@ -899,6 +899,22 @@ pub fn send_delivered(store: &mut Store, contact_id: i64, ids: &[Vec<u8>]) -> Co
 
 // ---------------------------------------------------------------- a caixa de saída
 
+/// Põe na caixa de saída um envelope já cifrado (o Welcome de um contato que chegou
+/// pela caixa postal).
+pub fn queue_raw(conn: &Connection, contact_id: i64, ciphertext: &[u8]) -> CoreResult<()> {
+    conn.execute(
+        "INSERT INTO outbox (contact_id, message_id, prekey, ciphertext, ephemeral, created_at)
+         VALUES (?1, ?2, 0, ?3, 0, ?4)",
+        (
+            contact_id,
+            secret_bytes::<16>()?.to_vec(),
+            ciphertext,
+            now_ms(),
+        ),
+    )?;
+    Ok(())
+}
+
 /// Um envelope esperando entrega.
 pub struct Outgoing {
     pub id: i64,
@@ -1241,17 +1257,8 @@ fn apply(conn: &Connection, contact: &Contact, content: Content) -> CoreResult<E
             messages
         }
         ContentBody::Mailbox(info) => {
-            let theirs = match (
-                <[u8; 32]>::try_from(info.endpoint_id.as_slice()),
-                <[u8; 32]>::try_from(info.drop.as_slice()),
-            ) {
-                (Ok(endpoint_id), Ok(drop)) => Some(crate::mailbox::Theirs {
-                    endpoint_id,
-                    addrs: crate::network::clean_addrs(info.addrs),
-                    drop,
-                }),
-                _ if info.endpoint_id.is_empty() => None,
-                _ => return Ok(Effect::Nothing),
+            let Ok(theirs) = crate::mailbox::theirs_from_info(info) else {
+                return Ok(Effect::Nothing);
             };
             if crate::mailbox::set_theirs(conn, id, theirs.as_ref())? {
                 Effect::Contact(id)

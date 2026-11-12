@@ -7,6 +7,7 @@
 //!                                 o vencimento (segundos desde 1970) dentro
 //! <pasta>/owners/<nó>/drops       o SHA-256 das fichas, 32 bytes cada
 //! <pasta>/owners/<nó>/items/<seq> ficha (32) || guardado em (u64) || envelope
+//! <pasta>/owners/<nó>/invites/<lookup>  ficha (32, o hash) || vence em (u64) || prekeys
 //! ```
 //!
 //! O que está aqui já chega cifrado para o dono, e as fichas ficam só como hash. A
@@ -54,9 +55,19 @@ struct Meta {
     stored_at: u64,
 }
 
+/// Um convite publicado: a ficha do Hello (o hash) e o vencimento. As prekeys ficam
+/// no arquivo.
+#[derive(Clone, Copy)]
+struct Published {
+    owner: Hash,
+    drop: Hash,
+    expires: u64,
+}
+
 struct OwnerBox {
     dir: PathBuf,
     drops: HashSet<Hash>,
+    invites: HashSet<Hash>,
     next_seq: u64,
     items: BTreeMap<u64, Meta>,
 }
@@ -77,6 +88,8 @@ pub struct Boxes {
     owners: HashMap<Hash, OwnerBox>,
     /// De que dono é cada ficha.
     drops: HashMap<Hash, Hash>,
+    /// Os convites publicados, pelo `lookup`.
+    invites: HashMap<Hash, Published>,
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -124,6 +137,7 @@ impl Boxes {
             limits,
             owners: HashMap::new(),
             drops: HashMap::new(),
+            invites: HashMap::new(),
         };
         for entry in fs::read_dir(&owners_dir)? {
             let entry = entry?;
@@ -133,6 +147,23 @@ impl Boxes {
             let owner_box = Self::load(&entry.path())?;
             for drop in &owner_box.drops {
                 boxes.drops.insert(*drop, owner);
+            }
+            for lookup in &owner_box.invites {
+                let header = fs::read(owner_box.dir.join("invites").join(hex(lookup)))
+                    .ok()
+                    .and_then(|b| b.get(..40).map(<[u8]>::to_vec));
+                if let Some(header) = header {
+                    let drop = header[..32].try_into().unwrap_or_default();
+                    let expires = u64::from_be_bytes(header[32..40].try_into().unwrap_or_default());
+                    boxes.invites.insert(
+                        *lookup,
+                        Published {
+                            owner,
+                            drop,
+                            expires,
+                        },
+                    );
+                }
             }
             boxes.owners.insert(owner, owner_box);
         }
@@ -178,7 +209,21 @@ impl Boxes {
             );
         }
         let next_seq = items.keys().next_back().map_or(1, |s| s + 1);
+        let invites_dir = dir.join("invites");
+        fs::create_dir_all(&invites_dir)?;
+        let mut invites = HashSet::new();
+        for entry in fs::read_dir(&invites_dir)?.flatten() {
+            match entry.file_name().to_str().and_then(unhex) {
+                Some(lookup) => {
+                    invites.insert(lookup);
+                }
+                None => {
+                    let _ = fs::remove_file(entry.path());
+                }
+            }
+        }
         Ok(OwnerBox {
+            invites,
             dir: dir.to_path_buf(),
             drops,
             next_seq,
@@ -248,9 +293,17 @@ impl Boxes {
             return Ok(false);
         }
         let drop = proto::hash(drop_token);
-        let Some(owner) = self.drops.get(&drop) else {
+        // A ficha de um contato, ou a do Hello de um convite publicado e vivo.
+        let owner = self.drops.get(&drop).copied().or_else(|| {
+            self.invites
+                .values()
+                .find(|p| p.drop == drop && p.expires >= now)
+                .map(|p| p.owner)
+        });
+        let Some(owner) = owner else {
             return Ok(false);
         };
+        let owner = &owner;
         let Some(owner_box) = self.owners.get_mut(owner) else {
             return Ok(false);
         };
@@ -280,6 +333,66 @@ impl Boxes {
             },
         );
         Ok(true)
+    }
+
+    /// Publica (ou troca) as prekeys de um convite do dono.
+    pub fn publish(
+        &mut self,
+        owner: &Hash,
+        publish: &proto::Publish,
+        now: u64,
+    ) -> std::io::Result<bool> {
+        let (Ok(lookup), Ok(drop)) = (
+            <Hash>::try_from(publish.lookup.as_slice()),
+            <Hash>::try_from(publish.drop.as_slice()),
+        ) else {
+            return Ok(false);
+        };
+        if publish.bundle.is_empty()
+            || publish.bundle.len() > proto::MAX_BUNDLE
+            || publish.expires_at <= now
+            || self.drops.contains_key(&drop)
+            || self.invites.get(&lookup).is_some_and(|p| &p.owner != owner)
+        {
+            return Ok(false);
+        }
+        let Some(owner_box) = self.owners.get_mut(owner) else {
+            return Ok(false);
+        };
+        if !owner_box.invites.contains(&lookup) && owner_box.invites.len() >= proto::MAX_INVITES {
+            return Ok(false);
+        }
+        let expires = publish.expires_at.min(now + proto::MAX_INVITE_SECS);
+        let mut bytes = Vec::with_capacity(40 + publish.bundle.len());
+        bytes.extend_from_slice(&drop);
+        bytes.extend_from_slice(&expires.to_be_bytes());
+        bytes.extend_from_slice(&publish.bundle);
+        write_atomic(&owner_box.dir.join("invites").join(hex(&lookup)), &bytes)?;
+        owner_box.invites.insert(lookup);
+        self.invites.insert(
+            lookup,
+            Published {
+                owner: *owner,
+                drop,
+                expires,
+            },
+        );
+        Ok(true)
+    }
+
+    /// As prekeys publicadas com esse `lookup`, se ainda valem.
+    pub fn bundle(&self, lookup: &[u8], now: u64) -> std::io::Result<Option<Vec<u8>>> {
+        let Ok(lookup) = <Hash>::try_from(lookup) else {
+            return Ok(None);
+        };
+        let Some(published) = self.invites.get(&lookup).filter(|p| p.expires >= now) else {
+            return Ok(None);
+        };
+        let Some(owner_box) = self.owners.get(&published.owner) else {
+            return Ok(None);
+        };
+        let bytes = fs::read(owner_box.dir.join("invites").join(hex(&lookup)))?;
+        Ok(bytes.get(40..).map(<[u8]>::to_vec))
     }
 
     /// O que chegou depois de `after`, até `FETCH_BATCH` itens.
@@ -323,6 +436,9 @@ impl Boxes {
             for drop in &owner_box.drops {
                 self.drops.remove(drop);
             }
+            for lookup in &owner_box.invites {
+                self.invites.remove(lookup);
+            }
             fs::remove_dir_all(&owner_box.dir)?;
         }
         Ok(())
@@ -341,6 +457,20 @@ impl Boxes {
             for seq in old {
                 owner_box.items.remove(&seq);
                 let _ = fs::remove_file(owner_box.dir.join("items").join(format!("{seq:020}")));
+            }
+        }
+        let dead: Vec<Hash> = self
+            .invites
+            .iter()
+            .filter(|(_, p)| p.expires < now)
+            .map(|(l, _)| *l)
+            .collect();
+        for lookup in dead {
+            if let Some(published) = self.invites.remove(&lookup) {
+                if let Some(owner_box) = self.owners.get_mut(&published.owner) {
+                    owner_box.invites.remove(&lookup);
+                    let _ = fs::remove_file(owner_box.dir.join("invites").join(hex(&lookup)));
+                }
             }
         }
         if let Ok(entries) = fs::read_dir(self.dir.join("pairing")) {
@@ -481,5 +611,45 @@ mod tests {
             .fetch(&OWNER, 0)
             .unwrap()
             .is_empty());
+    }
+
+    #[test]
+    fn an_invite_is_published_found_used_and_expires() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut boxes = paired(dir.path(), Limits::default());
+        let token = [9; 32];
+        let drop = proto::invite_drop(&token);
+        let publish = proto::Publish {
+            lookup: proto::invite_lookup(&token).to_vec(),
+            bundle: vec![4; 2000],
+            drop: proto::hash(&drop).to_vec(),
+            expires_at: 1000,
+        };
+        assert!(!boxes.publish(&OTHER, &publish, 200).unwrap(), "só o dono");
+        assert!(boxes.publish(&OWNER, &publish, 200).unwrap());
+        let big = proto::Publish {
+            bundle: vec![0; proto::MAX_BUNDLE + 1],
+            ..publish.clone()
+        };
+        assert!(!boxes.publish(&OWNER, &big, 200).unwrap());
+        assert_eq!(
+            boxes.bundle(&publish.lookup, 300).unwrap(),
+            Some(vec![4; 2000])
+        );
+        assert_eq!(boxes.bundle(&[0; 32], 300).unwrap(), None);
+        // O Hello entra pela ficha do convite, e volta ao dono com ela.
+        assert!(boxes.deposit(&drop, b"hello", 300).unwrap());
+        let items = boxes.fetch(&OWNER, 0).unwrap();
+        assert_eq!(items[0].drop, publish.drop);
+
+        // Sobrevive a abrir de novo, e some depois de vencer.
+        let mut boxes = Boxes::open(dir.path(), Limits::default()).unwrap();
+        assert!(boxes.bundle(&publish.lookup, 300).unwrap().is_some());
+        assert!(!boxes.deposit(&drop, b"late", 1001).unwrap());
+        boxes.sweep(1001).unwrap();
+        assert_eq!(boxes.bundle(&publish.lookup, 900).unwrap(), None);
+        let mut boxes = Boxes::open(dir.path(), Limits::default()).unwrap();
+        assert_eq!(boxes.bundle(&publish.lookup, 900).unwrap(), None);
+        boxes.unpair(&OWNER).unwrap();
     }
 }

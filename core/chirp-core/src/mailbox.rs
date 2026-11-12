@@ -111,6 +111,15 @@ pub fn set_last_fetch(conn: &Connection, now: i64) -> CoreResult<()> {
     Ok(())
 }
 
+/// A ficha que já foi dada ao contato (no Hello, antes de ele ser estabelecido).
+pub fn set_drop_token(conn: &Connection, contact_id: i64, token: &[u8; 32]) -> CoreResult<()> {
+    conn.execute(
+        "UPDATE contacts SET drop_token = ?2, drop_hash = ?3 WHERE id = ?1",
+        (contact_id, token.as_slice(), proto::hash(token).as_slice()),
+    )?;
+    Ok(())
+}
+
 /// A ficha do contato, criada na primeira vez.
 pub fn drop_token(conn: &Connection, contact_id: i64) -> CoreResult<[u8; 32]> {
     let known: Option<Vec<u8>> = conn.query_row(
@@ -129,13 +138,12 @@ pub fn drop_token(conn: &Connection, contact_id: i64) -> CoreResult<[u8; 32]> {
     Ok(token)
 }
 
-/// O SHA-256 das fichas dos contatos estabelecidos: o que a caixa deve aceitar.
+/// O SHA-256 das fichas dos contatos (os pendentes também, pelo Welcome): o que a
+/// caixa deve aceitar.
 pub fn drops(conn: &Connection) -> CoreResult<Vec<Vec<u8>>> {
-    let mut stmt = conn.prepare(
-        "SELECT drop_hash FROM contacts
-          WHERE drop_hash IS NOT NULL AND state = ?1 ORDER BY drop_hash",
-    )?;
-    let rows = stmt.query_map([contacts::ContactState::Established as i64], |r| r.get(0))?;
+    let mut stmt = conn
+        .prepare("SELECT drop_hash FROM contacts WHERE drop_hash IS NOT NULL ORDER BY drop_hash")?;
+    let rows = stmt.query_map([], |r| r.get(0))?;
     let mut hashes: Vec<Vec<u8>> = rows.collect::<rusqlite::Result<_>>()?;
     hashes.truncate(proto::MAX_DROPS);
     Ok(hashes)
@@ -154,8 +162,8 @@ pub fn digest(hashes: &[Vec<u8>]) -> Vec<u8> {
 pub fn contact_by_drop(conn: &Connection, hash: &[u8]) -> CoreResult<Option<Contact>> {
     let id: Option<i64> = conn
         .query_row(
-            "SELECT id FROM contacts WHERE drop_hash = ?1 AND state = ?2",
-            (hash, contacts::ContactState::Established as i64),
+            "SELECT id FROM contacts WHERE drop_hash = ?1",
+            [hash],
             |r| r.get(0),
         )
         .optional()?;
@@ -196,6 +204,23 @@ pub fn theirs(conn: &Connection, contact_id: i64) -> CoreResult<Option<Theirs>> 
         addrs: lines(addrs),
         drop,
     }))
+}
+
+/// A caixa que veio num `MailboxInfo`: `Ok(None)` quando veio vazio (desligada), e
+/// `Err` quando está fora do formato.
+pub fn theirs_from_info(info: crate::wire::MailboxInfo) -> Result<Option<Theirs>, ()> {
+    match (
+        <[u8; 32]>::try_from(info.endpoint_id.as_slice()),
+        <[u8; 32]>::try_from(info.drop.as_slice()),
+    ) {
+        (Ok(endpoint_id), Ok(drop)) => Ok(Some(Theirs {
+            endpoint_id,
+            addrs: crate::network::clean_addrs(info.addrs),
+            drop,
+        })),
+        _ if info.endpoint_id.is_empty() => Ok(None),
+        _ => Err(()),
+    }
 }
 
 /// A caixa que o contato mandou (ou a falta dela). Devolve se mudou.
