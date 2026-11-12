@@ -195,5 +195,10 @@
   "startAtLogin": "Ouvrir à la connexion",
   "startAtLoginHelp": "Il démarre caché, dans la zone de notification.",
   "trayOpen": "Ouvrir {name}",
-  "trayQuit": "Quitter"
+  "trayQuit": "Quitter",
+  "keepRunningHelpMobile": "Une notification discrète reste affichée pendant que Psito Chirp reçoit.",
+  "receivingNow": "Réception des messages",
+  "batteryTitle": "Économie de batterie",
+  "batteryHelp": "Téléphone au repos, Android peut retarder les messages. Laisser Psito Chirp hors de l'économie l'évite, et consomme un peu plus de batterie.",
+  "batteryAllow": "L'exclure"
 }

@@ -195,5 +195,10 @@
   "startAtLogin": "Beim Anmelden öffnen",
   "startAtLoginHelp": "Es startet versteckt im Infobereich.",
   "trayOpen": "{name} öffnen",
-  "trayQuit": "Beenden"
+  "trayQuit": "Beenden",
+  "keepRunningHelpMobile": "Eine unauffällige Benachrichtigung bleibt, solange Psito Chirp empfängt.",
+  "receivingNow": "Nachrichten werden empfangen",
+  "batteryTitle": "Energiesparen",
+  "batteryHelp": "Wenn das Telefon ruht, kann Android Nachrichten verzögern. Psito Chirp vom Energiesparen auszunehmen verhindert das und braucht etwas mehr Akku.",
+  "batteryAllow": "Ausnehmen"
 }

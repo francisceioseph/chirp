@@ -195,5 +195,10 @@
   "startAtLogin": "登录时打开",
   "startAtLoginHelp": "启动时隐藏在托盘中。",
   "trayOpen": "打开 {name}",
-  "trayQuit": "退出"
+  "trayQuit": "退出",
+  "keepRunningHelpMobile": "Psito Chirp 接收消息时会保留一条低调的通知。",
+  "receivingNow": "正在接收消息",
+  "batteryTitle": "省电",
+  "batteryHelp": "手机闲置时，Android 可能会延迟消息。让 Psito Chirp 不受省电限制可以避免这种情况，但会多耗一点电。",
+  "batteryAllow": "不受限制"
 }

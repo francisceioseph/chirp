@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
 import '../../application/appearance_controller.dart';
 import '../../core/chirp_core.dart';
-import '../../platform/desktop.dart';
+import '../../platform/background.dart';
 import '../molecules/core_status_chip.dart';
 import '../organisms/appearance_card.dart';
 import '../organisms/background_card.dart';
@@ -50,7 +50,7 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: 16),
           NotificationsCard(store: store),
           const SizedBox(height: 16),
-          if (DesktopScope.of(context).supported) ...[
+          if (BackgroundScope.of(context).supported) ...[
             BackgroundCard(store: store),
             const SizedBox(height: 16),
           ],

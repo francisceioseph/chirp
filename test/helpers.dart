@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/chirp_app.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';
-import 'package:psito_chirp/src/platform/desktop.dart';
+import 'package:psito_chirp/src/platform/background.dart';
 import 'package:psito_chirp/src/platform/file_picker.dart';
 import 'package:psito_chirp/src/platform/key_vault.dart';
 import 'package:psito_chirp/src/platform/notifier.dart';
@@ -686,7 +686,7 @@ Future<void> pumpChirp(
   Color? accent,
   FilePicker? filePicker,
   Notifier? notifier,
-  Desktop? desktop,
+  Background? background,
   bool startHidden = false,
 }) async {
   await tester.pumpWidget(
@@ -696,22 +696,34 @@ Future<void> pumpChirp(
       systemAccent: accent == null ? null : () async => accent,
       filePicker: filePicker ?? FakeFilePicker(),
       notifier: notifier ?? FakeNotifier(),
-      desktop: desktop ?? const NoDesktop(),
+      background: background ?? const NoBackground(),
       startHidden: startHidden,
     ),
   );
   await tester.pumpAndSettle();
 }
 
-/// O desktop, sem janela nem bandeja: guarda o que pediram.
-class FakeDesktop implements Desktop {
-  FakeDesktop({this.canStartAtLogin = true});
+/// O segundo plano, sem janela, bandeja nem serviço: guarda o que pediram. Com
+/// [tray], é o desktop; sem, o Android.
+class FakeBackground implements Background {
+  FakeBackground({
+    this.tray = true,
+    bool? canStartAtLogin,
+    this.restricted = false,
+  }) : canStartAtLogin = canStartAtLogin ?? tray;
 
-  /// O último `setup`: com a bandeja, e os textos dela.
-  ({bool keepRunning, String tooltip, String open, String quit})? tray;
+  /// O último `setup`: ligado ou não, e os textos.
+  ({bool keepRunning, BackgroundTexts texts})? running;
 
   bool visible = true;
   int broughtToFront = 0;
+
+  /// A economia de bateria segura o app; pedir libera.
+  bool restricted;
+  int batteryAsks = 0;
+
+  @override
+  final bool tray;
 
   @override
   final bool canStartAtLogin;
@@ -725,11 +737,9 @@ class FakeDesktop implements Desktop {
   @override
   Future<void> setup({
     required bool keepRunning,
-    required String tooltip,
-    required String open,
-    required String quit,
+    required BackgroundTexts texts,
   }) async {
-    tray = (keepRunning: keepRunning, tooltip: tooltip, open: open, quit: quit);
+    running = (keepRunning: keepRunning, texts: texts);
     if (!keepRunning) visible = true;
   }
 
@@ -746,6 +756,15 @@ class FakeDesktop implements Desktop {
   bool setStartAtLogin(bool on) {
     startsAtLogin = on;
     return true;
+  }
+
+  @override
+  Future<bool> batteryRestricted() async => restricted;
+
+  @override
+  Future<void> askUnrestrictedBattery() async {
+    batteryAsks++;
+    restricted = false;
   }
 }
 

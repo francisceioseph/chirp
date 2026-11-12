@@ -674,4 +674,21 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
 
   @override
   String get trayQuit => 'Sair';
+
+  @override
+  String get keepRunningHelpMobile =>
+      'Fica uma notificação discreta enquanto o Psito Chirp recebe.';
+
+  @override
+  String get receivingNow => 'Recebendo mensagens';
+
+  @override
+  String get batteryTitle => 'Economia de bateria';
+
+  @override
+  String get batteryHelp =>
+      'Com o celular parado, o Android pode atrasar as mensagens. Deixar o Psito Chirp fora da economia evita isso, e gasta um pouco mais de bateria.';
+
+  @override
+  String get batteryAllow => 'Deixar fora';
 }

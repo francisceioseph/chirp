@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:dbus/dbus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:psito_chirp/src/platform/desktop.dart';
+import 'package:psito_chirp/src/platform/background.dart';
 
 /// Os ícones que o painel conhece (o StatusNotifierWatcher da sessão).
 Future<List<String>> _registered() async {
@@ -32,18 +32,21 @@ Future<List<String>> _registered() async {
 /// Com a janela escondida não há quadros, e o `pump` esperaria para sempre.
 Future<void> _wait() => Future<void>.delayed(const Duration(milliseconds: 300));
 
+const BackgroundTexts _texts = (
+  name: 'Psito Chirp',
+  open: 'Abrir',
+  quit: 'Sair',
+  receiving: 'Recebendo mensagens',
+  channel: 'Segundo plano',
+);
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('a bandeja e a janela', (_) async {
-    final desktop = SystemDesktop.create();
+    final desktop = systemBackground();
     expect(desktop.supported, isTrue);
-    await desktop.setup(
-      keepRunning: true,
-      tooltip: 'Psito Chirp',
-      open: 'Abrir',
-      quit: 'Sair',
-    );
+    await desktop.setup(keepRunning: true, texts: _texts);
     await _wait();
     // O ícone deste processo entrou no painel.
     expect(
@@ -54,11 +57,6 @@ void main() {
     await _wait();
     await desktop.bringToFront();
     await _wait();
-    await desktop.setup(
-      keepRunning: false,
-      tooltip: 'Psito Chirp',
-      open: 'Abrir',
-      quit: 'Sair',
-    );
+    await desktop.setup(keepRunning: false, texts: _texts);
   });
 }

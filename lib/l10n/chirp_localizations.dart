@@ -1283,6 +1283,36 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Quit'**
   String get trayQuit;
+
+  /// No description provided for @keepRunningHelpMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'A quiet notification stays while Psito Chirp is receiving.'**
+  String get keepRunningHelpMobile;
+
+  /// No description provided for @receivingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Receiving messages'**
+  String get receivingNow;
+
+  /// No description provided for @batteryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery saving'**
+  String get batteryTitle;
+
+  /// No description provided for @batteryHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'With the phone idle, Android may delay messages. Keeping Psito Chirp out of battery saving avoids that, and uses a little more battery.'**
+  String get batteryHelp;
+
+  /// No description provided for @batteryAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it out'**
+  String get batteryAllow;
 }
 
 class _ChirpLocalizationsDelegate

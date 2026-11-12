@@ -325,5 +325,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "keepRunningHelpMobile": "A quiet notification stays while Psito Chirp is receiving.",
+  "receivingNow": "Receiving messages",
+  "batteryTitle": "Battery saving",
+  "batteryHelp": "With the phone idle, Android may delay messages. Keeping Psito Chirp out of battery saving avoids that, and uses a little more battery.",
+  "batteryAllow": "Keep it out"
 }

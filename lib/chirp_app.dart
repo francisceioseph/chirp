@@ -9,7 +9,7 @@ import 'l10n/l10n.dart';
 import 'src/application/appearance_controller.dart';
 import 'src/application/startup_controller.dart';
 import 'src/core/chirp_core.dart';
-import 'src/platform/desktop.dart';
+import 'src/platform/background.dart';
 import 'src/platform/file_picker.dart';
 import 'src/platform/key_vault.dart';
 import 'src/platform/notifier.dart';
@@ -24,7 +24,7 @@ class ChirpApp extends StatefulWidget {
     this.systemAccent,
     this.filePicker = const SystemFilePicker(),
     this.notifier,
-    this.desktop = const NoDesktop(),
+    this.background = const NoBackground(),
     this.startHidden = false,
   });
 
@@ -41,8 +41,8 @@ class ChirpApp extends StatefulWidget {
   /// As notificações do sistema; sem ele (os testes de integração), nenhuma.
   final Notifier? notifier;
 
-  /// A bandeja, fechar sem sair e abrir com o computador (no celular, nada).
-  final Desktop desktop;
+  /// Receber com a janela fechada: a bandeja no desktop, o serviço no Android.
+  final Background background;
 
   /// Aberto com o computador: a janela começa escondida, e só aparece se a abertura
   /// precisar de quem usa (a senha, o perfil novo, um problema).
@@ -63,14 +63,14 @@ class _ChirpAppState extends State<ChirpApp> {
   void initState() {
     super.initState();
     _startup.addListener(_followStore);
-    if (widget.startHidden && widget.desktop.supported) {
+    if (widget.startHidden && widget.background.supported) {
       _startup.addListener(_showIfNeeded);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_startup.state is! StartupLoading &&
             _startup.state is! StartupReady) {
           return;
         }
-        widget.desktop.hide();
+        widget.background.hide();
       });
     }
     _startup.start();
@@ -85,7 +85,7 @@ class _ChirpAppState extends State<ChirpApp> {
     final state = _startup.state;
     if (state is StartupLoading || state is StartupReady) return;
     _startup.removeListener(_showIfNeeded);
-    widget.desktop.bringToFront();
+    widget.background.bringToFront();
   }
 
   @override
@@ -136,7 +136,10 @@ class _ChirpAppState extends State<ChirpApp> {
             picker: widget.filePicker,
             child: NotifierScope(
               notifier: widget.notifier,
-              child: DesktopScope(desktop: widget.desktop, child: child!),
+              child: BackgroundScope(
+                background: widget.background,
+                child: child!,
+              ),
             ),
           ),
           home: StartupPage(controller: _startup, appearance: _appearance),

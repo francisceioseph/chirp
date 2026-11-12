@@ -92,5 +92,33 @@ O que a fase 6 do `docs/PLANO.md` (seção 13, com a 6.7 e a 9) pediu, o que foi
 
 ### Falta
 
-- Android: receber com o app fechado pede um serviço em primeiro plano, mas quando o sistema fecha a tela, o isolate do Dart vai junto, e as notificações são feitas nele. Ou o núcleo em Rust passa a notificar sozinho, ou o serviço sobe um isolate próprio com o banco. Fica para uma parte própria, com o desenho antes.
+- O Android, que veio na parte 4.
 - O teste de abrir com o computador no sistema de verdade (grava na conta de quem testa).
+
+## Parte 4: segundo plano no Android
+
+### O desenho
+
+Quando o Android fecha a tela do app, o motor do Flutter vai junto, e com ele o Dart que faz as notificações. As saídas eram três: o núcleo em Rust notificar sozinho (pelo JNI, com os textos dos sete idiomas levados para o núcleo), um segundo isolate no serviço (um segundo nó e uma segunda conexão ao banco, disputando a mesma identidade), ou manter vivo o motor que já existe. Ficou a terceira, como o Briar: nada da lógica muda, e é o mesmo código já testado.
+
+### Feito
+
+- **Kotlin**:
+  - a `MainActivity` não é dona do motor: ele fica no `FlutterEngineCache`, e a tela se liga a ele ao abrir e o solta ao fechar (`shouldDestroyEngineWithHost` falso);
+  - o `ReceiveService`, um serviço em primeiro plano do tipo `remoteMessaging` (o que o Android 14 pede para quem leva mensagens entre aparelhos), com uma notificação fixa de importância mínima, "Recebendo mensagens", que abre o app. Segura o processo, e o Dart continua com o nó, os eventos e as notificações com a tela fechada ou o app fora dos recentes;
+  - o pedido para o Chirp ficar fora da economia de bateria, pelo sistema, e a pergunta se ele está dentro.
+- **App**: o `Desktop` virou `Background` (`platform/background.dart`): o desktop, o Android (`AndroidBackground`, pelo canal `org.psito.chirp/background`) ou nada, no iOS. O mesmo "continuar recebendo" liga e desliga o serviço. O cartão "Segundo plano" aparece no Android, com o texto da notificação fixa e, só enquanto a economia de bateria segura o app, o "Deixar fora", que some quando quem usa volta dos ajustes do sistema com ele liberado. 5 textos novos nos sete idiomas.
+
+### Conferido
+
+- Dart: 233 testes. O `background_test` cobre também o Android: o texto da notificação fixa, sem o abrir ao entrar, o pedido da bateria (e ele sumir ao voltar liberado), nada de bateria com o segundo plano desligado, e o cartão em 240×160 e 320×568 com o pedido aberto.
+- O Kotlin só é compilado no CI: o emulador não cabe na memória deste computador. O teste de verdade (fechar a tela, tirar dos recentes, receber) é num celular.
+
+### Revisão
+
+- O canal do Kotlin vive no motor, que dura mais que a tela: o pedido da bateria usa o contexto do app, não a tela que criou o canal.
+
+### Falta
+
+- Se o sistema matar o processo (falta de memória, reiniciar o celular), o serviço não volta sozinho (`START_NOT_STICKY`): sem a tela, o Dart não teria por onde fazer a abertura. Volta ao abrir o app. Abrir com o celular pediria a abertura sem tela.
+- O ícone da notificação fixa é o do app; o Android pede um monocromático para a barra.

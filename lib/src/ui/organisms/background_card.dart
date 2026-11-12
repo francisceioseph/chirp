@@ -1,36 +1,40 @@
 // lib/src/ui/organisms/background_card.dart
 //
-// O segundo plano no desktop (docs/PLANO.md, 7.5): continuar recebendo com a janela
-// fechada (o ícone na bandeja) e abrir ao entrar no computador, já escondido. No
-// celular, o cartão não aparece.
+// O segundo plano (docs/PLANO.md, 7.5): continuar recebendo com a janela fechada.
+// No desktop, o ícone na bandeja e o abrir ao entrar no computador, já escondido; no
+// Android, a notificação fixa do serviço e o pedido, opcional, para ficar fora da
+// economia de bateria. No iOS, o cartão não aparece.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
-import '../../platform/desktop.dart';
+import '../../platform/background.dart';
 
-/// Monta a bandeja (ou tira) conforme o que está gravado, com os textos do idioma.
-Future<void> setUpDesktop(
+/// Liga (ou desliga) o segundo plano conforme o que está gravado, com os textos do
+/// idioma.
+Future<void> setUpBackground(
   BuildContext context,
   ProfileStore store,
-  Desktop desktop, {
+  Background background, {
   bool? keepRunning,
 }) async {
   final l10n = context.l10n;
+  final texts = (
+    name: l10n.appName,
+    open: l10n.trayOpen(l10n.appName),
+    quit: l10n.trayQuit,
+    receiving: l10n.receivingNow,
+    channel: l10n.backgroundTitle,
+  );
   final bool on;
   try {
     on = keepRunning ?? await store.keepRunning();
   } on CoreException {
     return;
   }
-  await desktop.setup(
-    keepRunning: on,
-    tooltip: l10n.appName,
-    open: l10n.trayOpen(l10n.appName),
-    quit: l10n.trayQuit,
-  );
+  await background.setup(keepRunning: on, texts: texts);
 }
 
 class BackgroundCard extends StatefulWidget {
@@ -45,6 +49,8 @@ class BackgroundCard extends StatefulWidget {
 class _BackgroundCardState extends State<BackgroundCard> {
   bool? _keepRunning;
   bool _atLogin = false;
+  bool _batteryRestricted = false;
+  late final AppLifecycleListener _lifecycle;
 
   @override
   void initState() {
@@ -55,12 +61,28 @@ class _BackgroundCardState extends State<BackgroundCard> {
           if (mounted) setState(() => _keepRunning = on);
         })
         .catchError((Object _) {});
+    // Quem volta dos ajustes do sistema pode ter liberado a bateria.
+    _lifecycle = AppLifecycleListener(onResume: _checkBattery);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _atLogin = DesktopScope.of(context).startsAtLogin;
+    _atLogin = BackgroundScope.of(context).startsAtLogin;
+    _checkBattery();
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkBattery() async {
+    final restricted = await BackgroundScope.of(context).batteryRestricted();
+    if (mounted && restricted != _batteryRestricted) {
+      setState(() => _batteryRestricted = restricted);
+    }
   }
 
   Future<void> _setKeepRunning(bool on) async {
@@ -74,27 +96,28 @@ class _BackgroundCardState extends State<BackgroundCard> {
     }
     if (!mounted) return;
     unawaited(
-      setUpDesktop(
+      setUpBackground(
         context,
         widget.store,
-        DesktopScope.of(context),
+        BackgroundScope.of(context),
         keepRunning: on,
       ),
     );
   }
 
   void _setAtLogin(bool on) {
-    final desktop = DesktopScope.of(context);
-    desktop.setStartAtLogin(on);
-    setState(() => _atLogin = desktop.startsAtLogin);
+    final background = BackgroundScope.of(context);
+    background.setStartAtLogin(on);
+    setState(() => _atLogin = background.startsAtLogin);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final desktop = DesktopScope.of(context);
+    final theme = Theme.of(context);
+    final background = BackgroundScope.of(context);
     final keepRunning = _keepRunning;
-    if (!desktop.supported || keepRunning == null) {
+    if (!background.supported || keepRunning == null) {
       return const SizedBox.shrink();
     }
     return Card(
@@ -105,21 +128,50 @@ class _BackgroundCardState extends State<BackgroundCard> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Text(
               l10n.backgroundTitle,
-              style: Theme.of(context).textTheme.titleMedium,
+              style: theme.textTheme.titleMedium,
             ),
           ),
           SwitchListTile(
             title: Text(l10n.keepRunning),
-            subtitle: Text(l10n.keepRunningHelp),
+            subtitle: Text(
+              background.tray
+                  ? l10n.keepRunningHelp
+                  : l10n.keepRunningHelpMobile,
+            ),
             value: keepRunning,
             onChanged: _setKeepRunning,
           ),
-          if (desktop.canStartAtLogin)
+          if (background.canStartAtLogin)
             SwitchListTile(
               title: Text(l10n.startAtLogin),
               subtitle: Text(l10n.startAtLoginHelp),
               value: _atLogin,
               onChanged: _setAtLogin,
+            ),
+          if (keepRunning && _batteryRestricted)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.batteryTitle, style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.batteryHelp,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: FilledButton.tonal(
+                      onPressed: background.askUnrestrictedBattery,
+                      child: Text(l10n.batteryAllow),
+                    ),
+                  ),
+                ],
+              ),
             ),
         ],
       ),

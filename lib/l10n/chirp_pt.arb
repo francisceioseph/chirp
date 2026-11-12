@@ -195,5 +195,10 @@
   "startAtLogin": "Abrir ao entrar no computador",
   "startAtLoginHelp": "Ele começa escondido, na bandeja.",
   "trayOpen": "Abrir o {name}",
-  "trayQuit": "Sair"
+  "trayQuit": "Sair",
+  "keepRunningHelpMobile": "Fica uma notificação discreta enquanto o Psito Chirp recebe.",
+  "receivingNow": "Recebendo mensagens",
+  "batteryTitle": "Economia de bateria",
+  "batteryHelp": "Com o celular parado, o Android pode atrasar as mensagens. Deixar o Psito Chirp fora da economia evita isso, e gasta um pouco mais de bateria.",
+  "batteryAllow": "Deixar fora"
 }

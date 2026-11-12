@@ -19,7 +19,7 @@ import 'package:flutter/services.dart';
 import '../../../l10n/l10n.dart';
 import '../../application/contacts_controller.dart';
 import '../../core/chirp_core.dart';
-import '../../platform/desktop.dart';
+import '../../platform/background.dart';
 import '../../platform/notifier.dart';
 import '../atoms/chirp_app_bar.dart';
 import '../atoms/identity_avatar.dart';
@@ -87,15 +87,17 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
-  Desktop? _desktop;
+  Background? _background;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final desktop = DesktopScope.of(context);
-    if (desktop != _desktop) {
-      _desktop = desktop;
-      if (desktop.supported) setUpDesktop(context, _controller.store, desktop);
+    final background = BackgroundScope.of(context);
+    if (background != _background) {
+      _background = background;
+      if (background.supported) {
+        setUpBackground(context, _controller.store, background);
+      }
     }
     final notifier = NotifierScope.of(context);
     if (notifier == _notifier) return;
@@ -158,7 +160,7 @@ class _ContactsPageState extends State<ContactsPage> {
 
   void _openFromNotification(int contactId) {
     if (!mounted || _controller.byId(contactId) == null) return;
-    _desktop?.bringToFront();
+    _background?.bringToFront();
     Navigator.of(context).popUntil((route) => route.isFirst);
     _openConversation(contactId);
   }

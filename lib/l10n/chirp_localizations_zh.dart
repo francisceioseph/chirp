@@ -644,4 +644,20 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get trayQuit => '退出';
+
+  @override
+  String get keepRunningHelpMobile => 'Psito Chirp 接收消息时会保留一条低调的通知。';
+
+  @override
+  String get receivingNow => '正在接收消息';
+
+  @override
+  String get batteryTitle => '省电';
+
+  @override
+  String get batteryHelp =>
+      '手机闲置时，Android 可能会延迟消息。让 Psito Chirp 不受省电限制可以避免这种情况，但会多耗一点电。';
+
+  @override
+  String get batteryAllow => '不受限制';
 }

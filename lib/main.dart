@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'chirp_app.dart';
 import 'src/core/chirp_core.dart';
 import 'src/logging.dart';
-import 'src/platform/desktop.dart';
+import 'src/platform/background.dart';
 import 'src/platform/key_vault.dart';
 import 'src/platform/notifier.dart';
 import 'src/platform/system_accent.dart';
@@ -21,7 +21,7 @@ Future<void> main(List<String> args) async {
       vault: SystemKeyVault(),
       systemAccent: readSystemAccent,
       notifier: SystemNotifier(),
-      desktop: SystemDesktop.create(),
+      background: systemBackground(),
       startHidden: args.contains(startHiddenArg),
     ),
   );
