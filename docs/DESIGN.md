@@ -24,7 +24,6 @@ O resumo do que a UI usa do Material 3, para quem mexe nas telas. O porquê est�
 | O escudo de verificado, a nota "cifrada de ponta a ponta" | `tertiary`, `tertiaryContainer` |
 | O "chamar atenção" na conversa | `tertiaryContainer` / `onTertiaryContainer`, numa pílula |
 | O anel de quem está ao alcance | `ChirpStyle.reachable` (verde, no claro e no escuro); fora de alcance, `outlineVariant` |
-| A bochecha da calopsita | `ChirpStyle.cheek` (o laranja, igual em todos os temas) |
 | Cartões | `surfaceContainerLow`, sem sombra |
 | Textos de apoio (hora, estado) | `onSurfaceVariant` |
 | O QR | preto sobre branco nos dois temas (`qrDark`, `qrLight`), porque os leitores esperam assim |
@@ -44,7 +43,7 @@ O resumo do que a UI usa do Material 3, para quem mexe nas telas. O porquê est�
 - Avisos: `SnackBar` flutuante para o que passou, `MaterialBanner` para o que continua (sem rede).
 - A lista: o meu avatar e o meu nome na barra; os filtros (`FilterChip`: todas, não lidas, verificados) a partir de 4 conversas; os grupos "ao alcance" e "fora de alcance" só quando o alcance de todos já se sabe; quem está fora de alcance fica apagado.
 - O avatar dos contatos é o `ReachAvatar`: a grade gerada da chave, com o anel de alcance.
-- Os estados vazios têm a calopsita (`Cockatiel`, desenhada em `CustomPaint`) ou o `StateIcon` (um ícone num quadrado de cantos redondos, no tom do estado: primário, secundário ou erro).
+- Os estados vazios têm a calopsita (`Cockatiel`, o rosto da calopsita cinza do Psito Nest, em `assets/images/cockatiel.png`, CC0) ou o `StateIcon` (um ícone num quadrado de cantos redondos, no tom do estado: primário, secundário ou erro).
 - A conversa abre com a nota de segurança (verificada ou não, com o "Conferir código"); vazia, mostra um "Diga oi", o conferir e o chamar atenção. A nota de voz tem as barras de uma forma de onda, tiradas do id da mensagem.
 
 ## Layout

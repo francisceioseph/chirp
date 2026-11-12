@@ -38,6 +38,7 @@ flutter:
   assets:
     - assets/images/chirp_icon.svg
     - assets/images/tray.png
+    - assets/images/cockatiel.png
     - assets/fonts/OFL.txt
   # A Urbanist (SIL OFL 1.1), empacotada: nada de fonte buscada na rede.
   fonts:
