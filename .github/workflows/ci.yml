@@ -50,7 +50,7 @@ jobs:
           channel: stable
           cache: true
       - name: System libraries
-        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libsecret-1-dev ninja-build cmake clang pkg-config
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libsecret-1-dev ninja-build cmake clang pkg-config rpm desktop-file-utils appstream
       - name: Dependencies
         run: flutter pub get
       - name: Analyze
@@ -61,6 +61,15 @@ jobs:
         run: flutter test --concurrency=2
       - name: Build
         run: flutter build linux --release
+      # Os pacotes montam? A versão sai deles no packages.yml.
+      - name: Packages
+        run: |
+          desktop-file-validate linux/packaging/org.psito.chirp.desktop
+          appstreamcli validate --no-net linux/packaging/org.psito.chirp.metainfo.xml
+          tool/build-deb.sh build/deb --no-build
+          tool/build-rpm.sh build/rpm --no-build
+          dpkg-deb -c build/deb/*.deb | grep 'usr/bin/psito-chirp' >/dev/null
+          rpm -qlp build/rpm/*.rpm | grep '/usr/bin/psito-chirp' >/dev/null
 
   # A versão é a última tag: feat sobe o minor, fix o patch e BREAKING CHANGE o major
   # (.releaserc.json). O tool/set-version.sh grava no app e no núcleo, e o commit da
@@ -71,6 +80,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+    outputs:
+      tag: ${{ steps.new_tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,6 +98,24 @@ jobs:
           semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: The tag, if this run made one
+        id: new_tag
+        run: |
+          tag="$(git tag --points-at HEAD 'v*' | head -1)"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  # Os instaladores e os repositórios da versão nova (packages.yml).
+  packages:
+    needs: release
+    if: needs.release.outputs.tag != ''
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/packages.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}
+    secrets: inherit
 
   # A ponte compila nas outras quatro plataformas? É o risco que a fase 0 quer medir
   # cedo (docs/PLANO.md, 13). Os apps ficam nos artefatos do run.

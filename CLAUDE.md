@@ -34,6 +34,13 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
   - `src/ui/`: atomic design (`atoms/`, `molecules/`, `organisms/`, `templates/`, `pages/`) e o `theme/`: os temas são sementes com personalidade (`chirp_themes.dart`, um `ChirpThemeSpec` cada), e o formato das bolhas vem do `ChirpStyle` (a `ThemeExtension`). A tela principal usa o `ShellTemplate`: uma coluna abaixo de 840 px (a conversa abre por cima, por rota), duas a partir dele e três a partir de 1200 px (o contato ao lado). Os testes rodam em 800×600, numa coluna.
   - `src/logging.dart`: a trava dos logs em release.
   - `l10n/`: os `.arb` e o gerado ao lado, no git.
+- A distribuição (`docs/PLANO.md`, seção 9), feita pelo `.github/workflows/packages.yml` a cada versão nova:
+  - `linux/packaging/`: o `.desktop` e o AppStream (`org.psito.chirp`).
+    - `tool/stage-package.sh`, `build-deb.sh`, `build-rpm.sh` e `build-aur.sh` montam os pacotes `psito-chirp`, a partir do bundle de release, com o binário em `/usr/lib/psito-chirp/`.
+    - `tool/build-apt-repo.sh` e `build-dnf-repo.sh` montam os repositórios assinados do GitHub Pages, com a página do projeto (`site/`, com os sete idiomas no `i18n.js`).
+  - `windows/installer/psito-chirp.iss`: o Inno Setup. Só para quem usa, ou para todos, com a regra do firewall.
+  - `fastlane/metadata/android/`: o que o F-Droid mostra.
+  - As chaves (a dos repositórios e a do APK) saem uma vez só do `tool/create-apt-key.sh` e do `tool/create-android-key.sh`, para os segredos do GitHub. Sem elas, o CI pula os repositórios e o APK.
 
 ## Comandos
 
@@ -46,7 +53,7 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 
 ## Regras
 
-- Segurança e privacidade primeiro (`docs/PLANO.md`, seção 2): nada de criptografia caseira, nenhum servidor obrigatório, nenhuma chamada de rede que não seja a conversa. Nada de fonte, avatar, prévia ou verificação de versão buscados na web. O `privacy_test` recusa pacotes que chamam a rede e URLs no código.
+- Segurança e privacidade primeiro (`docs/PLANO.md`, seção 2; o que vale hoje está no `docs/AMEACAS.md`, que muda junto com o código): nada de criptografia caseira, nenhum servidor obrigatório, nenhuma chamada de rede que não seja a conversa. Nada de fonte, avatar, prévia ou verificação de versão buscados na web. O `privacy_test` recusa pacotes que chamam a rede e URLs no código.
 - O que é segredo, rede ou disco fica no núcleo em Rust, não no Dart. Segredos com `zeroize`; `unsafe_code` é negado fora do código gerado. A exceção é a chave do banco, que passa pelo Dart a caminho do cofre do sistema. Nada de chave ou senha gravada em claro: sem cofre, pede-se uma senha.
 - Campos de senha e de mensagem com `enableIMEPersonalizedLearning: false` e sem sugestões.
 - Logs: no Dart, `debugPrint` atrás do `logging.dart` (em release, só com o ajuste ligado); no Rust, nada de log ligado por padrão. Nunca conteúdo, nome, id, chave ou endereço, nem em desenvolvimento.
@@ -58,4 +65,4 @@ O plano inteiro, com o diagnóstico do protótipo, as decisões de protocolo e o
 - A janela funciona até 240×160 no desktop, e num celular de 320×568.
 - Os testes rodam em português (`test/flutter_test_config.dart`).
 - Trabalhe na `master`; commit e push só quando pedidos.
-- Versão pelo semantic-release (`.releaserc.json`, `tool/set-version.sh`, que grava no `pubspec.yaml` e no `Cargo.toml` do núcleo): `feat` sobe o minor, `fix` o patch e `BREAKING CHANGE` o major. A contagem parte da tag `v0.2.0`, para a 1.0 ser o fim da fase 6. O CI devolve à `master` o commit da versão, então rode `git pull --rebase` antes de cada push.
+- Versão pelo semantic-release (`.releaserc.json`, `tool/set-version.sh`, que grava no `pubspec.yaml`, com o versionCode do Android depois do `+`, e no `Cargo.toml` do núcleo): `feat` sobe o minor, `fix` o patch e `BREAKING CHANGE` o major. A contagem parte da tag `v0.2.0`, para a 1.0 ser o fim da fase 6. O CI devolve à `master` o commit da versão, então rode `git pull --rebase` antes de cada push.

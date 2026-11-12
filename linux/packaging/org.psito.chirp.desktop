@@ -1,0 +1,25 @@
+[Desktop Entry]
+Type=Application
+Name=Psito Chirp
+Name[pt]=Psito Chirp
+GenericName=Messenger
+GenericName[pt]=Mensageiro
+GenericName[es]=Mensajería
+GenericName[fr]=Messagerie
+GenericName[de]=Messenger
+GenericName[ru]=Мессенджер
+GenericName[zh]=即时通讯
+Comment=Private messenger with no servers in the middle
+Comment[pt]=Mensageiro privado, sem servidor no meio
+Comment[es]=Mensajería privada, sin servidores en medio
+Comment[fr]=Messagerie privée, sans serveur au milieu
+Comment[de]=Privater Messenger ohne Server dazwischen
+Comment[ru]=Приватный мессенджер без серверов посередине
+Comment[zh]=没有中间服务器的私密通讯
+Exec=psito-chirp
+Icon=org.psito.chirp
+Terminal=false
+Categories=Network;InstantMessaging;Chat;
+Keywords=chat;messages;p2p;signal;
+StartupWMClass=org.psito.chirp
+SingleMainWindow=true

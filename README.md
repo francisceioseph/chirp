@@ -12,6 +12,14 @@ A private messenger with no servers in the middle: conversations go straight fro
 - **Storage**: an encrypted database, with the key in the system keychain.
 - **Interface**: Material 3 with themes, in seven languages.
 
+## Install
+
+Installers for Windows, Android and macOS (a test build), and the APT and DNF repositories for Debian, Ubuntu and Fedora, are on the [project page](https://francisceioseph.github.io/chirp/). The files are also on the [releases page](https://github.com/francisceioseph/chirp/releases), with their SHA-256 in `SHA256SUMS`.
+
+## Security
+
+What Chirp protects, and what it does not, is in the threat model, [`docs/AMEACAS.md`](docs/AMEACAS.md) (in Portuguese). To report a vulnerability privately, see [`SECURITY.md`](SECURITY.md).
+
 ## Building
 
 You need Flutter 3.47.4 and a stable Rust toolchain. The Rust core is built automatically by `flutter build`.

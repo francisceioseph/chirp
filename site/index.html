@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Psito Chirp</title>
+<meta name="description" content="A private messenger with no servers in the middle. No accounts, no phone numbers, no logs and no telemetry.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #12181b;
+    --surface: #1b2327;
+    --line: #2e393e;
+    --text: #eef2f3;
+    --muted: #a9b5ba;
+    --accent: #ffc107;
+    --on-accent: #231a00;
+    --code: #0b1012;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f8f9;
+      --surface: #ffffff;
+      --line: #d8e0e3;
+      --text: #172126;
+      --muted: #566469;
+      --accent: #7a5900;
+      --on-accent: #ffffff;
+      --code: #172126;
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  header.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .brand img { width: 28px; height: 28px; }
+  .lang {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; min-height: 36px; cursor: pointer;
+  }
+  h3 { font-size: 17px; margin: 24px 0 4px; }
+  details { margin: 8px 0 0; }
+  summary { cursor: pointer; color: var(--muted); font-size: 14px; min-height: 28px; }
+  .hero { padding: 40px 0 32px; }
+  .hero img { width: 96px; height: 96px; display: block; margin-bottom: 20px; }
+  h1 { font-size: clamp(32px, 7vw, 52px); line-height: 1.1; margin: 0 0 12px; letter-spacing: -0.02em; }
+  .lead { font-size: 19px; color: var(--muted); max-width: 42em; margin: 0 0 24px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 8px 18px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--text); text-decoration: none; font-weight: 500;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+  section { padding: 28px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 24px; margin: 0 0 14px; letter-spacing: -0.01em; }
+  .shots { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  .shots img { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+  @media (min-width: 720px) {
+    .shots { grid-template-columns: 1fr 1fr; }
+    .shots img:first-child { grid-column: 1 / -1; }
+  }
+  .note { color: var(--muted); font-size: 14px; }
+  .code { position: relative; margin: 12px 0; }
+  pre {
+    margin: 0; padding: 14px 16px; padding-top: 44px; overflow-x: auto; border-radius: 10px;
+    background: var(--code); color: #eef2f3; font: 13.5px/1.6 ui-monospace, "DejaVu Sans Mono", monospace;
+  }
+  .copy {
+    position: absolute; top: 8px; right: 8px; font: inherit; font-size: 13px; color: #eef2f3;
+    background: #2e393e; border: 0; border-radius: 6px; padding: 4px 12px; min-height: 28px; cursor: pointer;
+  }
+  ul.list { margin: 0; padding-left: 20px; }
+  ul.list li { margin: 4px 0; }
+  .links { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .links a {
+    display: block; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; text-decoration: none; color: var(--text);
+  }
+  .links small { display: block; color: var(--muted); }
+  footer { border-top: 1px solid var(--line); padding: 24px 0 40px; color: var(--muted); font-size: 14px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="brand"><img src="icon.svg" alt=""> Psito Chirp</div>
+    <select class="lang" id="lang" aria-label="Language">
+      <option value="en">English</option>
+      <option value="pt" lang="pt">Português</option>
+      <option value="es" lang="es">Español</option>
+      <option value="fr" lang="fr">Français</option>
+      <option value="de" lang="de">Deutsch</option>
+      <option value="ru" lang="ru">Русский</option>
+      <option value="zh" lang="zh">简体中文</option>
+    </select>
+  </header>
+
+  <main>
+    <div class="hero">
+      <img src="icon.svg" alt="">
+      <h1 data-t="heroTitle">Talk straight to each other.</h1>
+      <p class="lead" data-t="heroLead">A private messenger with no servers in the middle: conversations go from one device to the other, over the local network or the internet, encrypted end to end. No accounts, no phone numbers, no logs and no telemetry.</p>
+      <div class="cta">
+        <a class="btn primary" href="#install" data-t="install">Install</a>
+        <a class="btn" href="https://github.com/francisceioseph/chirp" data-t="sourceCode">Source code</a>
+      </div>
+    </div>
+
+    <section aria-labelledby="features">
+      <h2 id="features" data-t="whatItDoes">What it does</h2>
+      <ul class="list">
+        <li data-t="feature1">One-to-one conversations, encrypted with the Signal protocol, with post-quantum key agreement</li>
+        <li data-t="feature2">Works on the local network with no internet at all, and over the internet when you turn it on</li>
+        <li data-t="feature3">Add a contact by QR code or with an invite link that works once</li>
+        <li data-t="feature4">Delivery and read receipts, typing, replies, edits, reactions, nudges and search</li>
+        <li data-t="feature5">Photos (without location data) and files, sent in encrypted pieces</li>
+        <li data-t="feature6">Messages wait and go out on their own when the contact shows up</li>
+        <li data-t="feature7">Notifications that can hide the name and the text, and the tray icon on the desktop</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="privacy">
+      <h2 id="privacy" data-t="privacyTitle">What it protects, and what it doesn't</h2>
+      <p data-t="privacyProtects">The content of your messages and files, from anyone on the network, from your internet provider and from a relay; the database on your device, encrypted with a key kept in the system keychain; and there is nothing of yours on a server of ours, because there isn't one.</p>
+      <p data-t="privacyLimits">It doesn't protect a device with malware, doesn't hide that you use Chirp from someone watching the local network, and, with the internet on, your contacts see your IP address. A contact can always keep or share what you send them.</p>
+      <p><a href="https://github.com/francisceioseph/chirp/blob/master/docs/AMEACAS.md" data-t="threatModel">The full threat model (in Portuguese)</a> · <a href="https://github.com/francisceioseph/chirp/blob/master/SECURITY.md" data-t="reportFlaw">Report a security flaw</a></p>
+    </section>
+
+    <section id="install" aria-labelledby="install-title">
+      <h2 id="install-title" data-t="install">Install</h2>
+
+      <h3>Windows</h3>
+      <p data-t="windowsIntro">On Windows 10 or 11, on x64. Installing for everyone asks for administrator rights and lets contacts on the local network reach you; installing just for you doesn't, and Windows asks about the network the first time.</p>
+      <p><a class="btn primary" href="https://github.com/francisceioseph/chirp/releases/latest/download/psito-chirp-windows-x64-setup.exe" data-t="windowsDownload">Download the installer</a></p>
+      <p class="note" data-t="windowsNote">SmartScreen may warn about an unknown publisher, because the installer isn't signed with a paid certificate. Choose More info, then Run anyway.</p>
+
+      <h3>Android</h3>
+      <p data-t="androidIntro">On Android 7 or newer. No Google services needed.</p>
+      <p><a class="btn primary" href="https://github.com/francisceioseph/chirp/releases/latest/download/psito-chirp-android.apk" data-t="androidDownload">Download the APK</a></p>
+      <p class="note" data-t="androidNote">Your phone asks to allow installing from the browser. Updates come the same way, from this page.</p>
+
+      <h3>Debian, Ubuntu, Mint</h3>
+      <p data-t="debIntro">On Debian 13, Ubuntu 24.04, Mint 22 or newer, on amd64. It updates along with the system.</p>
+      <div class="code">
+        <button type="button" class="copy" data-copy="deb-cmd" data-t="copy">Copy</button>
+        <pre id="deb-cmd" tabindex="0">sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://francisceioseph.github.io/chirp/psito-chirp.asc | sudo tee /etc/apt/keyrings/psito-chirp.asc &gt;/dev/null
+printf 'Types: deb\nURIs: https://francisceioseph.github.io/chirp\nSuites: stable\nComponents: main\nArchitectures: amd64\nSigned-By: /etc/apt/keyrings/psito-chirp.asc\n' | sudo tee /etc/apt/sources.list.d/psito-chirp.sources &gt;/dev/null
+sudo apt update
+sudo apt install psito-chirp</pre>
+      </div>
+      <details>
+        <summary data-t="removeIntro">To remove it, and the repository</summary>
+        <div class="code">
+          <button type="button" class="copy" data-copy="deb-remove" data-t="copy">Copy</button>
+          <pre id="deb-remove" tabindex="0">sudo apt remove psito-chirp
+sudo rm /etc/apt/sources.list.d/psito-chirp.sources /etc/apt/keyrings/psito-chirp.asc</pre>
+        </div>
+      </details>
+
+      <h3>Fedora</h3>
+      <p data-t="fedoraIntro">On x86_64. It updates along with the system. The first install asks you to accept the signing key.</p>
+      <div class="code">
+        <button type="button" class="copy" data-copy="rpm-cmd" data-t="copy">Copy</button>
+        <pre id="rpm-cmd" tabindex="0">sudo curl -fsSL -o /etc/yum.repos.d/psito-chirp.repo https://francisceioseph.github.io/chirp/psito-chirp.repo
+sudo dnf install psito-chirp</pre>
+      </div>
+      <details>
+        <summary data-t="removeIntro">To remove it, and the repository</summary>
+        <div class="code">
+          <button type="button" class="copy" data-copy="rpm-remove" data-t="copy">Copy</button>
+          <pre id="rpm-remove" tabindex="0">sudo dnf remove psito-chirp
+sudo rm /etc/yum.repos.d/psito-chirp.repo</pre>
+        </div>
+      </details>
+
+      <h3>macOS</h3>
+      <p data-t="macIntro">A test build, not signed by Apple. After dragging it to Applications, open it with a right click and Open, and confirm.</p>
+      <p><a class="btn" href="https://github.com/francisceioseph/chirp/releases/latest/download/psito-chirp-macos.dmg" data-t="macDownload">Download the disk image</a></p>
+
+      <p class="note" data-t="otherNote">On iPhone and iPad, for now, only <a href="https://github.com/francisceioseph/chirp#building">building from source</a> with Xcode. Every download has its SHA-256 in <code>SHA256SUMS</code>, on the <a href="https://github.com/francisceioseph/chirp/releases/latest">releases page</a>.</p>
+    </section>
+
+    <section aria-labelledby="links-title">
+      <h2 id="links-title" data-t="links">Links</h2>
+      <div class="links">
+        <a href="https://github.com/francisceioseph/chirp/issues"><span data-t="issues">Issues</span><small data-t="issuesNote">Report a problem</small></a>
+        <a href="https://github.com/francisceioseph/chirp/releases"><span data-t="releases">Releases</span><small data-t="releasesNote">What changed in each version</small></a>
+        <a href="https://github.com/francisceioseph/chirp/blob/master/docs/PROTOCOLO.md"><span data-t="protocol">Protocol</span><small data-t="protocolNote">How the devices talk (in Portuguese)</small></a>
+        <a href="https://github.com/francisceioseph/chirp">GitHub<small data-t="githubNote">The source code</small></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p data-t="footer">AGPL-3.0 license. Encryption by libsignal, networking by iroh. Developed with the help of Claude Code.</p>
+  </footer>
+</div>
+<script src="i18n.js"></script>
+</body>
+</html>

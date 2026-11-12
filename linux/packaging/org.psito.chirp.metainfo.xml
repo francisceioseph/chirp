@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- O que as lojas de apps do Linux (GNOME Software, Discover) mostram. -->
+<component type="desktop-application">
+  <id>org.psito.chirp</id>
+  <name>Psito Chirp</name>
+  <summary>Private messenger with no servers in the middle</summary>
+  <summary xml:lang="pt">Mensageiro privado, sem servidor no meio</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-only</project_license>
+  <developer id="io.github.francisceioseph">
+    <name>Francisco Souza</name>
+  </developer>
+  <description>
+    <p>
+      Conversations go straight from one device to the other, over the local network or
+      the internet, encrypted end to end with the Signal protocol. No accounts, no phone
+      numbers, no logs and no telemetry.
+    </p>
+    <p xml:lang="pt">
+      As conversas vão direto de um aparelho ao outro, pela rede local ou pela internet,
+      cifradas de ponta a ponta com o protocolo Signal. Sem conta, sem número de
+      telefone, sem registros e sem telemetria.
+    </p>
+  </description>
+  <launchable type="desktop-id">org.psito.chirp.desktop</launchable>
+  <url type="homepage">https://francisceioseph.github.io/chirp/</url>
+  <url type="bugtracker">https://github.com/francisceioseph/chirp/issues</url>
+  <url type="vcs-browser">https://github.com/francisceioseph/chirp</url>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-chat">intense</content_attribute>
+  </content_rating>
+  <categories>
+    <category>Network</category>
+    <category>InstantMessaging</category>
+  </categories>
+</component>

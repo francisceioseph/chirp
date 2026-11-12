@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -22,21 +24,31 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "org.psito.chirp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // A chave das versões publicadas vem do android/key.properties, que o CI escreve a
+    // partir dos segredos (tool/create-android-key.sh). Sem ele, o release sai com a
+    // chave de depuração, para o `flutter run --release` e o build do CI funcionarem.
+    val keyFile = rootProject.file("key.properties")
+    val release = keyFile.exists()
+    if (release) {
+        val key = Properties().apply { keyFile.inputStream().use { load(it) } }
+        signingConfigs.create("release") {
+            storeFile = rootProject.file(key.getProperty("storeFile"))
+            storePassword = key.getProperty("storePassword")
+            keyAlias = key.getProperty("keyAlias")
+            keyPassword = key.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (release) "release" else "debug")
         }
     }
 }

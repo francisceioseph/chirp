@@ -1,0 +1,13 @@
+As conversas vão direto de um aparelho ao outro, pela rede local ou pela internet, cifradas de ponta a ponta com o protocolo Signal e acordo de chaves pós-quântico. Sem conta, sem número de telefone, sem registros, sem telemetria e sem os serviços do Google.
+
+<ul>
+<li>Funciona na rede local sem internet nenhuma, e pela internet quando você liga, com um retransmissor opcional que você mesmo pode hospedar</li>
+<li>Adicione um contato pelo QR ou por um link de convite que vale uma vez</li>
+<li>Entregue e lida, digitando, respostas, edições, reações, chamar atenção e busca</li>
+<li>Fotos (sem os dados de localização) e arquivos, enviados em pedaços cifrados</li>
+<li>As mensagens esperam e saem sozinhas quando o contato aparece</li>
+<li>Notificações que podem esconder o nome e o texto</li>
+<li>O banco é cifrado, com a chave no Keystore do Android</li>
+</ul>
+
+Para continuar recebendo com o app fechado, o Chirp roda um serviço com uma notificação fixa e discreta. Dá para desligar.

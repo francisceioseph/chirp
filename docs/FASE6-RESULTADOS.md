@@ -122,3 +122,42 @@ Quando o Android fecha a tela do app, o motor do Flutter vai junto, e com ele o 
 
 - Se o sistema matar o processo (falta de memória, reiniciar o celular), o serviço não volta sozinho (`START_NOT_STICKY`): sem a tela, o Dart não teria por onde fazer a abertura. Volta ao abrir o app. Abrir com o celular pediria a abertura sem tela.
 - O ícone da notificação fixa é o do app; o Android pede um monocromático para a barra.
+
+## Parte 5: instaladores, repositórios e os documentos da 1.0
+
+### Feito
+
+- **Versão**: o `set-version.sh` grava também o versionCode do Android depois do `+` (1.2.3 vira 1002003), porque o Android só instala por cima um número maior. O `release` do CI diz a tag nova, e o `packages.yml` roda com ela.
+- **Linux**:
+  - o pacote `psito-chirp` em `.deb` e `.rpm`, com o binário em `/usr/lib/psito-chirp/`, o `/usr/bin/psito-chirp`, o `.desktop` e o AppStream (`linux/packaging/`), o ícone e os documentos;
+  - as dependências à mão: o GTK, a GLib 2.80, a glibc 2.38, o libsecret, o EGL e o GLES. O SQLCipher e o OpenSSL já vão no núcleo;
+  - o AUR (`build-aur.sh`) gera o `PKGBUILD` a partir do `.deb` da release, e quem envia é quem mantém;
+  - com a chave `APT_SIGNING_KEY`, os repositórios APT e DNF assinados, com as três últimas versões, no GitHub Pages, junto da página.
+- **Windows**: o instalador do Inno Setup.
+  - Por padrão, só para quem usa e sem administrador, e o Windows pergunta sobre a rede na primeira vez.
+  - Para todos, com a regra do firewall para a rede local (redes privadas e de domínio).
+  - Desinstalar fecha o Chirp da bandeja e tira a regra e o "abrir ao entrar". As conversas ficam: para apagar, há o "Apagar tudo".
+- **Android**:
+  - o APK assinado com a chave das versões (`ANDROID_KEYSTORE`, que sai do `create-android-key.sh`). Sem ela, o CI não publica o APK: um APK com a chave de depuração impediria as atualizações depois;
+  - os textos e o ícone do F-Droid em `fastlane/metadata/android/`.
+- **macOS**: o `.dmg` sem a assinatura da Apple, como build de teste. O iOS continua só pelo Xcode.
+- **As somas**: o `SHA256SUMS` de tudo o que a release tem, assinado com a chave dos repositórios.
+- **Documentos**:
+  - o `SECURITY.md`, para relatar uma falha pelo relato privado do GitHub;
+  - o `docs/AMEACAS.md`, o modelo de ameaças do que vale hoje, conferido com o código. O bloqueio de contatos e o aviso de chave trocada estavam no plano mas não no código, e foram para "ainda não feito";
+  - a página do projeto (`site/`), nos sete idiomas, com a instalação de cada sistema e o que o Chirp protege e o que não.
+- **CI**: o job `app` monta o `.deb` e o `.rpm` e valida o `.desktop` e o AppStream a cada push, para um arquivo que falta não aparecer só na versão.
+
+### Conferido
+
+- O `.deb` montado aqui tem o que deve, e o `desktop-file-validate` e o `appstreamcli validate` passam.
+- A página, em 375 px de largura, cabe sem rolar para o lado, e as chaves dos sete idiomas são as mesmas da página.
+- O `.rpm`, o instalador, o APK assinado e o `.dmg` só são montados no CI.
+
+### Falta
+
+- **Ações de quem é dono do repositório**:
+  - rodar o `tool/create-apt-key.sh` e o `tool/create-android-key.sh`;
+  - ligar o GitHub Pages com a origem "GitHub Actions";
+  - ligar o relato privado de vulnerabilidades.
+- O F-Droid: pedir a inclusão no `fdroiddata`, com o build reprodutível. O AppImage e o Flatpak ficam para depois.

@@ -1,0 +1,253 @@
+name: Packages
+
+# Os pacotes de uma versão (docs/PLANO.md, 9), anexados à release:
+#   - Linux: .deb e .rpm; com a chave APT_SIGNING_KEY, também os repositórios APT e DNF
+#     assinados, publicados no GitHub Pages com a página do projeto (site/);
+#   - Windows: o instalador do Inno Setup;
+#   - Android: o APK, só com a chave ANDROID_KEYSTORE (sem ela, um APK assinado com a
+#     chave de depuração não deixaria atualizar depois);
+#   - macOS: o .dmg, sem assinatura da Apple (build de teste);
+#   - o SHA256SUMS de tudo, assinado com a mesma chave dos repositórios.
+# As chaves saem do tool/create-apt-key.sh e do tool/create-android-key.sh. O Pages não
+# guarda nada entre uma publicação e outra: os pacotes antigos vêm das releases.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The version to package, like v0.8.0
+        type: string
+        required: true
+
+env:
+  FLUTTER_VERSION: 3.47.4
+  TAG: ${{ inputs.tag }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  # Os segredos não valem no "if" de um job; este diz quais existem.
+  keys:
+    runs-on: ubuntu-24.04
+    outputs:
+      repo: ${{ steps.check.outputs.repo }}
+      android: ${{ steps.check.outputs.android }}
+    steps:
+      - id: check
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+        run: |
+          echo "repo=${APT_SIGNING_KEY:+yes}" >> "$GITHUB_OUTPUT"
+          echo "android=${ANDROID_KEYSTORE:+yes}" >> "$GITHUB_OUTPUT"
+
+  linux:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libsecret-1-dev ninja-build cmake clang pkg-config rpm
+      - name: Build the packages
+        run: |
+          flutter pub get
+          flutter build linux --release
+          tool/build-deb.sh build/deb --no-build
+          tool/build-rpm.sh build/rpm --no-build
+      - name: Attach them to the release
+        run: gh release upload "$TAG" build/deb/*.deb build/rpm/*.rpm --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            build/deb/*.deb
+            build/rpm/*.rpm
+
+  repos:
+    needs: [keys, linux]
+    if: needs.keys.outputs.repo == 'yes'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Tools
+        run: sudo apt-get update && sudo apt-get install -y apt-utils rpm createrepo-c
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-packages
+          path: build/new
+      - name: Fetch the two versions before this one
+        run: |
+          mkdir -p build/pkgs
+          gh release list --limit 3 --json tagName --jq '.[].tagName' |
+            grep -vx "$TAG" | head -2 |
+            while read -r tag; do
+              gh release download "$tag" --pattern '*.deb' --pattern '*.rpm' --dir build/pkgs || true
+            done
+          find build/new -name '*.deb' -o -name '*.rpm' | xargs -I{} cp {} build/pkgs/
+      - name: Build the repositories
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          gpg --batch --import <<< "$APT_SIGNING_KEY"
+          tool/build-apt-repo.sh build/site build/pkgs/*.deb
+          tool/build-dnf-repo.sh build/site https://francisceioseph.github.io/chirp build/pkgs/*.rpm
+          cp -r site/. build/site/
+      - name: Attach the signed .rpm to the release
+        run: gh release upload "$TAG" build/site/rpm/psito-chirp-"${TAG#v}"-1.x86_64.rpm --clobber
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build
+        run: |
+          flutter pub get
+          flutter build windows --release
+      - name: Build the installer
+        run: |
+          choco install innosetup --no-progress -y
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$($env:TAG.TrimStart('v'))" windows\installer\psito-chirp.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Attach it to the release
+        run: gh release upload $env:TAG windows\installer\Output\psito-chirp-windows-x64-setup.exe --clobber
+
+  android:
+    needs: keys
+    if: needs.keys.outputs.android == 'yes'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: The signing key
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          base64 -d <<< "$ANDROID_KEYSTORE" > android/chirp.jks
+          printf 'storeFile=chirp.jks\nstorePassword=%s\nkeyAlias=chirp\nkeyPassword=%s\n' \
+            "$ANDROID_KEY_PASSWORD" "$ANDROID_KEY_PASSWORD" > android/key.properties
+      - name: Build
+        run: |
+          flutter pub get
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk psito-chirp-android.apk
+      - name: Attach it to the release
+        run: gh release upload "$TAG" psito-chirp-android.apk --clobber
+      - name: Remove the key
+        if: always()
+        run: rm -f android/chirp.jks android/key.properties
+
+  macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build
+        run: |
+          flutter pub get
+          flutter build macos --release
+      - name: Build the disk image
+        run: |
+          mkdir dmg
+          cp -R build/macos/Build/Products/Release/psito_chirp.app "dmg/Psito Chirp.app"
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "Psito Chirp" -srcfolder dmg -format UDZO -ov psito-chirp-macos.dmg
+      - name: Attach it to the release
+        run: gh release upload "$TAG" psito-chirp-macos.dmg --clobber
+
+  # As somas de tudo o que a release tem, assinadas quando há a chave.
+  sums:
+    needs: [keys, linux, repos, windows, android, macos]
+    if: always() && needs.linux.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch the files
+        run: |
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir files \
+            --pattern '*.deb' --pattern '*.rpm' --pattern '*.exe' --pattern '*.apk' --pattern '*.dmg'
+      - name: Sum and sign
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          cd files
+          sha256sum -- * > ../SHA256SUMS
+          cd ..
+          files=(SHA256SUMS)
+          if [ -n "$APT_SIGNING_KEY" ]; then
+            gpg --batch --import <<< "$APT_SIGNING_KEY"
+            gpg --batch --yes --armor --detach-sign -o SHA256SUMS.asc SHA256SUMS
+            files+=(SHA256SUMS.asc)
+          fi
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" "${files[@]}" --clobber

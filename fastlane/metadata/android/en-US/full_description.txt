@@ -1,0 +1,13 @@
+Conversations go straight from one device to the other, over the local network or the internet, encrypted end to end with the Signal protocol and post-quantum key agreement. No accounts, no phone numbers, no logs and no telemetry, and no Google services.
+
+<ul>
+<li>Works on the local network with no internet at all, and over the internet when you turn it on, with an optional relay you can host yourself</li>
+<li>Add a contact by QR code or with an invite link that works once</li>
+<li>Delivery and read receipts, typing, replies, edits, reactions, nudges and search</li>
+<li>Photos (without location data) and files, sent in encrypted pieces</li>
+<li>Messages wait and go out on their own when the contact shows up</li>
+<li>Notifications that can hide the name and the text</li>
+<li>The database is encrypted, with its key in the Android Keystore</li>
+</ul>
+
+To keep receiving with the app closed, Chirp runs a service with a quiet, permanent notification. You can turn it off.
