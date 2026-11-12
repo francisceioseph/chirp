@@ -43,7 +43,7 @@ void main() {
     await ready(tester, 800);
     await tester.tap(find.text('Canela'));
     await tester.pumpAndSettle();
-    expect(find.text(l10n.appName), findsNothing);
+    expect(find.byTooltip(l10n.profileTitle), findsNothing);
     expect(find.byTooltip('Voltar'), findsOneWidget);
   });
 
@@ -52,7 +52,7 @@ void main() {
     expect(find.text(l10n.conversationPick), findsOneWidget);
     await tester.tap(find.text('Canela'));
     await tester.pumpAndSettle();
-    expect(find.text(l10n.appName), findsOneWidget);
+    expect(find.byTooltip(l10n.profileTitle), findsOneWidget);
     expect(find.text(l10n.messageHint), findsOneWidget);
     expect(find.text(l10n.conversationPick), findsNothing);
     expect(
@@ -71,7 +71,7 @@ void main() {
     await tester.tap(details('Canela'));
     await tester.pumpAndSettle();
     expect(find.text(l10n.safetyNumberTitle), findsOneWidget);
-    expect(find.text(l10n.appName), findsNothing);
+    expect(find.byTooltip(l10n.profileTitle), findsNothing);
   });
 
   testWidgets('com três colunas, os detalhes ficam ao lado e o Esc fecha', (
@@ -152,7 +152,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SearchPage), findsNothing);
     expect(details('Canela'), findsOneWidget);
-    expect(find.text(l10n.appName), findsOneWidget);
+    expect(find.byTooltip(l10n.profileTitle), findsOneWidget);
   });
 
   for (final width in [1000.0, 1300.0]) {

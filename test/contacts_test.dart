@@ -125,7 +125,7 @@ void main() {
     // Tocar abre a conversa; o título dela abre os detalhes.
     await tester.tap(find.text('Canela'));
     await tester.pumpAndSettle();
-    expect(find.text(l10n.conversationEmpty), findsOneWidget);
+    expect(find.text(l10n.sayHi('Canela')), findsOneWidget);
     await tester.tap(find.text('Canela'));
     await tester.pumpAndSettle();
     expect(find.text(l10n.safetyNumberTitle), findsOneWidget);

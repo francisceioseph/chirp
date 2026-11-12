@@ -194,7 +194,7 @@ class _ComposerState extends State<Composer> {
                       IconButton(
                         tooltip: l10n.attachFile,
                         onPressed: widget.enabled ? widget.onAttach : null,
-                        icon: const Icon(Icons.attach_file),
+                        icon: const Icon(Icons.add_circle_outline),
                       ),
                     Expanded(
                       child: TextField(

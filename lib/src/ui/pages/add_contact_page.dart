@@ -14,9 +14,16 @@ import '../organisms/paste_invite_form.dart';
 import '../templates/shell_template.dart';
 
 class AddContactPage extends StatefulWidget {
-  const AddContactPage({super.key, required this.controller});
+  const AddContactPage({
+    super.key,
+    required this.controller,
+    this.startOnPaste = false,
+  });
 
   final ContactsController controller;
+
+  /// Abre no colar (o "Usar um link" do início vazio).
+  final bool startOnPaste;
 
   @override
   State<AddContactPage> createState() => _AddContactPageState();
@@ -116,6 +123,7 @@ class _AddContactPageState extends State<AddContactPage> {
                         children: [
                           Expanded(
                             child: _Side(
+                              icon: Icons.qr_code_2,
                               title: l10n.inviteTabShow,
                               child: _show(context),
                             ),
@@ -123,6 +131,8 @@ class _AddContactPageState extends State<AddContactPage> {
                           const SizedBox(width: 24),
                           Expanded(
                             child: _Side(
+                              icon: Icons.link,
+                              tonal: true,
                               title: l10n.inviteTabPaste,
                               child: PasteInviteForm(onAdd: _add),
                             ),
@@ -138,6 +148,7 @@ class _AddContactPageState extends State<AddContactPage> {
         }
         return DefaultTabController(
           length: 2,
+          initialIndex: widget.startOnPaste ? 1 : 0,
           child: Scaffold(
             appBar: AppBar(
               title: Text(l10n.addContact),
@@ -163,28 +174,66 @@ class _AddContactPageState extends State<AddContactPage> {
 
 /// Um dos dois lados, na janela larga: o título e o conteúdo, num cartão.
 class _Side extends StatelessWidget {
-  const _Side({required this.title, required this.child});
+  const _Side({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.tonal = false,
+  });
 
+  final IconData icon;
   final String title;
   final Widget child;
 
+  /// O ícone no tom secundário (o colar), e não no primário (o meu código).
+  final bool tonal;
+
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(title, style: Theme.of(context).textTheme.titleMedium),
-          ),
-          const SizedBox(height: 16),
-          child,
-        ],
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                ExcludeSemantics(
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: tonal
+                          ? scheme.secondaryContainer
+                          : scheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: tonal
+                          ? scheme.onSecondaryContainer
+                          : scheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(title, style: theme.textTheme.titleMedium),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            child,
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _Pane extends StatelessWidget {

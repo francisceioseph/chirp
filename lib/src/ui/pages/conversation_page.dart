@@ -14,8 +14,7 @@ import '../../application/contacts_controller.dart';
 import '../../application/conversation_controller.dart';
 import '../../core/chirp_core.dart';
 import '../atoms/chirp_app_bar.dart';
-import '../atoms/identity_avatar.dart';
-import '../atoms/panel_text.dart';
+import '../atoms/reach_avatar.dart';
 import '../failure_text.dart';
 import '../molecules/conversation_tile.dart';
 import '../molecules/message_bubble.dart';
@@ -290,15 +289,13 @@ class _ConversationPageState extends State<ConversationPage>
         final body = !_conversation.loaded
             ? const Center(child: CircularProgressIndicator())
             : messages.isEmpty
-            ? Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: PanelBody(
-                    contact.established
-                        ? l10n.conversationEmpty
-                        : l10n.contactPending,
-                  ),
-                ),
+            ? _EmptyConversation(
+                name: name,
+                contact: contact,
+                onVerify: _openDetails,
+                onNudge: contact.established
+                    ? () => _run(_conversation.nudge)
+                    : null,
               )
             : ListView.builder(
                 controller: _scroll,
@@ -307,8 +304,15 @@ class _ConversationPageState extends State<ConversationPage>
                   top: ChirpAppBar.topInset(context) + 8,
                   bottom: 8,
                 ),
-                itemCount: messages.length,
+                // Depois da mensagem mais antiga, a nota de segurança da conversa.
+                itemCount: messages.length + (_conversation.hasOlder ? 0 : 1),
                 itemBuilder: (context, i) {
+                  if (i == messages.length) {
+                    return _SecurityNote(
+                      verified: contact.verified,
+                      onVerify: _openDetails,
+                    );
+                  }
                   final message = messages[messages.length - 1 - i];
                   return MessageBubble(
                     key: ValueKey(message.id),
@@ -355,7 +359,11 @@ class _ConversationPageState extends State<ConversationPage>
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
-                        IdentityAvatar(seed: contact.avatarSeed, size: 36),
+                        ReachAvatar(
+                          seed: contact.avatarSeed,
+                          reach: contact.reach,
+                          size: 40,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -439,6 +447,150 @@ class _ConversationPageState extends State<ConversationPage>
           ),
         );
       },
+    );
+  }
+}
+
+/// No começo da conversa: cifrada de ponta a ponta, e se vocês já conferiram o código.
+class _SecurityNote extends StatelessWidget {
+  const _SecurityNote({required this.verified, required this.onVerify});
+
+  final bool verified;
+  final VoidCallback onVerify;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final (background, foreground) = verified
+        ? (scheme.tertiaryContainer, scheme.onTertiaryContainer)
+        : (scheme.surfaceContainerHigh, scheme.onSurface);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Material(
+            color: background,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              child: Row(
+                children: [
+                  Icon(
+                    verified ? Icons.lock : Icons.gpp_maybe_outlined,
+                    size: 18,
+                    color: foreground,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      verified ? l10n.e2eVerified : l10n.e2eUnverified,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (!verified)
+                    TextButton(
+                      onPressed: onVerify,
+                      child: Text(l10n.checkCode),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A conversa sem mensagens: um oi, e o que fazer primeiro.
+class _EmptyConversation extends StatelessWidget {
+  const _EmptyConversation({
+    required this.name,
+    required this.contact,
+    required this.onVerify,
+    this.onNudge,
+  });
+
+  final String name;
+  final Contact contact;
+  final VoidCallback onVerify;
+  final VoidCallback? onNudge;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Icon(
+                    contact.established
+                        ? Icons.waving_hand_outlined
+                        : Icons.hourglass_top,
+                    size: 32,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                contact.established ? l10n.sayHi(name) : l10n.contactPending,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleLarge,
+              ),
+              if (contact.established) ...[
+                const SizedBox(height: 8),
+                Text(
+                  contact.verified ? l10n.e2eVerified : l10n.sayHiUnverified,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (!contact.verified)
+                      FilledButton.tonalIcon(
+                        onPressed: onVerify,
+                        icon: const Icon(Icons.verified_user_outlined),
+                        label: Text(l10n.checkCode),
+                      ),
+                    TextButton.icon(
+                      onPressed: onNudge,
+                      icon: const Icon(Icons.vibration),
+                      label: Text(l10n.nudge),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

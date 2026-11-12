@@ -169,11 +169,11 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   String get addContact => 'Добавить контакт';
 
   @override
-  String get contactsEmptyTitle => 'Контактов пока нет';
+  String get contactsEmptyTitle => 'Здесь пока никого';
 
   @override
   String get contactsEmptyBody =>
-      'Покажите свой код кому-нибудь рядом или вставьте приглашение, которое вам прислали. В одной сети, без интернета.';
+      'Чтобы общаться, обменяйтесь приглашениями. Сообщения идут напрямую с устройства на устройство, зашифрованные, без серверов.';
 
   @override
   String get contactPending => 'Ждём другое устройство';
@@ -359,9 +359,6 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get react => 'Реакция';
-
-  @override
-  String get conversationEmpty => 'Сообщений пока нет. Поздоровайтесь!';
 
   @override
   String get contactDetails => 'Сведения о контакте';
@@ -757,4 +754,85 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   @override
   String get microphoneDenied =>
       'Psito Chirp нужен микрофон для записи. Разрешить можно в настройках системы.';
+
+  @override
+  String get emptyShowCode => 'Показать мой код';
+
+  @override
+  String get emptyShowCodeBody =>
+      'Вы рядом? Другой человек сканирует QR. Так надёжнее всего: вы сразу проверены.';
+
+  @override
+  String get emptyUseLink => 'Использовать ссылку-приглашение';
+
+  @override
+  String get emptyUseLinkBody =>
+      'Далеко? Отправьте ссылку как угодно или вставьте полученную. Она действует один раз, 24 часа.';
+
+  @override
+  String get emptyPromise => 'Без аккаунта, без номера телефона, без журналов.';
+
+  @override
+  String get contactsWillAppear => 'Здесь появятся ваши контакты';
+
+  @override
+  String get filterAll => 'Все';
+
+  @override
+  String get filterUnread => 'Непрочитанные';
+
+  @override
+  String get filterVerified => 'Проверенные';
+
+  @override
+  String get filterEmpty => 'С этим фильтром ничего нет.';
+
+  @override
+  String groupReachable(int count) {
+    return 'В СЕТИ · $count';
+  }
+
+  @override
+  String groupUnreachable(int count) {
+    return 'НЕДОСТУПНЫ · $count';
+  }
+
+  @override
+  String sayHi(String name) {
+    return 'Поздоровайтесь с $name';
+  }
+
+  @override
+  String get sayHiUnverified =>
+      'Вы ещё не сверили код безопасности. Общаться можно, но сверьте его при встрече.';
+
+  @override
+  String get e2eVerified =>
+      'Сквозное шифрование. Вы сверили код безопасности лично.';
+
+  @override
+  String get e2eUnverified =>
+      'Сквозное шифрование. Сверьте код безопасности при встрече.';
+
+  @override
+  String get checkCode => 'Сверить код';
+
+  @override
+  String get inviteValidity => 'Действует один раз, 24 часа';
+
+  @override
+  String get pasteStep1 =>
+      'Попросите ссылку у другого человека там, где вы уже общаетесь.';
+
+  @override
+  String get pasteStep2 =>
+      'Вставьте её сюда. Chirp найдёт человека в локальной сети или в интернете, если он включён.';
+
+  @override
+  String get pasteStep3 =>
+      'Контакт будет непроверенным: сверьте код безопасности при встрече.';
+
+  @override
+  String get pasteTip =>
+      'Ссылка действует один раз и истекает через 24 часа. Не публикуйте её.';
 }

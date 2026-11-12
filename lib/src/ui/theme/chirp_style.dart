@@ -12,6 +12,8 @@ class ChirpStyle extends ThemeExtension<ChirpStyle> {
     this.bubbleRadius = 16,
     this.tailRadius = 4,
     this.glass = false,
+    this.reachable = const Color(0xFF2E7D32),
+    this.cheek = const Color(0xFFF08A24),
   });
 
   /// O canto redondo das bolhas.
@@ -22,6 +24,13 @@ class ChirpStyle extends ThemeExtension<ChirpStyle> {
 
   /// O efeito vidro foi escolhido (veja [glassOn]).
   final bool glass;
+
+  /// O anel de quem está ao alcance agora (o verde de "conectado" dos mensageiros
+  /// antigos), com contraste no claro e no escuro: o `chirpTheme` escolhe.
+  final Color reachable;
+
+  /// A bochecha laranja da calopsita (a mascote), igual em todos os temas.
+  final Color cheek;
 
   static ChirpStyle of(BuildContext context) =>
       Theme.of(context).extension<ChirpStyle>() ?? const ChirpStyle();
@@ -46,10 +55,14 @@ class ChirpStyle extends ThemeExtension<ChirpStyle> {
     double? bubbleRadius,
     double? tailRadius,
     bool? glass,
+    Color? reachable,
+    Color? cheek,
   }) => ChirpStyle(
     bubbleRadius: bubbleRadius ?? this.bubbleRadius,
     tailRadius: tailRadius ?? this.tailRadius,
     glass: glass ?? this.glass,
+    reachable: reachable ?? this.reachable,
+    cheek: cheek ?? this.cheek,
   );
 
   @override
@@ -59,6 +72,8 @@ class ChirpStyle extends ThemeExtension<ChirpStyle> {
       bubbleRadius: lerpDouble(bubbleRadius, other.bubbleRadius, t)!,
       tailRadius: lerpDouble(tailRadius, other.tailRadius, t)!,
       glass: t < 0.5 ? glass : other.glass,
+      reachable: Color.lerp(reachable, other.reachable, t)!,
+      cheek: Color.lerp(cheek, other.cheek, t)!,
     );
   }
 }

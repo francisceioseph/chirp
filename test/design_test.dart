@@ -93,7 +93,8 @@ void main() {
             spec.style.bubbleRadius,
           );
           final card = theme.cardTheme.shape! as RoundedRectangleBorder;
-          expect(card.borderRadius, BorderRadius.circular(spec.radius));
+          // Os cartões são um degrau mais redondos que os campos (o M3 Expressive).
+          expect(card.borderRadius, BorderRadius.circular(spec.radius + 8));
         }
       }
     });

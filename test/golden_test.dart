@@ -146,4 +146,15 @@ void main() {
       matchesGoldenFile('goldens/computador_convite.png'),
     );
   });
+
+  testWidgets('computador, início vazio', (tester) async {
+    setWindow(tester, 1300, 800);
+    final (core, vault) = await withProfile();
+    core.store!.savedAppearance = light;
+    await pumpChirp(tester, core: core, vault: vault);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/computador_inicio_vazio.png'),
+    );
+  });
 }

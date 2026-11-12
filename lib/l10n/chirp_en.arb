@@ -72,8 +72,8 @@
   "somethingWentWrong": "Something went wrong. Try again.",
   "profileTitle": "Your profile",
   "addContact": "Add contact",
-  "contactsEmptyTitle": "No contacts yet",
-  "contactsEmptyBody": "Show your code to someone nearby, or paste the invite they sent you. On the same network, no internet needed.",
+  "contactsEmptyTitle": "Nobody here yet",
+  "contactsEmptyBody": "To talk, swap invites. Messages go straight from one device to the other, encrypted, and never pass through a server.",
   "contactPending": "Waiting for the other device",
   "contactVerified": "Verified",
   "contactUnverified": "Not verified",
@@ -144,7 +144,6 @@
   "reaction5": "Thanks",
   "reaction6": "Celebrate",
   "react": "React",
-  "conversationEmpty": "No messages yet. Say hi!",
   "contactDetails": "Contact details",
   "searchMessages": "Search messages",
   "searchNothing": "Nothing found",
@@ -349,5 +348,48 @@
   "voicePreview": "Voice note",
   "voiceTooShort": "Too short: hold on a little longer.",
   "audioUnavailable": "No microphone or speaker, or the system didn't allow using it.",
-  "microphoneDenied": "Psito Chirp needs the microphone to record. You can allow it in the system settings."
+  "microphoneDenied": "Psito Chirp needs the microphone to record. You can allow it in the system settings.",
+  "emptyShowCode": "Show my code",
+  "emptyShowCodeBody": "Together? The other person scans the QR. It's the safest way: you're verified from the start.",
+  "emptyUseLink": "Use an invite link",
+  "emptyUseLinkBody": "Far apart? Send your link however you like, or paste the one you got. It works once, for 24 hours.",
+  "emptyPromise": "No account, no phone number, no logs.",
+  "contactsWillAppear": "Your contacts show up here",
+  "filterAll": "All",
+  "filterUnread": "Unread",
+  "filterVerified": "Verified",
+  "filterEmpty": "Nothing here with this filter.",
+  "groupReachable": "IN REACH · {count}",
+  "@groupReachable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groupUnreachable": "OUT OF REACH · {count}",
+  "@groupUnreachable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sayHi": "Say hi to {name}",
+  "@sayHi": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sayHiUnverified": "You haven't checked the safety code yet. You can talk, but check it when you meet.",
+  "e2eVerified": "End-to-end encrypted. You checked the safety code in person.",
+  "e2eUnverified": "End-to-end encrypted. Check the safety code when you meet.",
+  "checkCode": "Check code",
+  "inviteValidity": "Works once, for 24 hours",
+  "pasteStep1": "Ask the other person for the link, wherever you already talk.",
+  "pasteStep2": "Paste it here. Chirp looks for them on the local network, or the internet if it's on.",
+  "pasteStep3": "They come in as unverified: check the safety code when you meet.",
+  "pasteTip": "The link works only once and expires in 24 hours. Don't leave it anywhere public."
 }

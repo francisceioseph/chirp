@@ -118,7 +118,7 @@ void main() {
       mode: AppearanceMode.dark,
     );
     await pumpChirp(tester, core: core, vault: vault);
-    final theme = Theme.of(tester.element(find.text(l10n.appName).first));
+    final theme = Theme.of(tester.element(find.byTooltip(l10n.profileTitle).first));
     expect(theme.brightness, Brightness.dark);
     expect(theme.visualDensity, VisualDensity.compact);
   });

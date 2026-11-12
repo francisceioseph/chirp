@@ -168,11 +168,11 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
   String get addContact => 'Ajouter un contact';
 
   @override
-  String get contactsEmptyTitle => 'Aucun contact pour l\'instant';
+  String get contactsEmptyTitle => 'Personne pour l’instant';
 
   @override
   String get contactsEmptyBody =>
-      'Montrez votre code à quelqu\'un à côté de vous, ou collez l\'invitation qu\'on vous a envoyée. Sur le même réseau, sans internet.';
+      'Pour discuter, échangez des invitations. Les messages vont directement d’un appareil à l’autre, chiffrés, sans passer par aucun serveur.';
 
   @override
   String get contactPending => 'En attente de l\'autre appareil';
@@ -358,9 +358,6 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
 
   @override
   String get react => 'Réagir';
-
-  @override
-  String get conversationEmpty => 'Pas encore de messages. Dites bonjour !';
 
   @override
   String get contactDetails => 'Détails du contact';
@@ -757,4 +754,86 @@ class ChirpLocalizationsFr extends ChirpLocalizations {
   @override
   String get microphoneDenied =>
       'Psito Chirp a besoin du micro pour enregistrer. Vous pouvez l’autoriser dans les réglages du système.';
+
+  @override
+  String get emptyShowCode => 'Montrer mon code';
+
+  @override
+  String get emptyShowCodeBody =>
+      'Ensemble ? L’autre personne scanne le QR. C’est le plus sûr : vous êtes vérifiés dès le départ.';
+
+  @override
+  String get emptyUseLink => 'Utiliser un lien d’invitation';
+
+  @override
+  String get emptyUseLinkBody =>
+      'Loin ? Envoyez votre lien comme vous voulez, ou collez celui reçu. Il sert une fois, pendant 24 heures.';
+
+  @override
+  String get emptyPromise =>
+      'Sans compte, sans numéro de téléphone, sans journaux.';
+
+  @override
+  String get contactsWillAppear => 'Vos contacts apparaissent ici';
+
+  @override
+  String get filterAll => 'Toutes';
+
+  @override
+  String get filterUnread => 'Non lues';
+
+  @override
+  String get filterVerified => 'Vérifiés';
+
+  @override
+  String get filterEmpty => 'Rien avec ce filtre.';
+
+  @override
+  String groupReachable(int count) {
+    return 'JOIGNABLES · $count';
+  }
+
+  @override
+  String groupUnreachable(int count) {
+    return 'HORS DE PORTÉE · $count';
+  }
+
+  @override
+  String sayHi(String name) {
+    return 'Dites bonjour à $name';
+  }
+
+  @override
+  String get sayHiUnverified =>
+      'Vous n’avez pas encore vérifié le code de sécurité. Vous pouvez discuter, mais vérifiez-le en vous voyant.';
+
+  @override
+  String get e2eVerified =>
+      'Chiffrée de bout en bout. Vous avez vérifié le code de sécurité en personne.';
+
+  @override
+  String get e2eUnverified =>
+      'Chiffrée de bout en bout. Vérifiez le code de sécurité en vous voyant.';
+
+  @override
+  String get checkCode => 'Vérifier le code';
+
+  @override
+  String get inviteValidity => 'Valable une fois, pendant 24 heures';
+
+  @override
+  String get pasteStep1 =>
+      'Demandez le lien à l’autre personne, là où vous discutez déjà.';
+
+  @override
+  String get pasteStep2 =>
+      'Collez-le ici. Chirp la cherche sur le réseau local, ou sur internet s’il est activé.';
+
+  @override
+  String get pasteStep3 =>
+      'Le contact arrive non vérifié : vérifiez le code de sécurité en vous voyant.';
+
+  @override
+  String get pasteTip =>
+      'Le lien ne sert qu’une fois et expire en 24 heures. Ne le laissez pas en public.';
 }

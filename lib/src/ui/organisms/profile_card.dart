@@ -5,7 +5,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
-import '../atoms/identity_avatar.dart';
+import '../atoms/reach_avatar.dart';
 import '../molecules/fingerprint_text.dart';
 
 class ProfileCard extends StatelessWidget {
@@ -18,47 +18,89 @@ class ProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IdentityAvatar(seed: profile.avatarSeed, size: 88),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    profile.displayName,
-                    style: theme.textTheme.titleLarge,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
+      clipBehavior: Clip.antiAlias,
+      child: DecoratedBox(
+        // Um degradê do tom primário para a superfície: o "cartão de visita".
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [scheme.primaryContainer, scheme.surfaceContainerLow],
+            stops: const [0, 0.7],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ReachAvatar(seed: profile.avatarSeed, size: 104),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      profile.displayName,
+                      style: theme.textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
+                  ),
+                  if (onRename != null)
+                    IconButton(
+                      tooltip: l10n.renameTooltip,
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: onRename,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.fingerprint,
+                            size: 20,
+                            color: scheme.tertiary,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              l10n.profileKeyLabel,
+                              style: theme.textTheme.labelLarge,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      FingerprintText(fingerprint: profile.fingerprint),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.profileKeyHelp,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-                if (onRename != null)
-                  IconButton(
-                    tooltip: l10n.renameTooltip,
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: onRename,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(l10n.profileKeyLabel, style: theme.textTheme.labelLarge),
-            const SizedBox(height: 4),
-            FingerprintText(fingerprint: profile.fingerprint),
-            const SizedBox(height: 8),
-            Text(
-              l10n.profileKeyHelp,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

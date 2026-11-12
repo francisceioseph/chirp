@@ -143,6 +143,7 @@ class MessageBubble extends StatelessWidget {
           if (file != null && file.voice && file.state == FileState.done)
             VoiceNote(
               color: foreground,
+              seed: message.id,
               duration: voiceDuration,
               position: voicePosition,
               onPlay: onPlay,
@@ -282,27 +283,43 @@ class MessageBubble extends StatelessWidget {
         child: GestureDetector(
           onLongPress: onOptions,
           onSecondaryTap: onOptions,
+          // Uma pílula no meio da conversa, como o "chamar atenção" do MSN.
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.vibration,
-                  size: 18,
-                  color: theme.colorScheme.primary,
+            child: Center(
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: theme.colorScheme.tertiaryContainer,
+                  shape: const StadiumBorder(),
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    '$text · $time',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.vibration,
+                        size: 18,
+                        color: theme.colorScheme.onTertiaryContainer,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '$text · $time',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onTertiaryContainer,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ),

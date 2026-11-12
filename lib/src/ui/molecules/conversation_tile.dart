@@ -6,7 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
-import '../atoms/identity_avatar.dart';
+import '../atoms/reach_avatar.dart';
 import '../atoms/message_status_icon.dart';
 import '../notification_text.dart';
 import '../time_format.dart';
@@ -91,41 +91,84 @@ class ConversationTile extends StatelessWidget {
       );
     }
 
-    return ListTile(
-      selected: selected,
-      selectedTileColor: scheme.secondaryContainer,
-      selectedColor: scheme.onSecondaryContainer,
-      leading: IdentityAvatar(seed: contact.avatarSeed, size: 40),
-      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: subtitle,
-      trailing: last == null && unread == 0
-          ? null
-          : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (last != null)
-                  Text(
-                    messageTime(context, last.receivedAt, now: now),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: unread > 0 ? scheme.primary : null,
-                    ),
-                  ),
-                if (unread > 0) ...[
-                  const SizedBox(height: 4),
-                  Semantics(
-                    label: l10n.unreadCount(unread),
-                    excludeSemantics: true,
-                    child: Badge.count(
-                      count: unread,
-                      backgroundColor: scheme.primary,
-                      textColor: scheme.onPrimary,
-                    ),
-                  ),
-                ],
-              ],
+    final time = last == null
+        ? null
+        : Text(
+            messageTime(context, last.receivedAt, now: now),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: unread > 0 ? scheme.primary : scheme.onSurfaceVariant,
+              fontWeight: unread > 0 ? FontWeight.w800 : FontWeight.w600,
             ),
-      onTap: onTap,
+          );
+    // Só quem já se sabe fora de alcance; logo ao abrir, ninguém foi tentado ainda.
+    final out = contact.reach == ContactReach.unreachable;
+    return Opacity(
+      // Fora de alcance, a linha fica mais apagada, como os contatos offline do MSN.
+      opacity: out && !selected ? 0.78 : 1,
+      child: ListTile(
+        selected: selected,
+        selectedTileColor: scheme.secondaryContainer,
+        selectedColor: scheme.onSecondaryContainer,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        leading: ReachAvatar(
+          seed: contact.avatarSeed,
+          reach: contact.reach,
+          size: 52,
+        ),
+        title: Row(
+          children: [
+            Flexible(
+              flex: 3,
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: unread > 0 ? FontWeight.w800 : FontWeight.w700,
+                ),
+              ),
+            ),
+            if (contact.verified) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.verified_user,
+                size: 16,
+                color: scheme.tertiary,
+                semanticLabel: l10n.contactVerified,
+              ),
+            ],
+            const SizedBox(width: 8),
+            // A hora encolhe antes do nome, numa janela estreita.
+            Expanded(
+              flex: 2,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: time ?? const SizedBox.shrink(),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Expanded(child: subtitle),
+            if (unread > 0) ...[
+              const SizedBox(width: 8),
+              Semantics(
+                label: l10n.unreadCount(unread),
+                excludeSemantics: true,
+                child: Badge.count(
+                  count: unread,
+                  backgroundColor: scheme.primary,
+                  textColor: scheme.onPrimary,
+                ),
+              ),
+            ],
+          ],
+        ),
+        onTap: onTap,
+      ),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../../l10n/l10n.dart';
 import '../../application/startup_controller.dart';
 import '../atoms/panel_text.dart';
+import '../atoms/state_icon.dart';
 import '../templates/centered_panel.dart';
 
 class ProblemPage extends StatelessWidget {
@@ -26,7 +27,6 @@ class ProblemPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     final (title, body) = switch (problem) {
       StartupProblem.coreMissing => (
         l10n.coreUnavailable,
@@ -56,7 +56,15 @@ class ProblemPage extends StatelessWidget {
     };
     return CenteredPanel(
       children: [
-        Icon(Icons.lock_clock_outlined, size: 56, color: scheme.error),
+        Center(
+          child: StateIcon(switch (problem) {
+            StartupProblem.keyLost => Icons.key_off_outlined,
+            StartupProblem.vaultUnavailable =>
+              Icons.enhanced_encryption_outlined,
+            StartupProblem.newerStore => Icons.update,
+            _ => Icons.error_outline,
+          }, tone: StateTone.error),
+        ),
         const SizedBox(height: 24),
         PanelTitle(title),
         const SizedBox(height: 12),

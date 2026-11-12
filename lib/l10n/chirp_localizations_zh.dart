@@ -159,10 +159,10 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String get addContact => '添加联系人';
 
   @override
-  String get contactsEmptyTitle => '还没有联系人';
+  String get contactsEmptyTitle => '这里还没有人';
 
   @override
-  String get contactsEmptyBody => '把你的二维码给附近的人看，或者粘贴别人发给你的邀请。在同一个网络里，不需要互联网。';
+  String get contactsEmptyBody => '想聊天，就互换邀请。消息加密后直接从一台设备发到另一台，不经过任何服务器。';
 
   @override
   String get contactPending => '正在等待另一台设备';
@@ -341,9 +341,6 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get react => '回应';
-
-  @override
-  String get conversationEmpty => '还没有消息。打个招呼吧！';
 
   @override
   String get contactDetails => '联系人详情';
@@ -717,4 +714,76 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
 
   @override
   String get microphoneDenied => 'Psito Chirp 需要麦克风才能录音。你可以在系统设置中允许。';
+
+  @override
+  String get emptyShowCode => '显示我的二维码';
+
+  @override
+  String get emptyShowCodeBody => '在一起？让对方扫描二维码。这是最安全的方式：你们一开始就已验证。';
+
+  @override
+  String get emptyUseLink => '使用邀请链接';
+
+  @override
+  String get emptyUseLinkBody => '相隔很远？用任何方式发送你的链接，或粘贴收到的链接。只能用一次，24 小时内有效。';
+
+  @override
+  String get emptyPromise => '无需账号，无需手机号，没有日志。';
+
+  @override
+  String get contactsWillAppear => '你的联系人会显示在这里';
+
+  @override
+  String get filterAll => '全部';
+
+  @override
+  String get filterUnread => '未读';
+
+  @override
+  String get filterVerified => '已验证';
+
+  @override
+  String get filterEmpty => '此筛选下没有内容。';
+
+  @override
+  String groupReachable(int count) {
+    return '可联系 · $count';
+  }
+
+  @override
+  String groupUnreachable(int count) {
+    return '无法联系 · $count';
+  }
+
+  @override
+  String sayHi(String name) {
+    return '跟 $name 打个招呼';
+  }
+
+  @override
+  String get sayHiUnverified => '你们还没有核对安全码。可以聊天，但见面时请核对一下。';
+
+  @override
+  String get e2eVerified => '端到端加密。你们已当面核对过安全码。';
+
+  @override
+  String get e2eUnverified => '端到端加密。见面时请核对安全码。';
+
+  @override
+  String get checkCode => '核对安全码';
+
+  @override
+  String get inviteValidity => '仅可使用一次，24 小时内有效';
+
+  @override
+  String get pasteStep1 => '通过你们平时聊天的方式，向对方要链接。';
+
+  @override
+  String get pasteStep2 => '粘贴到这里。Chirp 会在局域网中寻找对方，开启互联网后也会在互联网上寻找。';
+
+  @override
+  String get pasteStep3 => '对方会显示为未验证：见面时请核对安全码。';
+
+  @override
+  String get pasteTip => '链接只能用一次，24 小时后失效。不要放在公开的地方。';
 }

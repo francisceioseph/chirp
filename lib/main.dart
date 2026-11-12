@@ -2,6 +2,8 @@
 //
 // O Chirp sozinho: abre o núcleo em Rust e entrega ao ChirpApp, com o cofre do
 // sistema. Os testes montam o ChirpApp com falsos, sem a biblioteca nativa.
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'chirp_app.dart';
@@ -15,6 +17,12 @@ import 'src/platform/system_accent.dart';
 Future<void> main(List<String> args) async {
   silenceLogsInRelease();
   WidgetsFlutterBinding.ensureInitialized();
+  // A licença da Urbanist, que vai empacotada, na tela de licenças.
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(const [
+      'Urbanist',
+    ], await rootBundle.loadString('assets/fonts/OFL.txt'));
+  });
   runApp(
     ChirpApp(
       core: await BridgeCore.open(),

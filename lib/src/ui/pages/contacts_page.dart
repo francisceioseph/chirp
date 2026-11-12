@@ -22,13 +22,13 @@ import '../../core/chirp_core.dart';
 import '../../platform/background.dart';
 import '../../platform/notifier.dart';
 import '../atoms/chirp_app_bar.dart';
-import '../atoms/identity_avatar.dart';
+import '../atoms/reach_avatar.dart';
 import '../atoms/panel_text.dart';
 import '../failure_text.dart';
 import '../molecules/conversation_tile.dart';
+import '../organisms/empty_home.dart';
 import '../organisms/background_card.dart';
 import '../notification_text.dart';
-import '../templates/centered_panel.dart';
 import '../templates/shell_template.dart';
 import 'add_contact_page.dart';
 import 'contact_page.dart';
@@ -57,6 +57,9 @@ class _ContactsPageState extends State<ContactsPage> {
 
   /// O painel do contato aberto (com três colunas).
   bool _details = false;
+
+  /// O filtro da lista: todas, só as não lidas, só os verificados.
+  _Filter _filter = _Filter.all;
 
   ContactsController get _controller => widget.controller;
 
@@ -168,11 +171,12 @@ class _ContactsPageState extends State<ContactsPage> {
   int _columns(BuildContext context) =>
       ShellTemplate.columnsFor(MediaQuery.sizeOf(context).width);
 
-  void _openAdd() {
+  void _openAdd({bool paste = false}) {
     if (_controller.networkFailure != null) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => AddContactPage(controller: _controller),
+        builder: (_) =>
+            AddContactPage(controller: _controller, startOnPaste: paste),
       ),
     );
   }
@@ -248,6 +252,7 @@ class _ContactsPageState extends State<ContactsPage> {
               list: _list(context),
               placeholder: _Placeholder(
                 empty: _controller.conversations.isEmpty,
+                emptyHome: _emptyHome(),
               ),
               conversation: selected == null
                   ? null
@@ -274,15 +279,135 @@ class _ContactsPageState extends State<ContactsPage> {
     );
   }
 
+  Widget _emptyHome() => EmptyHome(
+    onShowCode: _controller.networkFailure == null ? _openAdd : null,
+    onUseLink: _controller.networkFailure == null
+        ? () => _openAdd(paste: true)
+        : null,
+  );
+
   Widget _list(BuildContext context) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final conversations = _controller.conversations;
     final networkFailure = _controller.networkFailure;
     final top = ChirpAppBar.topInset(context);
+    final wide = _columns(context) > 1;
+    final shown = [
+      for (final c in conversations)
+        if (switch (_filter) {
+          _Filter.all => true,
+          _Filter.unread => c.unread > 0,
+          _Filter.verified => c.contact.verified,
+        })
+          c,
+    ];
+    // Em grupos só quando há gente dos dois lados, como os "Conectados" do MSN.
+    final reachable = [
+      for (final c in shown)
+        if (isReachable(c.contact.reach)) c,
+    ];
+    final others = [
+      for (final c in shown)
+        if (!isReachable(c.contact.reach)) c,
+    ];
+    // E só quando o alcance de todos já se sabe (logo ao abrir, ninguém foi tentado).
+    final grouped =
+        reachable.isNotEmpty &&
+        others.isNotEmpty &&
+        others.every((c) => c.contact.reach == ContactReach.unreachable);
+    Widget tile(Conversation conversation) {
+      final contact = conversation.contact;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: ConversationTile(
+          key: ValueKey(contact.id),
+          conversation: conversation,
+          typing: _controller.isTyping(contact.id),
+          selected: contact.id == _selected,
+          onTap: () => _openConversation(contact.id),
+        ),
+      );
+    }
+
+    Widget header(String text) => Semantics(
+      header: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 4),
+        child: Text(
+          text,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+          ),
+        ),
+      ),
+    );
+
+    // Os filtros só aparecem quando a lista cresce (e ficam enquanto um vale).
+    final filters =
+        conversations.length >= filtersFrom || _filter != _Filter.all;
+    final items = <Widget>[
+      if (filters)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Row(
+            spacing: 8,
+            children: [
+              for (final (filter, label) in [
+                (_Filter.all, l10n.filterAll),
+                (_Filter.unread, l10n.filterUnread),
+                (_Filter.verified, l10n.filterVerified),
+              ])
+                FilterChip(
+                  label: Text(label),
+                  selected: _filter == filter,
+                  showCheckmark: true,
+                  onSelected: (_) => setState(() => _filter = filter),
+                ),
+            ],
+          ),
+        ),
+      if (shown.isEmpty)
+        Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            l10n.filterEmpty,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        )
+      else if (grouped) ...[
+        header(l10n.groupReachable(reachable.length)),
+        for (final c in reachable) tile(c),
+        header(l10n.groupUnreachable(others.length)),
+        for (final c in others) tile(c),
+      ] else
+        for (final c in shown) tile(c),
+    ];
+
     return Scaffold(
       extendBodyBehindAppBar: ChirpAppBar.extendsBody(context),
       appBar: ChirpAppBar(
-        title: Text(l10n.appName),
+        titleSpacing: 16,
+        title: Row(
+          children: [
+            ReachAvatar(seed: widget.profile.avatarSeed, size: 36),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                widget.profile.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
         actions: [
           if (conversations.isNotEmpty)
             IconButton(
@@ -293,7 +418,7 @@ class _ContactsPageState extends State<ContactsPage> {
           IconButton(
             tooltip: l10n.profileTitle,
             onPressed: widget.onOpenProfile,
-            icon: IdentityAvatar(seed: widget.profile.avatarSeed, size: 32),
+            icon: const Icon(Icons.settings_outlined),
           ),
           const SizedBox(width: 8),
         ],
@@ -310,6 +435,7 @@ class _ContactsPageState extends State<ContactsPage> {
           if (networkFailure != null) ...[
             SizedBox(height: top),
             MaterialBanner(
+              leading: Icon(Icons.cloud_off, color: scheme.error),
               content: Text(
                 '${l10n.networkUnavailable} '
                 '${failureText(l10n, networkFailure)}',
@@ -326,36 +452,27 @@ class _ContactsPageState extends State<ContactsPage> {
             child: !_controller.loaded
                 ? const Center(child: CircularProgressIndicator())
                 : conversations.isEmpty
-                ? CenteredPanel(
-                    children: [
-                      Icon(
-                        Icons.group_outlined,
-                        size: 56,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      PanelTitle(l10n.contactsEmptyTitle),
-                      const SizedBox(height: 8),
-                      PanelBody(l10n.contactsEmptyBody),
-                    ],
-                  )
-                : ListView.builder(
+                ? (wide
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              l10n.contactsWillAppear,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        )
+                      : _emptyHome())
+                : ListView(
                     // Com o aviso de rede em cima, a lista já começa embaixo dele.
                     padding: EdgeInsets.only(
                       top: networkFailure == null ? top : 0,
                       bottom: 88,
                     ),
-                    itemCount: conversations.length,
-                    itemBuilder: (context, i) {
-                      final contact = conversations[i].contact;
-                      return ConversationTile(
-                        key: ValueKey(contact.id),
-                        conversation: conversations[i],
-                        typing: _controller.isTyping(contact.id),
-                        selected: contact.id == _selected,
-                        onTap: () => _openConversation(contact.id),
-                      );
-                    },
+                    children: items,
                   ),
           ),
         ],
@@ -364,16 +481,23 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 }
 
+enum _Filter { all, unread, verified }
+
+/// A partir de quantas conversas a lista mostra os filtros.
+const filtersFrom = 4;
+
 /// O lado da conversa antes de escolher uma.
 class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.empty});
+  const _Placeholder({required this.empty, required this.emptyHome});
 
-  /// Sem conversas, o lado fica só com a marca (o texto de adicionar está na lista).
+  /// Sem conversas, o lado mostra o início vazio, com os jeitos de adicionar.
   final bool empty;
+  final Widget emptyHome;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    if (empty) return ColoredBox(color: scheme.surface, child: emptyHome);
     return ColoredBox(
       color: scheme.surfaceContainerLow,
       child: Center(

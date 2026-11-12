@@ -49,7 +49,7 @@ void main() {
 
   testWidgets('mandar uma mensagem, e ver entregue e lida', (tester) async {
     final (store, contact) = await chat(tester);
-    expect(find.text(l10n.conversationEmpty), findsOneWidget);
+    expect(find.text(l10n.sayHi('Pérola')), findsOneWidget);
     await write(tester, '  Oi, Pérola!  ');
     expect(store.sent.single.text, 'Oi, Pérola!');
     expect(find.text('Oi, Pérola!'), findsOneWidget);

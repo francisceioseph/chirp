@@ -6,7 +6,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
-import '../atoms/chirp_mark.dart';
+import '../atoms/state_icon.dart';
 import '../atoms/panel_text.dart';
 import '../failure_text.dart';
 import '../molecules/passphrase_field.dart';
@@ -81,7 +81,9 @@ class _PassphrasePageState extends State<PassphrasePage> {
             : failureText(l10n, failure, minPassphraseChars: widget.minChars));
     return CenteredPanel(
       children: [
-        const Center(child: ChirpMark(size: 72)),
+        const Center(
+          child: StateIcon(Icons.lock_outline, tone: StateTone.secondary),
+        ),
         const SizedBox(height: 24),
         PanelTitle(
           widget.creating

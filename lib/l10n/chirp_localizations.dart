@@ -387,13 +387,13 @@ abstract class ChirpLocalizations {
   /// No description provided for @contactsEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'No contacts yet'**
+  /// **'Nobody here yet'**
   String get contactsEmptyTitle;
 
   /// No description provided for @contactsEmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'Show your code to someone nearby, or paste the invite they sent you. On the same network, no internet needed.'**
+  /// **'To talk, swap invites. Messages go straight from one device to the other, encrypted, and never pass through a server.'**
   String get contactsEmptyBody;
 
   /// No description provided for @contactPending.
@@ -731,12 +731,6 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'React'**
   String get react;
-
-  /// No description provided for @conversationEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No messages yet. Say hi!'**
-  String get conversationEmpty;
 
   /// No description provided for @contactDetails.
   ///
@@ -1427,6 +1421,138 @@ abstract class ChirpLocalizations {
   /// In en, this message translates to:
   /// **'Psito Chirp needs the microphone to record. You can allow it in the system settings.'**
   String get microphoneDenied;
+
+  /// No description provided for @emptyShowCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Show my code'**
+  String get emptyShowCode;
+
+  /// No description provided for @emptyShowCodeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Together? The other person scans the QR. It\'s the safest way: you\'re verified from the start.'**
+  String get emptyShowCodeBody;
+
+  /// No description provided for @emptyUseLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an invite link'**
+  String get emptyUseLink;
+
+  /// No description provided for @emptyUseLinkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Far apart? Send your link however you like, or paste the one you got. It works once, for 24 hours.'**
+  String get emptyUseLinkBody;
+
+  /// No description provided for @emptyPromise.
+  ///
+  /// In en, this message translates to:
+  /// **'No account, no phone number, no logs.'**
+  String get emptyPromise;
+
+  /// No description provided for @contactsWillAppear.
+  ///
+  /// In en, this message translates to:
+  /// **'Your contacts show up here'**
+  String get contactsWillAppear;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get filterUnread;
+
+  /// No description provided for @filterVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get filterVerified;
+
+  /// No description provided for @filterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here with this filter.'**
+  String get filterEmpty;
+
+  /// No description provided for @groupReachable.
+  ///
+  /// In en, this message translates to:
+  /// **'IN REACH · {count}'**
+  String groupReachable(int count);
+
+  /// No description provided for @groupUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'OUT OF REACH · {count}'**
+  String groupUnreachable(int count);
+
+  /// No description provided for @sayHi.
+  ///
+  /// In en, this message translates to:
+  /// **'Say hi to {name}'**
+  String sayHi(String name);
+
+  /// No description provided for @sayHiUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t checked the safety code yet. You can talk, but check it when you meet.'**
+  String get sayHiUnverified;
+
+  /// No description provided for @e2eVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'End-to-end encrypted. You checked the safety code in person.'**
+  String get e2eVerified;
+
+  /// No description provided for @e2eUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'End-to-end encrypted. Check the safety code when you meet.'**
+  String get e2eUnverified;
+
+  /// No description provided for @checkCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Check code'**
+  String get checkCode;
+
+  /// No description provided for @inviteValidity.
+  ///
+  /// In en, this message translates to:
+  /// **'Works once, for 24 hours'**
+  String get inviteValidity;
+
+  /// No description provided for @pasteStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the other person for the link, wherever you already talk.'**
+  String get pasteStep1;
+
+  /// No description provided for @pasteStep2.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste it here. Chirp looks for them on the local network, or the internet if it\'s on.'**
+  String get pasteStep2;
+
+  /// No description provided for @pasteStep3.
+  ///
+  /// In en, this message translates to:
+  /// **'They come in as unverified: check the safety code when you meet.'**
+  String get pasteStep3;
+
+  /// No description provided for @pasteTip.
+  ///
+  /// In en, this message translates to:
+  /// **'The link works only once and expires in 24 hours. Don\'t leave it anywhere public.'**
+  String get pasteTip;
 }
 
 class _ChirpLocalizationsDelegate

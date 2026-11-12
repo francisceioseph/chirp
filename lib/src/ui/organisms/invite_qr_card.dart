@@ -43,10 +43,11 @@ class InviteQrCard extends StatelessWidget {
       children: [
         Center(
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: qrLight,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
             child: SizedBox.square(
               dimension: 200,
@@ -72,7 +73,27 @@ class InviteQrCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.timer_outlined,
+              size: 18,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                l10n.inviteValidity,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         Text(
           l10n.inviteQrHelp,
           style: theme.textTheme.bodyMedium?.copyWith(

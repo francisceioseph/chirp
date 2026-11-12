@@ -60,6 +60,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#Release}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\..\LICENSE"; DestDir: "{app}\licenses"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "..\..\SECURITY.md"; DestDir: "{app}\licenses"; Flags: ignoreversion
+Source: "..\..\assets\fonts\OFL.txt"; DestDir: "{app}\licenses"; DestName: "OFL-Urbanist.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; AppUserModelID: "{#AppModelId}"

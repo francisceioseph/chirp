@@ -26,5 +26,7 @@ cp "linux/packaging/$ID.desktop" "$ROOT/usr/share/applications/"
 cp "linux/packaging/$ID.metainfo.xml" "$ROOT/usr/share/metainfo/"
 cp assets/images/chirp_icon.svg "$ROOT/usr/share/icons/hicolor/scalable/apps/$ID.svg"
 cp LICENSE README.md SECURITY.md docs/AMEACAS.md "$ROOT/usr/share/doc/$NAME/"
+# A licença da fonte empacotada (a Urbanist, SIL OFL)
+cp assets/fonts/OFL.txt "$ROOT/usr/share/doc/$NAME/OFL-Urbanist.txt"
 # Os textos das licenças do que foi compilado, que o Flutter junta no bundle
 gunzip -c "$BUNDLE/data/flutter_assets/NOTICES.Z" > "$ROOT/usr/share/doc/$NAME/NOTICES"
