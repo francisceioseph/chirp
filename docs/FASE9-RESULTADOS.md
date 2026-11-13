@@ -26,7 +26,25 @@ O que a fase 9 do `docs/PLANO.md` (seção 13, com a 6.8) pediu, o que foi feito
 
 ### Falta (da parte 1)
 
-- **Apresentar os membros entre si**: hoje uma mensagem só chega a quem é contato de quem escreve. A parte 2: o admin repassa um convite de cada membro novo aos outros, pela sessão a dois, e cada par vira contato de grupo.
 - Reações, arquivos, notas de voz, chamar atenção, "digitando" e recibos de leitura no grupo.
 - A foto do grupo e mais de um admin.
 - Um admin que saiu e volta a ser adicionado pelo novo admin não aceita o grupo (o admin guardado com ele é ele mesmo).
+
+## Parte 2: apresentar os membros entre si
+
+### Feito
+
+- **Núcleo** (migração 15, o `GroupIntro`, conteúdo 22): de cada par de membros que não se conhecem, o de menor chave cria um convite e manda ao admin, que repassa ao outro; quem recebe confere que a chave do convite é a do membro e entra nele, pela rede ou pela caixa postal. O nó faz isso ao ligar, a cada 60 segundos e quando um grupo muda, e manda de novo um convite que não virou contato em 24 horas.
+- O contato que nasce assim fica fora da lista de conversas até alguém escrever a dois.
+- **App**: o membro que ainda não é contato aparece como "sendo apresentado pelo admin", e o texto do grupo diz como funciona, nos sete idiomas.
+
+### Conferido
+
+- Rust: só o de menor chave convida, e não de novo antes de um dia; o admin repassa entre membros e não para quem está fora do grupo, nem um convite que não é link do Chirp; e, de ponta a ponta com três nós de verdade, Ana faz um grupo com Bia e Caio, que não se conhecem: os dois viram contatos pelo convite repassado, ficam fora da lista de conversas, e a mensagem de Bia no grupo chega a Caio.
+
+### Falta (da parte 2)
+
+- Se o admin não é contato de um membro (depois que o admin de antes sai), esse membro não é apresentado.
+- Reações, arquivos, notas de voz, chamar atenção, "digitando" e recibos de leitura no grupo.
+- A foto do grupo e mais de um admin.
+- Um admin que saiu e volta a ser adicionado pelo novo admin não aceita o grupo.

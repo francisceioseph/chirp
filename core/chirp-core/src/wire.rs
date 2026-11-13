@@ -110,7 +110,7 @@ pub struct Content {
     pub message_id: Vec<u8>,
     #[prost(
         oneof = "ContentBody",
-        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 20, 21"
+        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 17, 18, 20, 21, 22"
     )]
     pub body: Option<ContentBody>,
     /// O relógio de quem manda, em milissegundos: só para mostrar.
@@ -176,6 +176,21 @@ pub enum ContentBody {
     /// Quem manda saiu do grupo.
     #[prost(message, tag = "21")]
     GroupLeave(GroupLeave),
+    /// Um convite para um membro que não é contato, pelo admin (fase 9, parte 2).
+    #[prost(message, tag = "22")]
+    GroupIntro(GroupIntro),
+}
+
+#[derive(Clone, PartialEq, Message)]
+pub struct GroupIntro {
+    #[prost(bytes = "vec", tag = "1")]
+    pub group_id: Vec<u8>,
+    /// Ao admin: para quem é o convite. Do admin: de quem é.
+    #[prost(bytes = "vec", tag = "2")]
+    pub member: Vec<u8>,
+    /// O link do convite (`chirp://invite#...`).
+    #[prost(string, tag = "3")]
+    pub invite: String,
 }
 
 #[derive(Clone, PartialEq, Message)]

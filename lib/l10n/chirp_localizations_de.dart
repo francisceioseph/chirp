@@ -974,7 +974,7 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
 
   @override
   String get groupHelp =>
-      'Jedes Mitglied bekommt deine Nachrichten verschlüsselt, direkt von deinem Gerät, ohne Server. Vorerst erreichen sie nur Mitglieder, die auch deine Kontakte sind.';
+      'Jedes Mitglied bekommt deine Nachrichten verschlüsselt, direkt von deinem Gerät, ohne Server. Mitglieder, die sich nicht kennen, werden über den Admin vorgestellt und sprechen dann direkt.';
 
   @override
   String get groupLabel => 'Gruppe';
@@ -999,7 +999,7 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
 
   @override
   String get groupNotConnected =>
-      'Nicht dein Kontakt: deine Nachrichten erreichen diese Person noch nicht';
+      'Wird über den Admin vorgestellt: deine Nachrichten erreichen diese Person, sobald das fertig ist';
 
   @override
   String get groupAddMembers => 'Mitglieder hinzufügen';

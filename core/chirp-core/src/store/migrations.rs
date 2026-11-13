@@ -221,6 +221,22 @@ const MIGRATIONS: &[&str] = &[
          PRIMARY KEY (group_ref, identity_key)
      );
      ALTER TABLE messages ADD COLUMN author BLOB;",
+    // 15: apresentar os membros de um grupo entre si (fase 9, parte 2). O contato que
+    // nasce assim fica fora da lista de conversas até alguém escrever a dois.
+    "ALTER TABLE contacts ADD COLUMN via_group INTEGER NOT NULL DEFAULT 0;
+     CREATE TABLE group_intros_out (
+         group_ref INTEGER NOT NULL REFERENCES groups (contact_id) ON DELETE CASCADE,
+         member    BLOB NOT NULL,
+         sent_at   INTEGER NOT NULL,
+         PRIMARY KEY (group_ref, member)
+     );
+     CREATE TABLE group_intros_in (
+         group_ref   INTEGER NOT NULL REFERENCES groups (contact_id) ON DELETE CASCADE,
+         member      BLOB NOT NULL,
+         invite      TEXT NOT NULL,
+         received_at INTEGER NOT NULL,
+         PRIMARY KEY (group_ref, member)
+     );",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

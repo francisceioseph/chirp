@@ -915,7 +915,7 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String get groupNoOneToAdd => '还没有可以添加的联系人。先添加联系人，再把他们拉进群组。';
 
   @override
-  String get groupHelp => '每位成员都会直接从你的设备收到加密的消息，不经过服务器。目前只有同时也是你联系人的成员能收到。';
+  String get groupHelp => '每位成员都会直接从你的设备收到加密的消息，不经过服务器。互不认识的成员会由管理员介绍，之后直接通信。';
 
   @override
   String get groupLabel => '群组';
@@ -938,7 +938,7 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String get groupAdmin => '管理员';
 
   @override
-  String get groupNotConnected => '不是你的联系人：你的消息暂时到不了对方';
+  String get groupNotConnected => '正在通过管理员介绍：完成后你的消息就能送达';
 
   @override
   String get groupAddMembers => '添加成员';

@@ -138,6 +138,8 @@ pub struct Node {
     files_dir: std::path::PathBuf,
     /// Acorda a leitura da caixa postal (ligou agora, um contato novo).
     mailbox_wake: tokio::sync::Notify,
+    /// Acorda as apresentações entre membros de grupos (um grupo mudou).
+    intro_wake: tokio::sync::Notify,
     /// Se a última leitura da caixa postal deu certo (nada: ainda não tentou).
     mailbox_ok: Mutex<Option<bool>>,
     /// O rádio Bluetooth, se ligado e se o sistema tem um.
@@ -351,6 +353,7 @@ impl Node {
             fetch,
             files_dir,
             mailbox_wake: tokio::sync::Notify::new(),
+            intro_wake: tokio::sync::Notify::new(),
             mailbox_ok: Mutex::new(None),
             radio,
             ble_failed: std::sync::atomic::AtomicBool::new(false),
@@ -364,6 +367,7 @@ impl Node {
         tokio::spawn(node.clone().download_loop(fetching));
         tokio::spawn(node.clone().mailbox_loop());
         tokio::spawn(node.clone().ble_loop());
+        tokio::spawn(node.clone().intro_loop());
         Ok(node)
     }
 
@@ -1488,6 +1492,74 @@ impl Node {
         self.mailbox_ok.lock().ok().and_then(|ok| *ok)
     }
 
+    /// Apresenta os membros dos grupos entre si (fase 9, parte 2), ao ligar, a cada
+    /// `MAILBOX_INTERVAL` e quando um grupo muda.
+    async fn intro_loop(self: Arc<Self>) {
+        let mut tick = tokio::time::interval(MAILBOX_INTERVAL);
+        loop {
+            tokio::select! {
+                _ = tick.tick() => {}
+                _ = self.intro_wake.notified() => {}
+            }
+            if self.endpoint.is_closed() {
+                return;
+            }
+            let _ = self.intro_round().await;
+        }
+    }
+
+    /// Manda ao admin um convite para cada membro que eu devo apresentar, e entra nos
+    /// convites que o admin repassou. Um convite cuja chave não é a do membro, ou que
+    /// o outro lado recusa, sai; um que não alcança fica para a próxima.
+    async fn intro_round(&self) -> CoreResult<()> {
+        let due = with_store(&self.store, |s| {
+            let me = session::me(s)?;
+            crate::groups::intros_due(s.conn(), &me.public())
+        })
+        .await?;
+        for (group, member) in due {
+            let invite = self.create_invite(InviteKind::Link).await?;
+            let link = invite.to_link();
+            let admin = with_store(&self.store, move |s| {
+                crate::groups::send_intro(s, group, &member, &link)
+            })
+            .await?;
+            self.flush(admin);
+        }
+        let pending = with_store(&self.store, |s| crate::groups::intros_pending(s.conn())).await?;
+        for (group, member, link) in pending {
+            let invite = match Invite::from_link(&link) {
+                Ok(invite) if invite.identity_key[..] == member[..] => invite,
+                _ => {
+                    with_store(&self.store, move |s| {
+                        crate::groups::drop_intro(s.conn(), group, &member)
+                    })
+                    .await?;
+                    continue;
+                }
+            };
+            let joined = match self.join(invite, false).await {
+                Ok(contact) => Some(contact.id),
+                // Não alcançou: fica para a próxima volta.
+                Err(CoreError::Unreachable) => continue,
+                // Recusado, já contato, do próprio aparelho: não adianta tentar de novo.
+                Err(_) => None,
+            };
+            with_store(&self.store, move |s| {
+                crate::groups::drop_intro(s.conn(), group, &member)?;
+                match joined {
+                    Some(id) => crate::groups::mark_via_group(s.conn(), id),
+                    None => Ok(()),
+                }
+            })
+            .await?;
+            if let Some(id) = joined {
+                self.emit(NodeEvent::ContactChanged(id));
+            }
+        }
+        Ok(())
+    }
+
     async fn mailbox_loop(self: Arc<Self>) {
         let mut tick = tokio::time::interval(MAILBOX_INTERVAL);
         loop {
@@ -1641,7 +1713,11 @@ impl Node {
                 self.fetch();
             }
             Effect::Typing(id) => self.emit(NodeEvent::Typing(id)),
-            Effect::Contact(id) => self.emit(NodeEvent::ContactChanged(id)),
+            Effect::Contact(id) => {
+                self.emit(NodeEvent::ContactChanged(id));
+                // Pode ser um grupo novo, ou mudado: talvez haja membros a apresentar.
+                self.intro_wake.notify_one();
+            }
             Effect::Nothing => {}
         }
     }
@@ -2472,6 +2548,81 @@ mod tests {
         assert_eq!(texts(&alice_store, bob_at_alice).len(), 1);
         alice.close().await;
         bob.close().await;
+    }
+
+    /// Ana conhece Bia e Caio, que não se conhecem. Ana faz um grupo com os dois: o
+    /// grupo apresenta Bia e Caio (um convite repassado por Ana), e a mensagem de Bia
+    /// chega a Caio. O contato novo fica fora da lista de conversas.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn a_group_introduces_members_who_did_not_know_each_other() {
+        use crate::messages;
+        let (ana_store, bia_store, caio_store) = (device("Ana"), device("Bia"), device("Caio"));
+        let ana = Node::start_test(ana_store.clone()).await.unwrap();
+        let bia = Node::start_test(bia_store.clone()).await.unwrap();
+        let caio = Node::start_test(caio_store.clone()).await.unwrap();
+        for other in [&bia, &caio] {
+            let invite = ana.create_invite(InviteKind::Qr).await.unwrap();
+            other.join(invite, true).await.unwrap();
+        }
+        until("Ana knows both", || {
+            contacts(&ana_store)
+                .iter()
+                .filter(|c| c.state == ContactState::Established)
+                .count()
+                == 2
+        })
+        .await;
+        let ids: Vec<i64> = contacts(&ana_store).iter().map(|c| c.id).collect();
+        let group = crate::groups::create(&mut ana_store.lock().unwrap(), "Bando", &ids).unwrap();
+        for id in &ids {
+            ana.flush(*id);
+        }
+        let key =
+            |store: &SharedStore| crate::session::me(&store.lock().unwrap()).unwrap().public();
+        let (bia_key, caio_key) = (key(&bia_store), key(&caio_store));
+        let knows = |store: &SharedStore, other: &[u8]| {
+            crate::contacts::by_identity(store.lock().unwrap().conn(), other)
+                .unwrap()
+                .is_some_and(|c| c.state == ContactState::Established)
+        };
+        until("Bia and Caio meet through the group", || {
+            knows(&bia_store, &caio_key) && knows(&caio_store, &bia_key)
+        })
+        .await;
+        // Fora da lista de conversas: só o grupo e Ana aparecem.
+        for store in [&bia_store, &caio_store] {
+            let listed = messages::conversations(store.lock().unwrap().conn()).unwrap();
+            assert_eq!(listed.len(), 2, "Ana and the group");
+        }
+
+        let bia_group: i64 = bia_store
+            .lock()
+            .unwrap()
+            .conn()
+            .query_row("SELECT contact_id FROM groups", [], |r| r.get(0))
+            .unwrap();
+        messages::send_text(&mut bia_store.lock().unwrap(), bia_group, "oi, Caio", None).unwrap();
+        let caio_at_bia = crate::contacts::by_identity(bia_store.lock().unwrap().conn(), &caio_key)
+            .unwrap()
+            .unwrap()
+            .id;
+        bia.flush(caio_at_bia);
+        until("Caio gets Bia's group message", || {
+            let conn = caio_store.lock().unwrap();
+            conn.conn()
+                .query_row(
+                    "SELECT count(*) FROM messages WHERE body = 'oi, Caio' AND author = ?1",
+                    [&bia_key],
+                    |r| r.get::<_, i64>(0),
+                )
+                .unwrap()
+                == 1
+        })
+        .await;
+        let _ = group;
+        for node in [ana, bia, caio] {
+            node.close().await;
+        }
     }
 
     /// Os dois ficam sem caminho pela rede (sem mDNS e com um endereço que não serve)

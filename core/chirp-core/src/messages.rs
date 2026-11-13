@@ -202,6 +202,15 @@ pub struct Conversation {
 pub fn conversations(conn: &Connection) -> CoreResult<Vec<Conversation>> {
     let mut out = Vec::new();
     for contact in contacts::list(conn)? {
+        // Entrou por um convite de grupo: o meu (repassado pelo admin) ou o de outro.
+        let via_group: bool = conn.query_row(
+            "SELECT c.via_group OR EXISTS (
+                    SELECT 1 FROM group_intros_out o
+                     WHERE o.member = c.identity_key AND c.created_at >= o.sent_at)
+               FROM contacts c WHERE c.id = ?1",
+            [contact.id],
+            |r| r.get(0),
+        )?;
         let last = conn
             .query_row(
                 &format!(
@@ -217,6 +226,10 @@ pub fn conversations(conn: &Connection) -> CoreResult<Vec<Conversation>> {
             [contact.id],
             |r| r.get(0),
         )?;
+        // Um contato que só existe por um grupo aparece quando alguém escreve a dois.
+        if via_group && last.is_none() {
+            continue;
+        }
         out.push(Conversation {
             contact,
             last,
@@ -1111,7 +1124,7 @@ pub fn receive_from(
                 Some(ContentBody::Text(_) | ContentBody::Nudge(_) | ContentBody::File(_))
             )
             .then(|| content.message_id.clone());
-            (apply(&tx, &me.public(), contact, content)?, shown)
+            (apply(&tx, &me, contact, content)?, shown)
         }
         _ => (Effect::Nothing, None),
     };
@@ -1133,12 +1146,8 @@ pub(crate) fn advance_lamport(conn: &Connection, id: i64, theirs: u64) -> CoreRe
     Ok(lamport)
 }
 
-fn apply(
-    conn: &Connection,
-    me_key: &[u8],
-    contact: &Contact,
-    content: Content,
-) -> CoreResult<Effect> {
+fn apply(conn: &Connection, me: &Me, contact: &Contact, content: Content) -> CoreResult<Effect> {
+    let me_key = &me.public()[..];
     if !content.group.is_empty() {
         return crate::groups::apply_message(conn, contact, content);
     }
@@ -1147,7 +1156,7 @@ fn apply(
     };
     let lamport = match body {
         // O grupo tem o relógio dele; o da conversa a dois não muda.
-        ContentBody::Group(_) | ContentBody::GroupLeave(_) => 0,
+        ContentBody::Group(_) | ContentBody::GroupLeave(_) | ContentBody::GroupIntro(_) => 0,
         _ => advance_lamport(conn, contact.id, content.lamport)?,
     };
     let sent_at = content.sent_at.min(i64::MAX as u64) as i64;
@@ -1389,6 +1398,7 @@ fn apply(
         }
         ContentBody::Group(update) => crate::groups::apply_update(conn, me_key, contact, update)?,
         ContentBody::GroupLeave(leave) => crate::groups::apply_leave(conn, me_key, contact, leave)?,
+        ContentBody::GroupIntro(intro) => crate::groups::apply_intro(conn, me, contact, intro)?,
         // O aperto de mão já passou.
         ContentBody::Hello(_) | ContentBody::Welcome(_) => Effect::Nothing,
     })

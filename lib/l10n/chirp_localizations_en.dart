@@ -967,7 +967,7 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
 
   @override
   String get groupHelp =>
-      'Each member gets your messages encrypted, straight from your device, with no server. For now they reach only members who are also your contacts.';
+      'Each member gets your messages encrypted, straight from your device, with no server. Members who do not know each other are introduced through the admin, and then talk directly.';
 
   @override
   String get groupLabel => 'Group';
@@ -992,7 +992,7 @@ class ChirpLocalizationsEn extends ChirpLocalizations {
 
   @override
   String get groupNotConnected =>
-      'Not your contact: your messages do not reach them yet';
+      'Being introduced through the admin: your messages reach them once that is done';
 
   @override
   String get groupAddMembers => 'Add members';

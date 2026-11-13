@@ -373,3 +373,81 @@ fn strange_updates_are_ignored() {
     }
     assert!(bia.group().is_none());
 }
+
+#[test]
+fn the_admin_passes_an_invite_between_members_who_do_not_know_each_other() {
+    let (mut ana, mut bia, mut caio) = (
+        Device::new("Ana", 1),
+        Device::new("Bia", 2),
+        Device::new("Caio", 3),
+    );
+    befriend(&mut ana, &mut bia);
+    befriend(&mut ana, &mut caio);
+    let ids = [ana.contact(&bia), ana.contact(&caio)];
+    create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+
+    // Só o de menor chave convida; a admin, que já conhece os dois, ninguém.
+    let (small, big) = if bia.key() < caio.key() {
+        (&mut bia, &mut caio)
+    } else {
+        (&mut caio, &mut bia)
+    };
+    assert!(intros_due(big.store.conn(), &big.key()).unwrap().is_empty());
+    assert!(intros_due(ana.store.conn(), &ana.key()).unwrap().is_empty());
+    let due = intros_due(small.store.conn(), &small.key()).unwrap();
+    assert_eq!(due.len(), 1);
+    let (group, member) = due[0].clone();
+    assert_eq!(member, big.key());
+    send_intro(&mut small.store, group, &member, "chirp://invite#AAAA").unwrap();
+    // Mandado: não vence de novo antes de um dia.
+    assert!(intros_due(small.store.conn(), &small.key())
+        .unwrap()
+        .is_empty());
+    post(&mut [&mut ana, &mut *small, &mut *big]);
+
+    let pending = intros_pending(big.store.conn()).unwrap();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0].1, small.key());
+    assert_eq!(pending[0].2, "chirp://invite#AAAA");
+    assert!(intros_pending(small.store.conn()).unwrap().is_empty());
+}
+
+#[test]
+fn the_admin_does_not_pass_invites_for_strangers_or_odd_links() {
+    let (mut ana, mut bia, mut caio) = three();
+    let ids = [ana.contact(&bia)];
+    let group = create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    // Bia pede um convite para Caio, que não está no grupo: Ana não repassa.
+    let bia_group = bia.group().unwrap().id;
+    send_intro(
+        &mut bia.store,
+        bia_group,
+        &caio.key(),
+        "chirp://invite#AAAA",
+    )
+    .unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    assert!(intros_pending(caio.store.conn()).unwrap().is_empty());
+
+    // Um convite que não é link do Chirp não passa.
+    let caio_at_ana = ana.contact(&caio);
+    add(&mut ana.store, group.id, &[caio_at_ana]).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let sender = contacts::by_identity(ana.store.conn(), &bia.key())
+        .unwrap()
+        .unwrap();
+    let intro = wire::GroupIntro {
+        group_id: get(ana.store.conn(), &ana.key(), group.id)
+            .unwrap()
+            .group_id,
+        member: caio.key(),
+        invite: "https://example.org".into(),
+    };
+    let ana_me = session::me(&ana.store).unwrap();
+    assert_eq!(
+        apply_intro(ana.store.conn(), &ana_me, &sender, intro).unwrap(),
+        Effect::Nothing
+    );
+}

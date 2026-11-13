@@ -620,5 +620,175 @@ pub(crate) fn apply_message(
     Ok(Effect::Messages(id))
 }
 
+// ---------------------------------------------------------------- apresentar os membros
+
+/// Quanto esperar antes de mandar de novo um convite que não virou contato (o convite
+/// vence em 24 horas).
+pub const INTRO_AGAIN_SECS: i64 = 24 * 60 * 60;
+
+fn now_secs() -> i64 {
+    messages::now_ms() / 1000
+}
+
+/// Os membros a quem eu devo um convite: não são meus contatos, a minha chave é a
+/// menor do par (só um dos dois convida), e o admin, que repassa, é meu contato.
+/// Devolve o grupo e o membro.
+pub(crate) fn intros_due(conn: &Connection, me_key: &[u8]) -> CoreResult<Vec<(i64, Vec<u8>)>> {
+    let mut stmt = conn.prepare(
+        "SELECT g.contact_id, g.admin FROM groups g WHERE g.active = 1 AND g.admin != ?1",
+    )?;
+    let groups: Vec<(i64, Vec<u8>)> = stmt
+        .query_map([me_key], |r| Ok((r.get(0)?, r.get(1)?)))?
+        .collect::<rusqlite::Result<_>>()?;
+    let mut out = Vec::new();
+    for (id, admin) in groups {
+        if established(conn, &admin)?.is_none() {
+            continue;
+        }
+        for (member, _, _) in stored_members(conn, id)? {
+            if member.as_slice() <= me_key || established(conn, &member)?.is_some() {
+                continue;
+            }
+            let sent: Option<i64> = conn
+                .query_row(
+                    "SELECT sent_at FROM group_intros_out WHERE group_ref = ?1 AND member = ?2",
+                    (id, &member),
+                    |r| r.get(0),
+                )
+                .optional()?;
+            if sent.is_none_or(|at| now_secs() - at >= INTRO_AGAIN_SECS) {
+                out.push((id, member));
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Manda ao admin o convite para o membro. Devolve o contato do admin, para entregar.
+pub(crate) fn send_intro(
+    store: &mut Store,
+    id: i64,
+    member: &[u8],
+    invite: &str,
+) -> CoreResult<i64> {
+    let me = session::me(store)?;
+    let tx = store.conn_mut().transaction()?;
+    let row = row(&tx, id)?.ok_or(CoreError::UnknownContact)?;
+    let admin = established(&tx, &row.admin)?.ok_or(CoreError::UnknownContact)?;
+    send_to(
+        &tx,
+        &me,
+        std::slice::from_ref(&row.admin),
+        &[],
+        ContentBody::GroupIntro(wire::GroupIntro {
+            group_id: row.group_id,
+            member: member.to_vec(),
+            invite: invite.to_owned(),
+        }),
+        0,
+        messages::now_ms(),
+    )?;
+    tx.execute(
+        "INSERT OR REPLACE INTO group_intros_out (group_ref, member, sent_at) VALUES (?1, ?2, ?3)",
+        (id, member, now_secs()),
+    )?;
+    tx.commit()?;
+    Ok(admin.id)
+}
+
+fn is_member(conn: &Connection, id: i64, key: &[u8]) -> CoreResult<bool> {
+    Ok(conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM group_members WHERE group_ref = ?1 AND identity_key = ?2)",
+        (id, key),
+        |r| r.get(0),
+    )?)
+}
+
+/// Um convite entre membros. Ao admin: repassa ao membro, que é contato dele, dizendo
+/// de quem é. Do admin: guarda para o nó usar (`intros_pending`).
+pub(crate) fn apply_intro(
+    conn: &Connection,
+    me: &Me,
+    sender: &Contact,
+    intro: wire::GroupIntro,
+) -> CoreResult<Effect> {
+    let me_key = me.public();
+    let Some(id) = by_group_id(conn, &intro.group_id)? else {
+        return Ok(Effect::Nothing);
+    };
+    let row = row(conn, id)?.ok_or(CoreError::Storage)?;
+    if !row.active
+        || intro.invite.len() > 1024
+        || !intro.invite.starts_with(crate::invite::LINK_PREFIX)
+    {
+        return Ok(Effect::Nothing);
+    }
+    if row.admin == me_key {
+        // Repassar: quem pede e para quem são membros, e o outro é meu contato.
+        if !is_member(conn, id, &sender.identity_key)? || !is_member(conn, id, &intro.member)? {
+            return Ok(Effect::Nothing);
+        }
+        let Some(to) = established(conn, &intro.member)? else {
+            return Ok(Effect::Nothing);
+        };
+        send_to(
+            conn,
+            me,
+            std::slice::from_ref(&to.identity_key),
+            &[],
+            ContentBody::GroupIntro(wire::GroupIntro {
+                group_id: row.group_id,
+                member: sender.identity_key.clone(),
+                invite: intro.invite,
+            }),
+            0,
+            messages::now_ms(),
+        )?;
+        // O nó entrega o que ficou na caixa de saída na próxima volta.
+        return Ok(Effect::Nothing);
+    }
+    // Do admin, de um membro que não é meu contato.
+    if sender.identity_key != row.admin
+        || !is_member(conn, id, &intro.member)?
+        || established(conn, &intro.member)?.is_some()
+    {
+        return Ok(Effect::Nothing);
+    }
+    conn.execute(
+        "INSERT OR REPLACE INTO group_intros_in (group_ref, member, invite, received_at)
+         VALUES (?1, ?2, ?3, ?4)",
+        (id, &intro.member, &intro.invite, now_secs()),
+    )?;
+    Ok(Effect::Contact(id))
+}
+
+/// Os convites que o admin repassou e ainda não viraram contato: o grupo, o membro e
+/// o link.
+pub(crate) fn intros_pending(conn: &Connection) -> CoreResult<Vec<(i64, Vec<u8>, String)>> {
+    let mut stmt =
+        conn.prepare("SELECT group_ref, member, invite FROM group_intros_in ORDER BY received_at")?;
+    let rows = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+pub(crate) fn drop_intro(conn: &Connection, id: i64, member: &[u8]) -> CoreResult<()> {
+    conn.execute(
+        "DELETE FROM group_intros_in WHERE group_ref = ?1 AND member = ?2",
+        (id, member),
+    )?;
+    Ok(())
+}
+
+/// O contato em que entrei por um convite de grupo fica marcado: fora da lista de
+/// conversas até alguém escrever a dois. (Do lado de quem convidou, o
+/// `messages::conversations` reconhece pelo `group_intros_out`.)
+pub(crate) fn mark_via_group(conn: &Connection, contact_id: i64) -> CoreResult<()> {
+    conn.execute(
+        "UPDATE contacts SET via_group = 1 WHERE id = ?1",
+        [contact_id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests;

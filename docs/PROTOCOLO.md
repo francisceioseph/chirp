@@ -278,13 +278,15 @@ GroupUpdate { bytes group_id = 1 (16); string name = 2; uint64 version = 3;
               repeated GroupMember members = 5 (todos, o admin e quem recebe também); }
 GroupMember { bytes identity_key = 1 (33); bytes endpoint_id = 2 (32); string name = 3; }
 GroupLeave  { bytes group_id = 1; }
+GroupIntro  { bytes group_id = 1; bytes member = 2; string invite = 3 (o link, até 1024); }
 ```
 
 - **Sem Sender Keys**: cada mensagem do grupo vai a cada membro pela sessão a dois, com o mesmo `message_id` e o `Content.group` preenchido. Sem servidor, cada membro recebe a sua cópia de qualquer jeito; as Sender Keys só economizariam a cifra, e perderiam a recuperação do Double Ratchet depois de um vazamento. Quem sai deixa de receber, sem rotação de chaves.
 - **Quem muda o grupo é o admin**: o `GroupUpdate` vai a cada membro pela sessão a dois (com o `Content.group` vazio). Quem recebe aceita se quem manda é o `admin` do update e, para um grupo conhecido, também o admin guardado, com `version` maior. Um grupo novo só entra se quem recebe está nos membros. Um update sem quem recebe é a remoção: a conversa fica só para ler. Nome e membros passam pela regra dos nomes do perfil; no máximo 64 membros, sem repetidos, e o admin entre eles.
 - **Sair**: o `GroupLeave` vai a cada membro, que tira quem mandou. Se era o admin, o novo é o membro de menor `identity_key` (comparação de bytes), a mesma conta em todos os aparelhos.
 - **No grupo, por enquanto**: `Text`, `Edit` e `Delete` (só do autor, conferido pela chave de quem mandou). Reações, arquivos, chamar atenção, "digitando" e recibos de leitura ainda não. Uma mensagem minha fica "entregue" quando nenhuma cópia espera mais na caixa de saída.
-- **Membros que não são contatos**: aparecem pelo nome que o admin mandou, sem receber o que eu escrevo (não há sessão). Apresentar os membros entre si é a parte 2.
+- **Apresentar os membros** (parte 2): para cada par de membros que não são contatos, o de menor `identity_key` cria um convite (`InviteKind::Link`, publicado na caixa postal se houver) e manda ao admin um `GroupIntro` com `member` = o outro. O admin repassa só se quem pede e o outro são membros e o outro é contato dele, com `member` = quem pediu. Quem recebe do admin guarda o convite, confere que a chave do convite é a do membro, e entra nele como num link (o aperto de mão de sempre, ou pela caixa postal). Um convite que não virou contato é mandado de novo depois de 24 horas (o prazo dele). O contato que nasce assim fica fora da lista de conversas até alguém escrever a dois.
+- Enquanto a apresentação não termina, o membro aparece como "sendo apresentado", e o que eu escrevo não chega a ele.
 
 ## O Bluetooth LE (fase 8)
 

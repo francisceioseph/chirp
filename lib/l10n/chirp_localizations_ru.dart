@@ -974,7 +974,7 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get groupHelp =>
-      'Каждый участник получает ваши сообщения зашифрованными, прямо с вашего устройства, без сервера. Пока они доходят только до участников, которые есть у вас в контактах.';
+      'Каждый участник получает ваши сообщения зашифрованными, прямо с вашего устройства, без сервера. Незнакомых участников знакомит админ, и дальше они общаются напрямую.';
 
   @override
   String get groupLabel => 'Группа';
@@ -1001,7 +1001,7 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
 
   @override
   String get groupNotConnected =>
-      'Не ваш контакт: ваши сообщения пока до него не доходят';
+      'Знакомство через админа: ваши сообщения дойдут, когда оно завершится';
 
   @override
   String get groupAddMembers => 'Добавить участников';

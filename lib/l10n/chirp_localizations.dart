@@ -1797,7 +1797,7 @@ abstract class ChirpLocalizations {
   /// No description provided for @groupHelp.
   ///
   /// In en, this message translates to:
-  /// **'Each member gets your messages encrypted, straight from your device, with no server. For now they reach only members who are also your contacts.'**
+  /// **'Each member gets your messages encrypted, straight from your device, with no server. Members who do not know each other are introduced through the admin, and then talk directly.'**
   String get groupHelp;
 
   /// No description provided for @groupLabel.
@@ -1827,7 +1827,7 @@ abstract class ChirpLocalizations {
   /// No description provided for @groupNotConnected.
   ///
   /// In en, this message translates to:
-  /// **'Not your contact: your messages do not reach them yet'**
+  /// **'Being introduced through the admin: your messages reach them once that is done'**
   String get groupNotConnected;
 
   /// No description provided for @groupAddMembers.
