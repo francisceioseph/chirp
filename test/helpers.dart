@@ -182,6 +182,7 @@ class FakeStore implements ProfileStore {
     int? myReaction,
     int? theirReaction,
     ChatFile? file,
+    List<GroupReaction>? groupReactions,
   }) => ChatMessage(
     id: m.id,
     contactId: m.contactId,
@@ -201,6 +202,11 @@ class FakeStore implements ProfileStore {
         ? false
         : m.canDeleteForEveryone,
     file: (deleted ?? m.deleted) ? null : (file ?? m.file),
+    authorName: m.authorName,
+    authorSeed: m.authorSeed,
+    groupReactions: (deleted ?? m.deleted)
+        ? const []
+        : (groupReactions ?? m.groupReactions),
   );
 
   /// Chega uma mensagem do contato.
@@ -762,6 +768,23 @@ class FakeStore implements ProfileStore {
     );
     _changed(id);
     return id;
+  }
+
+  /// Um membro do grupo reagiu a uma mensagem (0 tira).
+  void groupReacted(int id, int authorId, int kind) {
+    final m = _byId(id);
+    final name = people.firstWhere((c) => c.id == authorId).displayName;
+    _put(
+      _copy(
+        m,
+        groupReactions: [
+          for (final r in m.groupReactions)
+            if (r.name != name) r,
+          if (kind > 0) GroupReaction(name: name, kind: kind),
+        ],
+      ),
+    );
+    _events.add(CoreEvent(CoreEventKind.messages, m.contactId));
   }
 
   /// Um membro escreveu no grupo.

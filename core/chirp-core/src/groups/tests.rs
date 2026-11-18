@@ -451,3 +451,91 @@ fn the_admin_does_not_pass_invites_for_strangers_or_odd_links() {
         Effect::Nothing
     );
 }
+
+#[test]
+fn reactions_in_a_group_are_one_per_member() {
+    let (mut ana, mut bia, mut caio) = three();
+    let ids = [ana.contact(&bia), ana.contact(&caio)];
+    let group = create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let sent = messages::send_text(&mut ana.store, group.id, "piu", None).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+
+    for (d, kind) in [(&mut bia, 1), (&mut caio, 2)] {
+        let g = d.group().unwrap().id;
+        let m = messages::list(d.store.conn(), g, None, 10).unwrap()[0].id;
+        messages::react(&mut d.store, m, kind).unwrap();
+    }
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let at = |d: &Device, id: i64| -> Vec<(Vec<u8>, u32)> {
+        let mut stmt = d
+            .store
+            .conn()
+            .prepare("SELECT member, kind FROM group_reactions WHERE message = ?1 ORDER BY kind")
+            .unwrap();
+        stmt.query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
+    assert_eq!(at(&ana, sent.id), [(bia.key(), 1), (caio.key(), 2)]);
+    // Caio vê a de Bia, e a dele fica como a minha.
+    let caio_msg =
+        messages::list(caio.store.conn(), caio.group().unwrap().id, None, 10).unwrap()[0].clone();
+    assert_eq!(caio_msg.my_reaction, 2);
+    assert_eq!(at(&caio, caio_msg.id), [(bia.key(), 1)]);
+
+    // Tirar a reação tira só a de quem tirou.
+    let bia_msg =
+        messages::list(bia.store.conn(), bia.group().unwrap().id, None, 10).unwrap()[0].id;
+    messages::react(&mut bia.store, bia_msg, 0).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    assert_eq!(at(&ana, sent.id), [(caio.key(), 2)]);
+}
+
+#[test]
+fn a_file_in_a_group_comes_from_its_author_and_only_members_may_fetch_it() {
+    let (mut ana, mut bia, mut caio) = three();
+    let ids = [ana.contact(&bia), ana.contact(&caio)];
+    let group = create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let dir = tempfile::tempdir().unwrap();
+    let prepared =
+        crate::files::prepare_bytes(dir.path(), "nota.txt", "text/plain", b"piu piu").unwrap();
+    let file_id = prepared.file_id.clone();
+    let sent = messages::send_file(&mut ana.store, group.id, prepared).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+
+    // Em Bia: a mensagem do grupo, de Ana, e baixar dela.
+    let at_bia = messages::list(bia.store.conn(), bia.group().unwrap().id, None, 10).unwrap();
+    assert_eq!(at_bia[0].kind, Kind::File);
+    assert_eq!(at_bia[0].author, Some(ana.key()));
+    let wanted = crate::files::wanted(bia.store.conn()).unwrap();
+    assert_eq!(wanted.len(), 1);
+    assert_eq!(wanted[0].0, bia.group().unwrap().id);
+    assert_eq!(wanted[0].1, bia.contact(&ana));
+    assert_eq!(
+        messages::by_id(ana.store.conn(), sent.id).unwrap().status,
+        Status::Delivered
+    );
+
+    // Ana serve aos membros, e não a quem saiu do grupo.
+    let caio_at_ana = ana.contact(&caio);
+    assert!(
+        crate::files::offered_to(ana.store.conn(), &file_id, caio_at_ana)
+            .unwrap()
+            .is_some()
+    );
+    remove(&mut ana.store, group.id, &caio.key()).unwrap();
+    assert!(
+        crate::files::offered_to(ana.store.conn(), &file_id, caio_at_ana)
+            .unwrap()
+            .is_none()
+    );
+    let bia_at_ana = ana.contact(&bia);
+    assert!(
+        crate::files::offered_to(ana.store.conn(), &file_id, bia_at_ana)
+            .unwrap()
+            .is_some()
+    );
+}

@@ -390,6 +390,15 @@ pub struct MessageView {
     /// Num grupo, quem escreveu (o nome e a semente do avatar); nada nas minhas.
     pub author_name: Option<String>,
     pub author_seed: Option<u32>,
+    /// Num grupo, as reações dos outros membros (as minhas ficam em `my_reaction`).
+    pub group_reactions: Vec<GroupReactionView>,
+}
+
+/// A reação de um membro do grupo.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupReactionView {
+    pub name: String,
+    pub kind: u32,
 }
 
 /// A caixa postal deste aparelho, como a UI mostra.
@@ -417,12 +426,35 @@ fn with_file(conn: &rusqlite::Connection, m: Message) -> MessageView {
         .author
         .as_deref()
         .map(|key| author_of(conn, m.contact_id, key));
+    let group_reactions = group_reactions(conn, m.id, m.contact_id);
     MessageView {
         file,
         author_seed: m.author.as_deref().map(avatar_seed),
         author_name: author,
+        group_reactions,
         ..m.into()
     }
+}
+
+/// As reações dos outros membros a uma mensagem do grupo, por nome.
+fn group_reactions(
+    conn: &rusqlite::Connection,
+    message: i64,
+    group: i64,
+) -> Vec<GroupReactionView> {
+    let rows: Vec<(Vec<u8>, u32)> = conn
+        .prepare("SELECT member, kind FROM group_reactions WHERE message = ?1 ORDER BY rowid")
+        .and_then(|mut stmt| {
+            stmt.query_map([message], |r| Ok((r.get(0)?, r.get(1)?)))?
+                .collect()
+        })
+        .unwrap_or_default();
+    rows.into_iter()
+        .map(|(key, kind)| GroupReactionView {
+            name: author_of(conn, group, &key),
+            kind,
+        })
+        .collect()
 }
 
 /// O nome de quem escreveu num grupo: o do contato, ou o que o grupo diz.
@@ -471,6 +503,7 @@ impl From<Message> for MessageView {
             in_mailbox: m.in_mailbox,
             author_name: None,
             author_seed: None,
+            group_reactions: vec![],
         }
     }
 }
@@ -1095,7 +1128,7 @@ impl ChirpStore {
     pub fn react(&self, id: i64, kind: u32) -> Result<MessageView, CoreError> {
         let message = messages::react(&mut *self.lock()?, id, kind)?;
         self.flush(message.contact_id);
-        Ok(message.into())
+        Ok(with_file(self.lock()?.conn(), message))
     }
 
     /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).

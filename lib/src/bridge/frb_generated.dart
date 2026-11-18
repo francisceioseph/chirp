@@ -3177,6 +3177,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupReactionView dco_decode_group_reaction_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return GroupReactionView(
+      name: dco_decode_String(arr[0]),
+      kind: dco_decode_u_32(arr[1]),
+    );
+  }
+
+  @protected
   GroupView dco_decode_group_view(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -3225,6 +3237,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<GroupMemberView> dco_decode_list_group_member_view(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_group_member_view).toList();
+  }
+
+  @protected
+  List<GroupReactionView> dco_decode_list_group_reaction_view(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_group_reaction_view).toList();
   }
 
   @protected
@@ -3280,8 +3298,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MessageView dco_decode_message_view(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 19)
-      throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
+    if (arr.length != 20)
+      throw Exception('unexpected arr length: expect 20 but see ${arr.length}');
     return MessageView(
       id: dco_decode_i_64(arr[0]),
       contactId: dco_decode_i_64(arr[1]),
@@ -3302,6 +3320,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       inMailbox: dco_decode_bool(arr[16]),
       authorName: dco_decode_opt_String(arr[17]),
       authorSeed: dco_decode_opt_box_autoadd_u_32(arr[18]),
+      groupReactions: dco_decode_list_group_reaction_view(arr[19]),
     );
   }
 
@@ -3788,6 +3807,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupReactionView sse_decode_group_reaction_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_name = sse_decode_String(deserializer);
+    var var_kind = sse_decode_u_32(deserializer);
+    return GroupReactionView(name: var_name, kind: var_kind);
+  }
+
+  @protected
   GroupView sse_decode_group_view(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_id = sse_decode_i_64(deserializer);
@@ -3864,6 +3893,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <GroupMemberView>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_group_member_view(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<GroupReactionView> sse_decode_list_group_reaction_view(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <GroupReactionView>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_group_reaction_view(deserializer));
     }
     return ans_;
   }
@@ -3950,6 +3993,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_inMailbox = sse_decode_bool(deserializer);
     var var_authorName = sse_decode_opt_String(deserializer);
     var var_authorSeed = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_groupReactions = sse_decode_list_group_reaction_view(deserializer);
     return MessageView(
       id: var_id,
       contactId: var_contactId,
@@ -3970,6 +4014,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       inMailbox: var_inMailbox,
       authorName: var_authorName,
       authorSeed: var_authorSeed,
+      groupReactions: var_groupReactions,
     );
   }
 
@@ -4513,6 +4558,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_group_reaction_view(
+    GroupReactionView self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.name, serializer);
+    sse_encode_u_32(self.kind, serializer);
+  }
+
+  @protected
   void sse_encode_group_view(GroupView self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_64(self.id, serializer);
@@ -4576,6 +4631,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_group_member_view(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_group_reaction_view(
+    List<GroupReactionView> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_group_reaction_view(item, serializer);
     }
   }
 
@@ -4665,6 +4732,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.inMailbox, serializer);
     sse_encode_opt_String(self.authorName, serializer);
     sse_encode_opt_box_autoadd_u_32(self.authorSeed, serializer);
+    sse_encode_list_group_reaction_view(self.groupReactions, serializer);
   }
 
   @protected

@@ -141,6 +141,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GroupMemberView dco_decode_group_member_view(dynamic raw);
 
   @protected
+  GroupReactionView dco_decode_group_reaction_view(dynamic raw);
+
+  @protected
   GroupView dco_decode_group_view(dynamic raw);
 
   @protected
@@ -160,6 +163,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<GroupMemberView> dco_decode_list_group_member_view(dynamic raw);
+
+  @protected
+  List<GroupReactionView> dco_decode_list_group_reaction_view(dynamic raw);
 
   @protected
   List<MessageView> dco_decode_list_message_view(dynamic raw);
@@ -375,6 +381,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GroupMemberView sse_decode_group_member_view(SseDeserializer deserializer);
 
   @protected
+  GroupReactionView sse_decode_group_reaction_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   GroupView sse_decode_group_view(SseDeserializer deserializer);
 
   @protected
@@ -396,6 +407,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<GroupMemberView> sse_decode_list_group_member_view(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<GroupReactionView> sse_decode_list_group_reaction_view(
     SseDeserializer deserializer,
   );
 
@@ -656,6 +672,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_group_reaction_view(
+    GroupReactionView self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_group_view(GroupView self, SseSerializer serializer);
 
   @protected
@@ -682,6 +704,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_group_member_view(
     List<GroupMemberView> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_group_reaction_view(
+    List<GroupReactionView> self,
     SseSerializer serializer,
   );
 

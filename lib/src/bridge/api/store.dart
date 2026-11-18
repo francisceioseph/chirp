@@ -8,8 +8,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `author_of`, `done_file`, `flush`, `lock`, `open`, `photo_changed`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`, `with_photo`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `author_of`, `done_file`, `flush`, `group_reactions`, `lock`, `open`, `photo_changed`, `running`, `runtime`, `started`, `stop_node`, `view`, `voice_bytes`, `with_file`, `with_photo`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 StoreState storeState({required String dir}) =>
     RustLib.instance.api.crateApiStoreStoreState(dir: dir);
@@ -590,6 +590,25 @@ class GroupMemberView {
           isAdmin == other.isAdmin;
 }
 
+/// A reação de um membro do grupo.
+class GroupReactionView {
+  final String name;
+  final int kind;
+
+  const GroupReactionView({required this.name, required this.kind});
+
+  @override
+  int get hashCode => name.hashCode ^ kind.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupReactionView &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          kind == other.kind;
+}
+
 /// Um grupo como a UI mostra.
 class GroupView {
   final PlatformInt64 id;
@@ -711,6 +730,9 @@ class MessageView {
   final String? authorName;
   final int? authorSeed;
 
+  /// Num grupo, as reações dos outros membros (as minhas ficam em `my_reaction`).
+  final List<GroupReactionView> groupReactions;
+
   const MessageView({
     required this.id,
     required this.contactId,
@@ -731,6 +753,7 @@ class MessageView {
     required this.inMailbox,
     this.authorName,
     this.authorSeed,
+    required this.groupReactions,
   });
 
   @override
@@ -753,7 +776,8 @@ class MessageView {
       file.hashCode ^
       inMailbox.hashCode ^
       authorName.hashCode ^
-      authorSeed.hashCode;
+      authorSeed.hashCode ^
+      groupReactions.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -778,7 +802,8 @@ class MessageView {
           file == other.file &&
           inMailbox == other.inMailbox &&
           authorName == other.authorName &&
-          authorSeed == other.authorSeed;
+          authorSeed == other.authorSeed &&
+          groupReactions == other.groupReactions;
 }
 
 /// A internet e os servidores de retransmissão (os dois desligados no começo).

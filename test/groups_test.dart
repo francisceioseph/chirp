@@ -42,10 +42,11 @@ void main() {
 
     final group = store.groups.keys.single;
     expect(store.groups[group]!.members, [1, 2]);
-    // A conversa do grupo abre: o nome, "Grupo", e sem chamar atenção nem anexo.
+    // A conversa do grupo abre: o nome, "Grupo", sem chamar atenção e com anexo.
     expect(find.text('Calopsitas'), findsWidgets);
     expect(find.text(l10n.groupLabel), findsOneWidget);
     expect(find.byTooltip(l10n.nudge), findsNothing);
+    expect(find.byTooltip(l10n.attachFile), findsOneWidget);
     await tester.enterText(find.byType(TextField).last, 'oi, bando');
     await tester.pump();
     await tester.tap(find.byTooltip(l10n.send));
@@ -54,21 +55,54 @@ void main() {
     expect(store.sent.last.text, 'oi, bando');
   });
 
-  testWidgets('cada bolha do grupo diz quem escreveu, e não há reações', (
+  testWidgets('cada bolha do grupo diz quem escreveu, e cada um reage', (
     tester,
   ) async {
+    final handle = tester.ensureSemantics();
     final store = await start(tester);
     final group = store.joinedGroup('Bando', [1, 2]);
     store.groupMessage(group, 1, 'piu');
-    store.groupMessage(group, 2, 'piu piu');
+    final m = store.groupMessage(group, 2, 'piu piu');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Bando'));
     await tester.pumpAndSettle();
     expect(find.text('Canela'), findsWidgets);
     expect(find.text('Pérola'), findsWidgets);
+
+    // Os outros reagem: o mesmo tipo aparece uma vez, com quantas são.
+    store
+      ..groupReacted(m.id, 1, 1)
+      ..groupReacted(m.id, 2, 1);
+    await tester.pumpAndSettle();
     await tester.longPress(find.text('piu piu'));
     await tester.pumpAndSettle();
     expect(find.text(l10n.reply), findsOneWidget);
+    await tester.tap(find.byTooltip(l10n.reaction1));
+    await tester.pumpAndSettle();
+    expect(store.sent.firstWhere((s) => s.id == m.id).myReaction, 1);
+    expect(find.text('3'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Canela: ${l10n.reaction1}')),
+      findsOneWidget,
+    );
+    handle.dispose();
+  });
+
+  testWidgets('num grupo de que saí, não há reações nem anexo', (tester) async {
+    final store = await start(tester);
+    final group = store.joinedGroup('Bando', [1, 2]);
+    store.groupMessage(group, 1, 'piu');
+    store.groups[group]!.active = false;
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bando'));
+    await tester.pumpAndSettle();
+    final attach = find.ancestor(
+      of: find.byTooltip(l10n.attachFile),
+      matching: find.byType(IconButton),
+    );
+    expect(tester.widget<IconButton>(attach.first).onPressed, isNull);
+    await tester.longPress(find.text('piu'));
+    await tester.pumpAndSettle();
     expect(find.byTooltip(l10n.reaction1), findsNothing);
   });
 
@@ -115,21 +149,25 @@ void main() {
     expect(find.text(l10n.groupClosed), findsWidgets);
   });
 
-  testWidgets('quem não é admin só vê, e o membro que não é contato é avisado', (
-    tester,
-  ) async {
-    final store = await start(tester);
-    store.joinedGroup('Bando', [1], strangers: ['Ana']);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Bando'));
-    await tester.pumpAndSettle();
-    await details(tester, 'Bando');
-    expect(find.text(l10n.groupNotConnected, findRichText: true), findsNothing);
-    expect(find.textContaining(l10n.groupNotConnected), findsOneWidget);
-    expect(find.text(l10n.groupAddMembers), findsNothing);
-    expect(find.text(l10n.groupRename), findsNothing);
-    expect(find.byTooltip('${l10n.groupRemove}: Canela'), findsNothing);
-  });
+  testWidgets(
+    'quem não é admin só vê, e o membro que não é contato é avisado',
+    (tester) async {
+      final store = await start(tester);
+      store.joinedGroup('Bando', [1], strangers: ['Ana']);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bando'));
+      await tester.pumpAndSettle();
+      await details(tester, 'Bando');
+      expect(
+        find.text(l10n.groupNotConnected, findRichText: true),
+        findsNothing,
+      );
+      expect(find.textContaining(l10n.groupNotConnected), findsOneWidget);
+      expect(find.text(l10n.groupAddMembers), findsNothing);
+      expect(find.text(l10n.groupRename), findsNothing);
+      expect(find.byTooltip('${l10n.groupRemove}: Canela'), findsNothing);
+    },
+  );
 
   for (final (w, h) in [(240.0, 160.0), (320.0, 568.0)]) {
     testWidgets('o grupo cabe em ${w.toInt()}×${h.toInt()}', (tester) async {

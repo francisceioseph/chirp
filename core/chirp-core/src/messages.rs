@@ -568,6 +568,7 @@ pub(crate) fn wipe(conn: &Connection, id: i64) -> CoreResult<()> {
         [id],
     )?;
     conn.execute("DELETE FROM reactions WHERE message = ?1", [id])?;
+    conn.execute("DELETE FROM group_reactions WHERE message = ?1", [id])?;
     // O arquivo some junto; o blob sai na próxima varredura (`files::sweep`).
     conn.execute("DELETE FROM files WHERE message = ?1", [id])?;
     Ok(())
@@ -615,19 +616,16 @@ pub fn react(store: &mut Store, id: i64, kind: u32) -> CoreResult<Message> {
     if message.deleted || message.kind != Kind::Text {
         return Err(CoreError::UnknownMessage);
     }
-    let contact = established(&tx, message.contact_id)?;
-    let lamport = next_lamport(&tx, contact.id)?;
-    enqueue(
+    let target = target_of(&tx, message.contact_id)?;
+    let lamport = next_lamport(&tx, target.id())?;
+    target.send(
         &tx,
         &me,
-        &contact,
         ContentBody::Reaction(wire::Reaction {
             target: message.message_id.clone(),
             kind,
         }),
         lamport,
-        now_ms(),
-        false,
     )?;
     set_reaction(&tx, id, true, kind)?;
     let message = by_id(&tx, id)?;
@@ -807,26 +805,22 @@ pub fn send_file(
 ) -> CoreResult<Message> {
     let me = session::me(store)?;
     let tx = store.conn_mut().transaction()?;
-    let contact = established(&tx, contact_id)?;
+    let target = target_of(&tx, contact_id)?;
     let lamport = next_lamport(&tx, contact_id)?;
     let sent_at = now_ms();
-    let message_id = enqueue(
-        &tx,
-        &me,
-        &contact,
-        ContentBody::File(wire::FileOffer {
-            file_id: prepared.file_id.clone(),
-            name: prepared.name.clone(),
-            size: prepared.size,
-            mime: prepared.mime.clone(),
-            hash: prepared.hash.clone(),
-            key: prepared.key.to_vec(),
-            thumbnail: prepared.thumbnail.clone().unwrap_or_default(),
-        }),
-        lamport,
-        sent_at,
-        false,
-    )?;
+    let body = ContentBody::File(wire::FileOffer {
+        file_id: prepared.file_id.clone(),
+        name: prepared.name.clone(),
+        size: prepared.size,
+        mime: prepared.mime.clone(),
+        hash: prepared.hash.clone(),
+        key: prepared.key.to_vec(),
+        thumbnail: prepared.thumbnail.clone().unwrap_or_default(),
+    });
+    let message_id = match &target {
+        Target::Contact(contact) => enqueue(&tx, &me, contact, body, lamport, sent_at, false)?,
+        Target::Group(_, group) => crate::groups::fanout(&tx, &me, group, body, lamport, sent_at)?,
+    };
     let id = insert(
         &tx,
         contact_id,
@@ -1132,6 +1126,81 @@ pub fn receive_from(
     Ok((effect, shown))
 }
 
+/// Uma oferta de arquivo que chegou vira mensagem na conversa `conversation` (a do
+/// contato, ou a do grupo). Devolve o id da mensagem; nada se a oferta não serve ou
+/// se o arquivo já era conhecido. `verified` é de quem mandou, para o baixar sozinho.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn insert_offer(
+    conn: &Connection,
+    conversation: i64,
+    message_id: &[u8],
+    offer: wire::FileOffer,
+    sent_at: i64,
+    lamport: i64,
+    verified: bool,
+) -> CoreResult<Option<i64>> {
+    let valid = offer.file_id.len() == 16
+        && offer.key.len() == 32
+        && offer.hash.len() == 32
+        && offer.size <= crate::files::MAX_FILE
+        && offer.thumbnail.len() <= crate::files::MAX_THUMBNAIL;
+    if !valid {
+        return Ok(None);
+    }
+    let name = crate::files::clean_name(&offer.name);
+    let Some(row) = insert(
+        conn,
+        conversation,
+        message_id,
+        false,
+        Kind::File,
+        &name,
+        None,
+        sent_at,
+        lamport,
+        Status::Pending,
+    )?
+    else {
+        return Ok(None);
+    };
+    // O mesmo arquivo oferecido de novo (com outro id de mensagem) é ignorado.
+    let known: bool = conn.query_row(
+        "SELECT EXISTS (SELECT 1 FROM files WHERE file_id = ?1)",
+        [&offer.file_id],
+        |r| r.get(0),
+    )?;
+    if known {
+        conn.execute("DELETE FROM messages WHERE id = ?1", [row])?;
+        return Ok(None);
+    }
+    let mime = if offer.mime.len() <= 100 && !offer.mime.chars().any(char::is_control) {
+        offer.mime
+    } else {
+        "application/octet-stream".to_owned()
+    };
+    crate::files::insert(
+        conn,
+        &crate::files::FileRow {
+            message: row,
+            file_id: offer.file_id,
+            name,
+            size: offer.size,
+            mime,
+            hash: offer.hash,
+            key: zeroize::Zeroizing::new(offer.key),
+            thumbnail: (!offer.thumbnail.is_empty()).then_some(offer.thumbnail),
+            chunks: crate::files::chunks_for(offer.size),
+            received: 0,
+            state: if crate::downloads::get(conn)?.allows(offer.size, verified) {
+                crate::files::State::Downloading
+            } else {
+                crate::files::State::Waiting
+            },
+        },
+    )?;
+    Ok(Some(row))
+}
+
 /// O relógio de Lamport da conversa avança com o que chega, sem deixar um contato
 /// empurrá-lo para longe. Devolve o valor da mensagem.
 pub(crate) fn advance_lamport(conn: &Connection, id: i64, theirs: u64) -> CoreResult<i64> {
@@ -1309,68 +1378,19 @@ fn apply(conn: &Connection, me: &Me, contact: &Contact, content: Content) -> Cor
             }
         }
         ContentBody::File(offer) => {
-            let valid = offer.file_id.len() == 16
-                && offer.key.len() == 32
-                && offer.hash.len() == 32
-                && offer.size <= crate::files::MAX_FILE
-                && offer.thumbnail.len() <= crate::files::MAX_THUMBNAIL;
-            if !valid {
-                return Ok(Effect::Nothing);
-            }
-            let name = crate::files::clean_name(&offer.name);
-            let Some(row) = insert(
+            let verified = contacts::by_id(conn, id)?.verified;
+            match insert_offer(
                 conn,
                 id,
                 &content.message_id,
-                false,
-                Kind::File,
-                &name,
-                None,
+                offer,
                 sent_at,
                 lamport,
-                Status::Pending,
-            )?
-            else {
-                return Ok(Effect::Nothing);
-            };
-            // O mesmo arquivo oferecido de novo (com outro id de mensagem) é ignorado.
-            let known: bool = conn.query_row(
-                "SELECT EXISTS (SELECT 1 FROM files WHERE file_id = ?1)",
-                [&offer.file_id],
-                |r| r.get(0),
-            )?;
-            if known {
-                conn.execute("DELETE FROM messages WHERE id = ?1", [row])?;
-                return Ok(Effect::Nothing);
+                verified,
+            )? {
+                Some(_) => messages,
+                None => Effect::Nothing,
             }
-            let mime = if offer.mime.len() <= 100 && !offer.mime.chars().any(char::is_control) {
-                offer.mime
-            } else {
-                "application/octet-stream".to_owned()
-            };
-            crate::files::insert(
-                conn,
-                &crate::files::FileRow {
-                    message: row,
-                    file_id: offer.file_id,
-                    name,
-                    size: offer.size,
-                    mime,
-                    hash: offer.hash,
-                    key: zeroize::Zeroizing::new(offer.key),
-                    thumbnail: (!offer.thumbnail.is_empty()).then_some(offer.thumbnail),
-                    chunks: crate::files::chunks_for(offer.size),
-                    received: 0,
-                    state: if crate::downloads::get(conn)?
-                        .allows(offer.size, contacts::by_id(conn, id)?.verified)
-                    {
-                        crate::files::State::Downloading
-                    } else {
-                        crate::files::State::Waiting
-                    },
-                },
-            )?;
-            messages
         }
         ContentBody::Mailbox(info) => {
             let Ok(theirs) = crate::mailbox::theirs_from_info(info) else {

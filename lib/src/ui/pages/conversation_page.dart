@@ -121,7 +121,8 @@ class _ConversationPageState extends State<ConversationPage>
     final choice = await showMessageActions(
       context,
       message,
-      reactions: !(_conversation.contact?.isGroup ?? false),
+      // Num grupo de que saí, não há a quem mandar a reação.
+      reactions: !(_conversation.contact?.groupClosed ?? false),
     );
     if (choice == null || !mounted) return;
     final reaction = choice.reaction;
@@ -448,10 +449,10 @@ class _ConversationPageState extends State<ConversationPage>
                       : (replyTo.authorName ?? name),
                   editing: _conversation.editing,
                   onCancel: _cancelComposer,
-                  // Num grupo, ainda sem "digitando", arquivos e notas de voz.
+                  // Num grupo, ainda sem "digitando".
                   onChanged: group ? null : (_) => _conversation.typed(),
-                  onAttach: group ? null : _attach,
-                  onRecord: group ? null : _record,
+                  onAttach: _attach,
+                  onRecord: _record,
                   recording: switch (_conversation.recordingSince) {
                     null => null,
                     final since => DateTime.now().difference(since),

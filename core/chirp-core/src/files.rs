@@ -424,8 +424,12 @@ pub fn offered_to(
         .query_row(
             &format!(
                 "SELECT {} FROM files f JOIN messages m ON m.id = f.message
-                  WHERE f.file_id = ?1 AND m.contact_id = ?2 AND m.outgoing = 1
-                    AND m.deleted = 0",
+                  WHERE f.file_id = ?1 AND m.outgoing = 1 AND m.deleted = 0
+                    AND (m.contact_id = ?2 OR EXISTS (
+                         -- Num grupo: a quem é membro agora.
+                         SELECT 1 FROM group_members gm
+                           JOIN contacts c ON c.identity_key = gm.identity_key
+                          WHERE gm.group_ref = m.contact_id AND c.id = ?2))",
                 COLUMNS
                     .split(", ")
                     .map(|c| format!("f.{c}"))
@@ -438,22 +442,27 @@ pub fn offered_to(
         .optional()?)
 }
 
-/// Os arquivos para baixar agora, com o contato de cada um.
-pub fn wanted(conn: &Connection) -> CoreResult<Vec<(i64, FileRow)>> {
+/// Os arquivos para baixar agora: a conversa, o contato de quem baixar (num grupo,
+/// quem mandou) e o arquivo.
+pub fn wanted(conn: &Connection) -> CoreResult<Vec<(i64, i64, FileRow)>> {
     let columns = COLUMNS
         .split(", ")
         .map(|c| format!("f.{c}"))
         .collect::<Vec<_>>()
         .join(", ");
     let mut statement = conn.prepare(&format!(
-        "SELECT m.contact_id, {columns} FROM files f JOIN messages m ON m.id = f.message
+        "SELECT m.contact_id, {columns},
+                COALESCE((SELECT c.id FROM contacts c
+                           WHERE c.identity_key = m.author AND c.state = 1), m.contact_id)
+           FROM files f JOIN messages m ON m.id = f.message
           WHERE f.state = 1 AND m.outgoing = 0 AND m.deleted = 0 ORDER BY f.message"
     ))?;
     let rows = statement.query_map([], |r| {
         let contact: i64 = r.get(0)?;
-        // As colunas do arquivo vêm depois do contato.
+        // As colunas do arquivo vêm depois da conversa, e quem baixar no fim.
         Ok((
             contact,
+            r.get(12)?,
             FileRow {
                 message: r.get(1)?,
                 file_id: r.get(2)?,

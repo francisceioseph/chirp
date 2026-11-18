@@ -4,6 +4,7 @@
 // o "editada", o estado e as reações embaixo. A chamada de atenção é uma linha no meio.
 // Segurar, o botão direito ou Enter com o foco nela abre as opções.
 import 'package:material_ui/material_ui.dart';
+import 'package:intl/intl.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
@@ -123,6 +124,8 @@ class MessageBubble extends StatelessWidget {
         '${l10n.you}: ${reactionLabel(l10n, message.myReaction)}',
       if (message.theirReaction > 0)
         '$sender: ${reactionLabel(l10n, message.theirReaction)}',
+      for (final r in message.groupReactions)
+        '${r.name}: ${reactionLabel(l10n, r.kind)}',
     ].join(', ');
 
     final bubble = Container(
@@ -211,10 +214,13 @@ class MessageBubble extends StatelessWidget {
       ),
     );
 
-    final reactions = [
+    // Cada tipo uma vez; num grupo, quantas são ao todo quando passam disso.
+    final all = [
       if (message.theirReaction > 0) message.theirReaction,
+      for (final r in message.groupReactions) r.kind,
       if (message.myReaction > 0) message.myReaction,
     ];
+    final reactions = {...all}.toList();
 
     return Semantics(
       container: true,
@@ -266,6 +272,19 @@ class MessageBubble extends StatelessWidget {
                                       horizontal: 1,
                                     ),
                                     child: ReactionIcon(kind: kind, size: 16),
+                                  ),
+                                if (all.length > reactions.length)
+                                  Padding(
+                                    padding: const EdgeInsetsDirectional.only(
+                                      start: 2,
+                                    ),
+                                    child: Text(
+                                      NumberFormat.decimalPattern(
+                                        Localizations.localeOf(context)
+                                            .toString(),
+                                      ).format(all.length),
+                                      style: theme.textTheme.labelSmall,
+                                    ),
                                   ),
                               ],
                             ),

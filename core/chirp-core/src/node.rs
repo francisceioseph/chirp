@@ -1355,20 +1355,25 @@ impl Node {
             let Ok(wanted) = with_store(&self.store, |s| files::wanted(s.conn())).await else {
                 continue;
             };
-            for (contact_id, row) in wanted {
-                let _ = self.download(contact_id, row).await;
+            for (conversation, source, row) in wanted {
+                let _ = self.download(conversation, source, row).await;
             }
         }
     }
 
-    async fn download(&self, contact_id: i64, row: files::FileRow) -> CoreResult<()> {
-        let contact =
-            with_store(&self.store, move |s| contacts::by_id(s.conn(), contact_id)).await?;
+    /// Baixa de `source` (o contato, ou quem mandou no grupo) o arquivo da conversa.
+    async fn download(
+        &self,
+        conversation: i64,
+        source: i64,
+        row: files::FileRow,
+    ) -> CoreResult<()> {
+        let contact = with_store(&self.store, move |s| contacts::by_id(s.conn(), source)).await?;
         if contact.state != ContactState::Established {
             return Ok(());
         }
         let conn = self.connect(&contact).await?;
-        let result = self.download_on(&conn, contact_id, &row).await;
+        let result = self.download_on(&conn, conversation, &row).await;
         conn.close(0u32.into(), b"");
         result
     }
@@ -2163,7 +2168,7 @@ mod tests {
         forged.file_id = vec![9; 16];
         forged.received = 0;
         assert_eq!(
-            bob.download(alice_at_bob, forged).await,
+            bob.download(alice_at_bob, alice_at_bob, forged).await,
             Err(CoreError::UnknownMessage)
         );
         alice.close().await;

@@ -3742,6 +3742,18 @@ impl SseDecode for crate::api::store::GroupMemberView {
     }
 }
 
+impl SseDecode for crate::api::store::GroupReactionView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_name = <String>::sse_decode(deserializer);
+        let mut var_kind = <u32>::sse_decode(deserializer);
+        return crate::api::store::GroupReactionView {
+            name: var_name,
+            kind: var_kind,
+        };
+    }
+}
+
 impl SseDecode for crate::api::store::GroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3819,6 +3831,20 @@ impl SseDecode for Vec<crate::api::store::GroupMemberView> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<crate::api::store::GroupMemberView>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::api::store::GroupReactionView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::store::GroupReactionView>::sse_decode(
                 deserializer,
             ));
         }
@@ -3924,6 +3950,8 @@ impl SseDecode for crate::api::store::MessageView {
         let mut var_inMailbox = <bool>::sse_decode(deserializer);
         let mut var_authorName = <Option<String>>::sse_decode(deserializer);
         let mut var_authorSeed = <Option<u32>>::sse_decode(deserializer);
+        let mut var_groupReactions =
+            <Vec<crate::api::store::GroupReactionView>>::sse_decode(deserializer);
         return crate::api::store::MessageView {
             id: var_id,
             contact_id: var_contactId,
@@ -3944,6 +3972,7 @@ impl SseDecode for crate::api::store::MessageView {
             in_mailbox: var_inMailbox,
             author_name: var_authorName,
             author_seed: var_authorSeed,
+            group_reactions: var_groupReactions,
         };
     }
 }
@@ -4843,6 +4872,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::GroupMemberView>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::GroupReactionView {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.name.into_into_dart().into_dart(),
+            self.kind.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::GroupReactionView
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::GroupReactionView>
+    for crate::api::store::GroupReactionView
+{
+    fn into_into_dart(self) -> crate::api::store::GroupReactionView {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::store::GroupView {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -4952,6 +5002,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::MessageView {
             self.in_mailbox.into_into_dart().into_dart(),
             self.author_name.into_into_dart().into_dart(),
             self.author_seed.into_into_dart().into_dart(),
+            self.group_reactions.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -5421,6 +5472,14 @@ impl SseEncode for crate::api::store::GroupMemberView {
     }
 }
 
+impl SseEncode for crate::api::store::GroupReactionView {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.name, serializer);
+        <u32>::sse_encode(self.kind, serializer);
+    }
+}
+
 impl SseEncode for crate::api::store::GroupView {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -5482,6 +5541,16 @@ impl SseEncode for Vec<crate::api::store::GroupMemberView> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::api::store::GroupMemberView>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::api::store::GroupReactionView> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::store::GroupReactionView>::sse_encode(item, serializer);
         }
     }
 }
@@ -5581,6 +5650,7 @@ impl SseEncode for crate::api::store::MessageView {
         <bool>::sse_encode(self.in_mailbox, serializer);
         <Option<String>>::sse_encode(self.author_name, serializer);
         <Option<u32>>::sse_encode(self.author_seed, serializer);
+        <Vec<crate::api::store::GroupReactionView>>::sse_encode(self.group_reactions, serializer);
     }
 }
 

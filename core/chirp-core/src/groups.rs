@@ -539,8 +539,8 @@ pub(crate) fn apply_leave(
     Ok(Effect::Contact(id))
 }
 
-/// Uma mensagem da conversa de um grupo, de um membro que é contato: texto, editar e
-/// apagar. O resto (reações, arquivos, atenção) fica para depois, e é ignorado.
+/// Uma mensagem da conversa de um grupo, de um membro que é contato: texto, editar,
+/// apagar, reagir e arquivos. O resto (atenção, "digitando") é ignorado.
 pub(crate) fn apply_message(
     conn: &Connection,
     sender: &Contact,
@@ -614,6 +614,53 @@ pub(crate) fn apply_message(
                 return Ok(Effect::Nothing);
             };
             messages::wipe(conn, target)?;
+        }
+        Some(ContentBody::Reaction(reaction)) => {
+            if reaction.kind > messages::REACTIONS {
+                return Ok(Effect::Nothing);
+            }
+            // A mensagem de qualquer um no grupo (a minha também), de texto.
+            let target: Option<i64> = conn
+                .query_row(
+                    "SELECT id FROM messages
+                      WHERE contact_id = ?1 AND message_id = ?2 AND kind = 0 AND deleted = 0",
+                    (id, &reaction.target),
+                    |r| r.get(0),
+                )
+                .optional()?;
+            let Some(target) = target else {
+                return Ok(Effect::Nothing);
+            };
+            if reaction.kind == 0 {
+                conn.execute(
+                    "DELETE FROM group_reactions WHERE message = ?1 AND member = ?2",
+                    (target, &sender.identity_key),
+                )?;
+            } else {
+                conn.execute(
+                    "INSERT OR REPLACE INTO group_reactions (message, member, kind)
+                     VALUES (?1, ?2, ?3)",
+                    (target, &sender.identity_key, reaction.kind),
+                )?;
+            }
+        }
+        Some(ContentBody::File(offer)) => {
+            let Some(row) = messages::insert_offer(
+                conn,
+                id,
+                &content.message_id,
+                offer,
+                sent_at,
+                lamport,
+                sender.verified,
+            )?
+            else {
+                return Ok(Effect::Nothing);
+            };
+            conn.execute(
+                "UPDATE messages SET author = ?2 WHERE id = ?1",
+                (row, &sender.identity_key),
+            )?;
         }
         _ => return Ok(Effect::Nothing),
     }

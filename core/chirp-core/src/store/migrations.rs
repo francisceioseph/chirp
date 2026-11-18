@@ -237,6 +237,13 @@ const MIGRATIONS: &[&str] = &[
          received_at INTEGER NOT NULL,
          PRIMARY KEY (group_ref, member)
      );",
+    // 16: as reações num grupo, uma por membro (as minhas ficam em `reactions`).
+    "CREATE TABLE group_reactions (
+         message INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE,
+         member  BLOB NOT NULL,
+         kind    INTEGER NOT NULL,
+         PRIMARY KEY (message, member)
+     );",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

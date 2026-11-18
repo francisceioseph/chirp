@@ -14,7 +14,7 @@ O que a fase 9 do `docs/PLANO.md` (seção 13, com a 6.8) pediu, o que foi feito
   - no grupo: texto, editar e apagar (só do autor), e a resposta citando; a mensagem diz quem escreveu.
 - **App**:
   - "Novo grupo" na lista (com algum contato): o nome e quem entra;
-  - a conversa do grupo, com o nome de quem escreveu em cada bolha, sem chamar atenção, anexo, nota de voz e reações por enquanto;
+  - a conversa do grupo, com o nome de quem escreveu em cada bolha, sem chamar atenção, anexo, nota de voz e reações (vieram na parte 3);
   - a página do grupo: os membros (o admin marcado, e quem não é contato avisado), e, para o admin, adicionar, renomear e tirar; sair pergunta antes e deixa a conversa só para ler;
   - 20 textos novos nos sete idiomas.
 - **Documentos**: o formato no `PROTOCOLO.md` e o que um membro e o admin veem e podem no `AMEACAS.md`.
@@ -46,5 +46,24 @@ O que a fase 9 do `docs/PLANO.md` (seção 13, com a 6.8) pediu, o que foi feito
 
 - Se o admin não é contato de um membro (depois que o admin de antes sai), esse membro não é apresentado.
 - Reações, arquivos, notas de voz, chamar atenção, "digitando" e recibos de leitura no grupo.
+- A foto do grupo e mais de um admin.
+- Um admin que saiu e volta a ser adicionado pelo novo admin não aceita o grupo.
+
+## Parte 3: arquivos e reações no grupo
+
+### Feito
+
+- **Núcleo** (migração 16, `group_reactions`): a reação de cada membro, uma por mensagem; o arquivo e a nota de voz oferecidos a cada membro, baixados do autor pela sessão a dois com ele, e entregues só a quem é membro agora.
+- **App**: anexo, nota de voz e reações na conversa do grupo; a bolha mostra cada tipo de reação uma vez e, quando há mais de uma do mesmo, quantas são ao todo; o leitor de tela diz quem reagiu com o quê. Num grupo de que saí, sem anexo nem reação.
+
+### Conferido
+
+- Rust: as reações de dois membros ficam separadas, trocar substitui e 0 tira; o arquivo de um membro chega aos outros, é baixado dele, e quem foi tirado do grupo não consegue buscar.
+- Dart: o anexo na conversa do grupo, as reações dos outros com a contagem e o rótulo para o leitor de tela, e sem anexo nem reações num grupo de que saí.
+
+### Falta
+
+- Chamar atenção, "digitando" e recibos de leitura no grupo.
+- Um arquivo de quem ainda não é contato espera a apresentação.
 - A foto do grupo e mais de um admin.
 - Um admin que saiu e volta a ser adicionado pelo novo admin não aceita o grupo.

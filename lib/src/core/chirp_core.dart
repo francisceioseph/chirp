@@ -381,10 +381,14 @@ class ChatMessage {
     this.inMailbox = false,
     this.authorName,
     this.authorSeed,
+    this.groupReactions = const [],
   });
 
   final int id;
   final int contactId;
+
+  /// Num grupo, a reação de cada um dos outros membros (a minha é [myReaction]).
+  final List<GroupReaction> groupReactions;
 
   /// Num grupo, quem escreveu (nada nas minhas).
   final String? authorName;
@@ -416,6 +420,15 @@ class ChatMessage {
   final bool inMailbox;
 
   bool get unread => !outgoing && status == MessageStatus.pending;
+}
+
+/// A reação de um membro do grupo a uma mensagem.
+@immutable
+class GroupReaction {
+  const GroupReaction({required this.name, required this.kind});
+
+  final String name;
+  final int kind;
 }
 
 /// Um grupo (fase 9): o nome, se sou o admin, se ainda sou membro e os outros membros.
@@ -1259,6 +1272,9 @@ ChatMessage _message(bridge.MessageView m) => ChatMessage(
   inMailbox: m.inMailbox,
   authorName: m.authorName,
   authorSeed: m.authorSeed,
+  groupReactions: [
+    for (final r in m.groupReactions) GroupReaction(name: r.name, kind: r.kind),
+  ],
   file: switch (m.file) {
     null => null,
     final f => ChatFile(
