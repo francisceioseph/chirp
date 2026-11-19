@@ -111,10 +111,13 @@ jobs:
   packages:
     needs: release
     if: needs.release.outputs.tag != ''
+    # O que o packages.yml pede, somado: um workflow chamado não pode pedir mais que
+    # isto (sem o `packages`, da imagem da caixa postal, o CI nem começava).
     permissions:
       contents: write
       pages: write
       id-token: write
+      packages: write
     uses: ./.github/workflows/packages.yml
     with:
       tag: ${{ needs.release.outputs.tag }}
