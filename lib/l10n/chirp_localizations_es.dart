@@ -291,6 +291,11 @@ class ChirpLocalizationsEs extends ChirpLocalizations {
   String get typing => 'escribiendo…';
 
   @override
+  String typingName(String name) {
+    return '$name está escribiendo…';
+  }
+
+  @override
   String get messageDeleted => 'Mensaje eliminado';
 
   @override

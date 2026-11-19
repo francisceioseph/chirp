@@ -82,6 +82,7 @@
   "nudgeReceived": "{name} hat dich angestupst",
   "nudgePreview": "Hat angestupst",
   "typing": "schreibt…",
+  "typingName": "{name} schreibt…",
   "messageDeleted": "Diese Nachricht wurde gelöscht",
   "messageEdited": "bearbeitet",
   "statusPending": "Wartet auf Zustellung",

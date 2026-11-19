@@ -88,6 +88,37 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('no grupo, diz quem está digitando, e o meu aviso sai', (
+    tester,
+  ) async {
+    final store = await start(tester);
+    final group = store.joinedGroup('Bando', [1, 2]);
+    store.groupMessage(group, 1, 'piu');
+    await tester.pumpAndSettle();
+    // Na lista, quem digita.
+    store.theyType(group, name: 'Pérola');
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(l10n.typingName('Pérola')), findsOneWidget);
+    await tester.tap(find.text('Bando'));
+    await tester.pumpAndSettle();
+    // No cabeçalho também (a lista ao lado pode mostrar de novo).
+    store.theyType(group, name: 'Canela');
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(l10n.typingName('Canela')), findsWidgets);
+    expect(find.text(l10n.groupLabel), findsNothing);
+    // Passado o tempo, volta a ser "Grupo".
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.typingName('Canela')), findsNothing);
+    expect(find.text(l10n.groupLabel), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).last, 'pi');
+    await tester.pump();
+    expect(store.typingCalls, greaterThan(0));
+  });
+
   testWidgets('num grupo de que saí, não há reações nem anexo', (tester) async {
     final store = await start(tester);
     final group = store.joinedGroup('Bando', [1, 2]);

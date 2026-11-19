@@ -570,10 +570,13 @@ enum CoreEventKind {
 
 @immutable
 class CoreEvent {
-  const CoreEvent(this.kind, this.contactId);
+  const CoreEvent(this.kind, this.contactId, {this.name = ''});
 
   final CoreEventKind kind;
   final int contactId;
+
+  /// Num "digitando" de grupo, quem digita; vazio no resto.
+  final String name;
 }
 
 /// O que a UI pode pedir ao núcleo.
@@ -969,11 +972,15 @@ class _BridgeStore implements ProfileStore {
 
   @override
   Stream<CoreEvent> events() => _store.watchEvents().map(
-    (e) => CoreEvent(switch (e.kind) {
-      bridge.EventKind.contact => CoreEventKind.contact,
-      bridge.EventKind.messages => CoreEventKind.messages,
-      bridge.EventKind.typing => CoreEventKind.typing,
-    }, e.contactId),
+    (e) => CoreEvent(
+      switch (e.kind) {
+        bridge.EventKind.contact => CoreEventKind.contact,
+        bridge.EventKind.messages => CoreEventKind.messages,
+        bridge.EventKind.typing => CoreEventKind.typing,
+      },
+      e.contactId,
+      name: e.name,
+    ),
   );
 
   @override

@@ -122,6 +122,11 @@
   "nudgeReceived": "{name} wants your attention",
   "nudgePreview": "Asked for attention",
   "typing": "typing…",
+  "typingName": "{name} is typing…",
+  "@typingName": {
+    "description": "In a group: which member is typing.",
+    "placeholders": { "name": { "type": "String" } }
+  },
   "messageDeleted": "This message was deleted",
   "messageEdited": "edited",
   "statusPending": "Waiting to be delivered",

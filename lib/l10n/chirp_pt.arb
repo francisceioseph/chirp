@@ -82,6 +82,7 @@
   "nudgeReceived": "{name} chamou sua atenção",
   "nudgePreview": "Chamou atenção",
   "typing": "digitando…",
+  "typingName": "{name} está digitando…",
   "messageDeleted": "Mensagem apagada",
   "messageEdited": "editada",
   "statusPending": "Esperando a entrega",

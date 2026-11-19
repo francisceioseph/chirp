@@ -347,6 +347,7 @@ class _ContactsPageState extends State<ContactsPage> {
           key: ValueKey(contact.id),
           conversation: conversation,
           typing: _controller.isTyping(contact.id),
+          typist: _controller.typist(contact.id),
           selected: contact.id == _selected,
           onTap: () => _openConversation(contact.id),
         ),

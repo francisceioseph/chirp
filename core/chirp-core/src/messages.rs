@@ -38,7 +38,7 @@ pub const NUDGE_INTERVAL_MS: i64 = 10 * 1000;
 /// O "digitando" que não sai nesse tempo já não diz nada e é jogado fora.
 pub const EPHEMERAL_TTL_MS: i64 = 10 * 1000;
 /// Quantos ids cabem num recibo.
-const MAX_RECEIPT_IDS: usize = 256;
+pub(crate) const MAX_RECEIPT_IDS: usize = 256;
 /// O relógio de Lamport de um contato não pula mais que isso de uma vez.
 const MAX_LAMPORT_JUMP: i64 = 1 << 32;
 
@@ -90,14 +90,14 @@ pub struct Message {
 }
 
 /// O que mudou com o que chegou, para avisar a UI.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
     /// Nada para mostrar (repetido, descartado).
     Nothing,
     /// A conversa mudou.
     Messages(i64),
-    /// O contato está digitando.
-    Typing(i64),
+    /// O contato está digitando; num grupo, o nome de quem (vazio na conversa a dois).
+    Typing(i64, String),
     /// O contato mudou o perfil.
     Contact(i64),
 }
@@ -433,6 +433,9 @@ pub fn send_text(
         Status::Pending,
     )?
     .ok_or(CoreError::Storage)?;
+    if let Some(group) = &group {
+        crate::groups::track(&tx, group, id)?;
+    }
     let message = by_id(&tx, id)?;
     tx.commit()?;
     Ok(message)
@@ -648,13 +651,32 @@ fn set_reaction(conn: &Connection, id: i64, outgoing: bool, kind: u32) -> CoreRe
     Ok(())
 }
 
-/// Avisa que estou digitando, se o aviso está ligado. Vai só se sair logo.
-pub fn typing(store: &mut Store, contact_id: i64) -> CoreResult<bool> {
+/// A quem o "digitando" da conversa iria: o contato, ou os membros do grupo que são
+/// contatos. O nó escolhe entre eles quem está online.
+pub fn typing_targets(conn: &Connection, contact_id: i64) -> CoreResult<Vec<i64>> {
+    match crate::groups::writable(conn, contact_id) {
+        Ok(Some(group)) => crate::groups::member_contacts(conn, &group),
+        Ok(None) => Ok(vec![contact_id]),
+        Err(_) => Ok(vec![]),
+    }
+}
+
+/// Avisa que estou digitando, se o aviso está ligado, a quem está em `online`. Vai só
+/// se sair logo.
+pub fn typing(store: &mut Store, contact_id: i64, online: &[i64]) -> CoreResult<bool> {
     if !settings(store.conn())?.typing {
         return Ok(false);
     }
     let me = session::me(store)?;
     let tx = store.conn_mut().transaction()?;
+    if let Some(group) = crate::groups::writable(&tx, contact_id)? {
+        let sent = crate::groups::send_typing(&tx, &me, contact_id, &group, online)?;
+        tx.commit()?;
+        return Ok(sent);
+    }
+    if !online.contains(&contact_id) {
+        return Ok(false);
+    }
     let contact = established(&tx, contact_id)?;
     // Um aviso por vez na fila basta.
     let queued: bool = tx.query_row(
@@ -689,19 +711,26 @@ pub fn mark_read(store: &mut Store, contact_id: i64) -> CoreResult<bool> {
     let me = session::me(store)?;
     let receipts = settings(store.conn())?.read_receipts;
     let tx = store.conn_mut().transaction()?;
-    let ids: Vec<Vec<u8>> = {
+    // Num grupo, o autor de cada uma (vazio na conversa a dois).
+    let unread: Vec<(Vec<u8>, Vec<u8>)> = {
         let mut stmt = tx.prepare(
-            "SELECT message_id FROM messages
+            "SELECT message_id, COALESCE(author, x'') FROM messages
               WHERE contact_id = ?1 AND outgoing = 0 AND status = 0 AND kind = 0
               ORDER BY id",
         )?;
-        let rows = stmt.query_map([contact_id], |r| r.get(0))?;
+        let rows = stmt.query_map([contact_id], |r| Ok((r.get(0)?, r.get(1)?)))?;
         rows.collect::<rusqlite::Result<_>>()?
     };
     let changed = tx.execute(
         "UPDATE messages SET status = 2 WHERE contact_id = ?1 AND outgoing = 0 AND status = 0",
         [contact_id],
     )?;
+    if receipts && !unread.is_empty() && crate::groups::is_group(&tx, contact_id)? {
+        crate::groups::send_read(&tx, &me, contact_id, &unread)?;
+        tx.commit()?;
+        return Ok(changed > 0);
+    }
+    let ids: Vec<Vec<u8>> = unread.into_iter().map(|(id, _)| id).collect();
     if receipts && !ids.is_empty() {
         if let Ok(contact) = established(&tx, contact_id) {
             let lamport: i64 = tx.query_row(
@@ -1356,7 +1385,7 @@ fn apply(conn: &Connection, me: &Me, contact: &Contact, content: Content) -> Cor
         // sai na hora (`EPHEMERAL_TTL_MS`), ou não sai.
         ContentBody::Typing(_) => {
             if settings(conn)?.typing {
-                Effect::Typing(id)
+                Effect::Typing(id, String::new())
             } else {
                 Effect::Nothing
             }

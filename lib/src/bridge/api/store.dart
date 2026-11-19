@@ -438,10 +438,17 @@ class CoreEvent {
   final EventKind kind;
   final PlatformInt64 contactId;
 
-  const CoreEvent({required this.kind, required this.contactId});
+  /// Num "digitando" de grupo, quem digita; vazio no resto.
+  final String name;
+
+  const CoreEvent({
+    required this.kind,
+    required this.contactId,
+    required this.name,
+  });
 
   @override
-  int get hashCode => kind.hashCode ^ contactId.hashCode;
+  int get hashCode => kind.hashCode ^ contactId.hashCode ^ name.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -449,7 +456,8 @@ class CoreEvent {
       other is CoreEvent &&
           runtimeType == other.runtimeType &&
           kind == other.kind &&
-          contactId == other.contactId;
+          contactId == other.contactId &&
+          name == other.name;
 }
 
 /// O baixar sozinho: o limite e se só dos contatos verificados.

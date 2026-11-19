@@ -86,8 +86,8 @@ pub enum NodeEvent {
     ContactChanged(i64),
     /// A conversa com o contato mudou: chegou mensagem, recibo, edição.
     MessagesChanged(i64),
-    /// O contato está digitando.
-    Typing(i64),
+    /// O contato está digitando; num grupo, com o nome de quem.
+    Typing(i64, String),
     /// A rede foi desligada de propósito: quem escuta os eventos para (o processo
     /// pode sair). Religar por causa dos ajustes não manda isto.
     Closed,
@@ -1717,7 +1717,7 @@ impl Node {
                 // Pode ser um arquivo novo para baixar.
                 self.fetch();
             }
-            Effect::Typing(id) => self.emit(NodeEvent::Typing(id)),
+            Effect::Typing(id, name) => self.emit(NodeEvent::Typing(id, name)),
             Effect::Contact(id) => {
                 self.emit(NodeEvent::ContactChanged(id));
                 // Pode ser um grupo novo, ou mudado: talvez haja membros a apresentar.

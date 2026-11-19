@@ -600,6 +600,12 @@ abstract class ChirpLocalizations {
   /// **'typing…'**
   String get typing;
 
+  /// In a group: which member is typing.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing…'**
+  String typingName(String name);
+
   /// No description provided for @messageDeleted.
   ///
   /// In en, this message translates to:

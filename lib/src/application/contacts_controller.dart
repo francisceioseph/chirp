@@ -42,8 +42,14 @@ class ContactsController extends ChangeNotifier {
 
   final Map<int, Timer> _typing = {};
 
+  final Map<int, String> _typist = {};
+
   /// O contato está digitando agora.
   bool isTyping(int contactId) => _typing.containsKey(contactId);
+
+  /// Num grupo, quem está digitando (o último que avisou); nulo fora dele.
+  String? typist(int contactId) =>
+      isTyping(contactId) ? _typist[contactId] : null;
 
   /// A mensagem mais nova de cada contato, para saber o que acabou de chegar.
   final Map<int, int> _newest = {};
@@ -106,8 +112,14 @@ class ContactsController extends ChangeNotifier {
     switch (event.kind) {
       case CoreEventKind.typing:
         _typing.remove(event.contactId)?.cancel();
+        if (event.name.isEmpty) {
+          _typist.remove(event.contactId);
+        } else {
+          _typist[event.contactId] = event.name;
+        }
         _typing[event.contactId] = Timer(typingShownFor, () {
           _typing.remove(event.contactId);
+          _typist.remove(event.contactId);
           _notify();
         });
         _notify();

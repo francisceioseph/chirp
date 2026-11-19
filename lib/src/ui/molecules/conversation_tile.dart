@@ -19,6 +19,7 @@ class ConversationTile extends StatelessWidget {
     super.key,
     required this.conversation,
     this.typing = false,
+    this.typist,
     this.onTap,
     this.now,
     this.selected = false,
@@ -26,6 +27,9 @@ class ConversationTile extends StatelessWidget {
 
   final Conversation conversation;
   final bool typing;
+
+  /// Num grupo, quem está digitando.
+  final String? typist;
 
   /// A conversa aberta ao lado (com duas colunas).
   final bool selected;
@@ -45,7 +49,10 @@ class ConversationTile extends StatelessWidget {
     final Widget subtitle;
     if (typing) {
       subtitle = Text(
-        l10n.typing,
+        switch (typist) {
+          final who? => l10n.typingName(who),
+          null => l10n.typing,
+        },
         overflow: TextOverflow.ellipsis,
         style: TextStyle(color: scheme.primary, fontStyle: FontStyle.italic),
       );

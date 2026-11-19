@@ -296,14 +296,17 @@ fn nudges_are_rate_limited_both_ways() {
 #[test]
 fn typing_is_ephemeral_and_can_be_turned_off() {
     let (mut alice, mut bob) = pair();
-    assert!(typing(&mut alice.store, alice.other).unwrap());
+    assert!(typing(&mut alice.store, alice.other, &[alice.other]).unwrap());
     // Um aviso por vez na fila.
-    assert!(!typing(&mut alice.store, alice.other).unwrap());
-    assert_eq!(post(&mut alice, &mut bob), vec![Effect::Typing(bob.other)]);
+    assert!(!typing(&mut alice.store, alice.other, &[alice.other]).unwrap());
+    assert_eq!(
+        post(&mut alice, &mut bob),
+        vec![Effect::Typing(bob.other, String::new())]
+    );
     assert!(bob.list().is_empty());
 
     // Não saiu agora: vai fora, e não chega atrasado.
-    typing(&mut alice.store, alice.other).unwrap();
+    typing(&mut alice.store, alice.other, &[alice.other]).unwrap();
     drop_ephemeral(alice.store.conn(), Some(alice.other)).unwrap();
     assert_eq!(alice.outbox(), 0);
     // Uma mensagem depois do aviso perdido se decifra igual.
@@ -321,7 +324,7 @@ fn typing_is_ephemeral_and_can_be_turned_off() {
         },
     )
     .unwrap();
-    assert!(!typing(&mut alice.store, alice.other).unwrap());
+    assert!(!typing(&mut alice.store, alice.other, &[alice.other]).unwrap());
 }
 
 #[test]

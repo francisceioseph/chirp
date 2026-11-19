@@ -82,6 +82,7 @@
   "nudgeReceived": "{name} 在提醒你",
   "nudgePreview": "发出了提醒",
   "typing": "正在输入…",
+  "typingName": "{name} 正在输入…",
   "messageDeleted": "此消息已删除",
   "messageEdited": "已编辑",
   "statusPending": "等待送达",

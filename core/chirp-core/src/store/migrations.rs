@@ -244,6 +244,13 @@ const MIGRATIONS: &[&str] = &[
          kind    INTEGER NOT NULL,
          PRIMARY KEY (message, member)
      );",
+    // 17: a quem foi cada mensagem minha de texto num grupo, e quem já leu.
+    "CREATE TABLE group_receipts (
+         message INTEGER NOT NULL REFERENCES messages (id) ON DELETE CASCADE,
+         member  BLOB NOT NULL,
+         read    INTEGER NOT NULL DEFAULT 0,
+         PRIMARY KEY (message, member)
+     );",
 ];
 
 pub fn run(conn: &mut Connection) -> CoreResult<()> {

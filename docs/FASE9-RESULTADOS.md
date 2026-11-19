@@ -63,7 +63,25 @@ O que a fase 9 do `docs/PLANO.md` (seção 13, com a 6.8) pediu, o que foi feito
 
 ### Falta
 
-- Chamar atenção, "digitando" e recibos de leitura no grupo.
+- Um arquivo de quem ainda não é contato espera a apresentação.
+- A foto do grupo e mais de um admin.
+- Um admin que saiu e volta a ser adicionado pelo novo admin não aceita o grupo.
+
+## Parte 4: "digitando" e "lida" no grupo
+
+### Feito
+
+- **Núcleo** (migração 17, `group_receipts`): o "digitando" vai aos membros online, e quem recebe sabe quem é; cada mensagem minha de texto guarda a quem foi, quem lê manda o recibo só ao autor, e a mensagem fica "lida" quando todos que a receberam e ainda são membros leram. Os dois seguem os ajustes de "digitando" e de recibos de leitura.
+- **App**: "Canela está digitando…" no cabeçalho do grupo e na lista; digitar no grupo avisa. Um texto novo nos sete idiomas.
+
+### Conferido
+
+- Rust: o aviso vai só a quem está online, uma vez por vez, e chega com o nome; a mensagem fica "entregue" até o último membro ler, e Caio não manda recibo a Bia pela mensagem de Ana; quem foi tirado não segura o "lida"; com os recibos desligados, fica "entregue".
+- Dart: quem digita na lista e no cabeçalho, a volta para "Grupo" depois de alguns segundos, e o aviso saindo ao digitar.
+
+### Falta
+
+- Chamar atenção no grupo, e ver quem já leu (hoje é só o "lida" de todos).
 - Um arquivo de quem ainda não é contato espera a apresentação.
 - A foto do grupo e mais de um admin.
 - Um admin que saiu e volta a ser adicionado pelo novo admin não aceita o grupo.

@@ -287,10 +287,13 @@ class _ConversationPageState extends State<ConversationPage>
         final messages = _conversation.messages;
         final replyTo = _conversation.replyTo;
         final group = contact.isGroup;
-        final subtitle = group
-            ? (contact.groupClosed ? l10n.groupClosed : l10n.groupLabel)
+        final typist = widget.contacts.typist(contact.id);
+        final subtitle = contact.groupClosed
+            ? l10n.groupClosed
             : _conversation.theyAreTyping
-            ? l10n.typing
+            ? (typist == null ? l10n.typing : l10n.typingName(typist))
+            : group
+            ? l10n.groupLabel
             : !contact.established
             ? l10n.contactPending
             : contact.verified
@@ -449,8 +452,7 @@ class _ConversationPageState extends State<ConversationPage>
                       : (replyTo.authorName ?? name),
                   editing: _conversation.editing,
                   onCancel: _cancelComposer,
-                  // Num grupo, ainda sem "digitando".
-                  onChanged: group ? null : (_) => _conversation.typed(),
+                  onChanged: (_) => _conversation.typed(),
                   onAttach: _attach,
                   onRecord: _record,
                   recording: switch (_conversation.recordingSince) {

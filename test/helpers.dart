@@ -281,9 +281,9 @@ class FakeStore implements ProfileStore {
     _events.add(CoreEvent(CoreEventKind.messages, contactId));
   }
 
-  /// O contato está digitando.
-  void theyType(int contactId) =>
-      _events.add(CoreEvent(CoreEventKind.typing, contactId));
+  /// O contato (ou, num grupo, o membro [name]) está digitando.
+  void theyType(int contactId, {String name = ''}) =>
+      _events.add(CoreEvent(CoreEventKind.typing, contactId, name: name));
 
   /// A rede entrega (e o contato lê) as minhas.
   void deliver(int contactId, {bool read = false}) {

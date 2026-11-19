@@ -176,25 +176,44 @@ fn send_to(
     lamport: i64,
     sent_at: i64,
 ) -> CoreResult<Vec<u8>> {
-    let message_id = secret_bytes::<16>()?.to_vec();
+    let content = Content {
+        message_id: secret_bytes::<16>()?.to_vec(),
+        body: Some(body),
+        sent_at: sent_at as u64,
+        lamport: lamport as u64,
+        padding: vec![],
+        group: group.to_vec(),
+    };
+    send_content(conn, me, to, &content, false)
+}
+
+/// O mesmo conteúdo a cada um de `to` que é contato; `ephemeral` é o "digitando", que
+/// não vale depois.
+fn send_content(
+    conn: &Connection,
+    me: &Me,
+    to: &[Vec<u8>],
+    content: &Content,
+    ephemeral: bool,
+) -> CoreResult<Vec<u8>> {
+    let message_id = content.message_id.clone();
     for identity_key in to {
         let Some(contact) = established(conn, identity_key)? else {
             continue;
         };
-        let plain = Content {
-            message_id: message_id.clone(),
-            body: Some(body.clone()),
-            sent_at: sent_at as u64,
-            lamport: lamport as u64,
-            padding: vec![],
-            group: group.to_vec(),
-        }
-        .encode_padded();
+        let plain = content.clone().encode_padded();
         let (prekey, bytes) = session::encrypt(conn, me, &contact.identity_key, &plain)?;
         conn.execute(
             "INSERT INTO outbox (contact_id, message_id, prekey, ciphertext, ephemeral, created_at)
-             VALUES (?1, ?2, ?3, ?4, 0, ?5)",
-            (contact.id, &message_id, prekey, bytes, messages::now_ms()),
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            (
+                contact.id,
+                &message_id,
+                prekey,
+                bytes,
+                ephemeral,
+                messages::now_ms(),
+            ),
         )?;
     }
     Ok(message_id)
@@ -387,6 +406,121 @@ pub(crate) fn writable(conn: &Connection, id: i64) -> CoreResult<Option<Writable
 pub(crate) struct Writable {
     pub group_id: Vec<u8>,
     pub members: Vec<Vec<u8>>,
+}
+
+/// A conversa é de um grupo (ativo ou não).
+pub(crate) fn is_group(conn: &Connection, id: i64) -> CoreResult<bool> {
+    Ok(row(conn, id)?.is_some())
+}
+
+/// Os membros do grupo que são contatos (os ids das conversas a dois).
+pub(crate) fn member_contacts(conn: &Connection, group: &Writable) -> CoreResult<Vec<i64>> {
+    let mut out = Vec::new();
+    for key in &group.members {
+        if let Some(contact) = established(conn, key)? {
+            out.push(contact.id);
+        }
+    }
+    Ok(out)
+}
+
+/// Guarda a quem uma mensagem minha do grupo foi (os membros que são contatos), para
+/// saber quando todos leram.
+pub(crate) fn track(conn: &Connection, group: &Writable, message: i64) -> CoreResult<()> {
+    for key in &group.members {
+        if established(conn, key)?.is_some() {
+            conn.execute(
+                "INSERT OR IGNORE INTO group_receipts (message, member) VALUES (?1, ?2)",
+                (message, key),
+            )?;
+        }
+    }
+    Ok(())
+}
+
+/// "Digitando" no grupo: só aos membros em `online`, e a quem já não tem um aviso
+/// esperando na fila.
+pub(crate) fn send_typing(
+    conn: &Connection,
+    me: &Me,
+    id: i64,
+    group: &Writable,
+    online: &[i64],
+) -> CoreResult<bool> {
+    let mut to = Vec::new();
+    for key in &group.members {
+        let Some(contact) = established(conn, key)? else {
+            continue;
+        };
+        let queued: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM outbox WHERE contact_id = ?1 AND ephemeral = 1)",
+            [contact.id],
+            |r| r.get(0),
+        )?;
+        if online.contains(&contact.id) && !queued {
+            to.push(key.clone());
+        }
+    }
+    if to.is_empty() {
+        return Ok(false);
+    }
+    let lamport: i64 = conn.query_row("SELECT lamport FROM contacts WHERE id = ?1", [id], |r| {
+        r.get(0)
+    })?;
+    let content = Content {
+        message_id: secret_bytes::<16>()?.to_vec(),
+        body: Some(ContentBody::Typing(wire::Typing {})),
+        sent_at: messages::now_ms() as u64,
+        lamport: lamport as u64,
+        padding: vec![],
+        group: group.group_id.clone(),
+    };
+    send_content(conn, me, &to, &content, true)?;
+    Ok(true)
+}
+
+/// Li mensagens do grupo: o recibo vai a cada autor (que ainda é membro e é contato),
+/// só com as dele. `unread` é (message_id, autor).
+pub(crate) fn send_read(
+    conn: &Connection,
+    me: &Me,
+    id: i64,
+    unread: &[(Vec<u8>, Vec<u8>)],
+) -> CoreResult<()> {
+    let Ok(Some(group)) = writable(conn, id) else {
+        return Ok(());
+    };
+    let lamport: i64 = conn.query_row("SELECT lamport FROM contacts WHERE id = ?1", [id], |r| {
+        r.get(0)
+    })?;
+    let mut authors: Vec<&Vec<u8>> = unread.iter().map(|(_, a)| a).collect();
+    authors.sort();
+    authors.dedup();
+    for author in authors {
+        if !group.members.contains(author) {
+            continue;
+        }
+        let ids: Vec<Vec<u8>> = unread
+            .iter()
+            .filter(|(_, a)| a == author)
+            .map(|(m, _)| m.clone())
+            .collect();
+        for chunk in ids.chunks(messages::MAX_RECEIPT_IDS) {
+            send_to(
+                conn,
+                me,
+                std::slice::from_ref(author),
+                &group.group_id,
+                ContentBody::Receipt(wire::Receipt {
+                    read: chunk.to_vec(),
+                    delivered: vec![],
+                }),
+                lamport,
+                messages::now_ms(),
+            )?;
+        }
+    }
+    Ok(())
 }
 
 /// Manda um conteúdo da conversa do grupo a todos os membros (que são contatos).
@@ -614,6 +748,42 @@ pub(crate) fn apply_message(
                 return Ok(Effect::Nothing);
             };
             messages::wipe(conn, target)?;
+        }
+        // Não confere a hora, como na conversa a dois: o aviso só sai na hora.
+        Some(ContentBody::Typing(_)) => {
+            return Ok(if messages::settings(conn)?.typing {
+                Effect::Typing(id, sender.display_name.clone())
+            } else {
+                Effect::Nothing
+            });
+        }
+        // Quem leu as minhas: a mensagem fica "lida" quando todos os membros de agora
+        // a quem ela foi leram.
+        Some(ContentBody::Receipt(receipt)) => {
+            if !messages::settings(conn)?.read_receipts {
+                return Ok(Effect::Nothing);
+            }
+            for message_id in receipt.read.iter().take(messages::MAX_RECEIPT_IDS) {
+                conn.execute(
+                    "UPDATE group_receipts SET read = 1
+                      WHERE member = ?2 AND message = (
+                            SELECT id FROM messages
+                             WHERE contact_id = ?1 AND message_id = ?3 AND outgoing = 1)",
+                    (id, &sender.identity_key, message_id),
+                )?;
+                conn.execute(
+                    "UPDATE messages SET status = 2, in_mailbox = 0
+                      WHERE contact_id = ?1 AND message_id = ?2 AND outgoing = 1
+                        AND EXISTS (SELECT 1 FROM group_receipts r
+                                     WHERE r.message = messages.id AND r.read = 1)
+                        AND NOT EXISTS (
+                            SELECT 1 FROM group_receipts r
+                              JOIN group_members gm
+                                ON gm.group_ref = ?1 AND gm.identity_key = r.member
+                             WHERE r.message = messages.id AND r.read = 0)",
+                    (id, message_id),
+                )?;
+            }
         }
         Some(ContentBody::Reaction(reaction)) => {
             if reaction.kind > messages::REACTIONS {

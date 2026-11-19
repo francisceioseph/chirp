@@ -293,6 +293,11 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
   String get typing => 'печатает…';
 
   @override
+  String typingName(String name) {
+    return '$name печатает…';
+  }
+
+  @override
   String get messageDeleted => 'Сообщение удалено';
 
   @override

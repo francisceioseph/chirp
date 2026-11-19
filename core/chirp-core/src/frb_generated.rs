@@ -3642,9 +3642,11 @@ impl SseDecode for crate::api::store::CoreEvent {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_kind = <crate::api::store::EventKind>::sse_decode(deserializer);
         let mut var_contactId = <i64>::sse_decode(deserializer);
+        let mut var_name = <String>::sse_decode(deserializer);
         return crate::api::store::CoreEvent {
             kind: var_kind,
             contact_id: var_contactId,
+            name: var_name,
         };
     }
 }
@@ -4735,6 +4737,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::CoreEvent {
         [
             self.kind.into_into_dart().into_dart(),
             self.contact_id.into_into_dart().into_dart(),
+            self.name.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -5393,6 +5396,7 @@ impl SseEncode for crate::api::store::CoreEvent {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <crate::api::store::EventKind>::sse_encode(self.kind, serializer);
         <i64>::sse_encode(self.contact_id, serializer);
+        <String>::sse_encode(self.name, serializer);
     }
 }
 

@@ -3099,11 +3099,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   CoreEvent dco_decode_core_event(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
     return CoreEvent(
       kind: dco_decode_event_kind(arr[0]),
       contactId: dco_decode_i_64(arr[1]),
+      name: dco_decode_String(arr[2]),
     );
   }
 
@@ -3733,7 +3734,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_kind = sse_decode_event_kind(deserializer);
     var var_contactId = sse_decode_i_64(deserializer);
-    return CoreEvent(kind: var_kind, contactId: var_contactId);
+    var var_name = sse_decode_String(deserializer);
+    return CoreEvent(kind: var_kind, contactId: var_contactId, name: var_name);
   }
 
   @protected
@@ -4500,6 +4502,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_event_kind(self.kind, serializer);
     sse_encode_i_64(self.contactId, serializer);
+    sse_encode_String(self.name, serializer);
   }
 
   @protected

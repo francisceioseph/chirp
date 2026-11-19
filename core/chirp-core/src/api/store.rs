@@ -280,10 +280,12 @@ pub enum EventKind {
     Typing,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoreEvent {
     pub kind: EventKind,
     pub contact_id: i64,
+    /// Num "digitando" de grupo, quem digita; vazio no resto.
+    pub name: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1031,14 +1033,17 @@ impl ChirpStore {
                     Ok(NodeEvent::ContactChanged(id)) => CoreEvent {
                         kind: EventKind::Contact,
                         contact_id: id,
+                        name: String::new(),
                     },
                     Ok(NodeEvent::MessagesChanged(id)) => CoreEvent {
                         kind: EventKind::Messages,
                         contact_id: id,
+                        name: String::new(),
                     },
-                    Ok(NodeEvent::Typing(id)) => CoreEvent {
+                    Ok(NodeEvent::Typing(id, name)) => CoreEvent {
                         kind: EventKind::Typing,
                         contact_id: id,
+                        name,
                     },
                     // A rede desligou: o fluxo fecha, como fechava com o nó.
                     Ok(NodeEvent::Closed) => break,
@@ -1046,6 +1051,7 @@ impl ChirpStore {
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => CoreEvent {
                         kind: EventKind::Contact,
                         contact_id: 0,
+                        name: String::new(),
                     },
                     Err(_) => break,
                 };
@@ -1134,13 +1140,18 @@ impl ChirpStore {
     /// Estou digitando para o contato (a UI chama de tempos em tempos enquanto digita).
     /// Só sai se o contato está online agora.
     pub fn typing(&self, contact_id: i64) -> Result<(), CoreError> {
-        let online = self
+        // Num grupo, os membros que são contatos; o aviso vai só a quem está online.
+        let targets = messages::typing_targets(self.lock()?.conn(), contact_id)?;
+        let online: Vec<i64> = self
             .node
             .lock()
             .ok()
-            .and_then(|slot| slot.as_ref().map(|n| n.is_online(contact_id)))
-            .unwrap_or(false);
-        if online && messages::typing(&mut *self.lock()?, contact_id)? {
+            .and_then(|slot| {
+                slot.as_ref()
+                    .map(|n| targets.into_iter().filter(|&c| n.is_online(c)).collect())
+            })
+            .unwrap_or_default();
+        if !online.is_empty() && messages::typing(&mut *self.lock()?, contact_id, &online)? {
             self.flush(contact_id);
         }
         Ok(())

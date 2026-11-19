@@ -539,3 +539,126 @@ fn a_file_in_a_group_comes_from_its_author_and_only_members_may_fetch_it() {
             .is_some()
     );
 }
+
+#[test]
+fn typing_in_a_group_goes_to_online_members_and_says_who() {
+    let (mut ana, mut bia, mut caio) = three();
+    let ids = [ana.contact(&bia), ana.contact(&caio)];
+    let group = create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    assert_eq!(
+        messages::typing_targets(ana.store.conn(), group.id).unwrap(),
+        ids
+    );
+
+    // Só Bia está online: o aviso vai só a ela, e uma vez.
+    assert!(messages::typing(&mut ana.store, group.id, &[ids[0]]).unwrap());
+    assert!(!messages::typing(&mut ana.store, group.id, &[ids[0]]).unwrap());
+    let queued: Vec<(i64, bool)> = {
+        let mut stmt = ana
+            .store
+            .conn()
+            .prepare("SELECT contact_id, ephemeral FROM outbox")
+            .unwrap();
+        stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
+    assert_eq!(queued, [(ids[0], true)]);
+
+    let (prekey, bytes): (bool, Vec<u8>) = ana
+        .store
+        .conn()
+        .query_row("SELECT prekey, ciphertext FROM outbox", [], |r| {
+            Ok((r.get(0)?, r.get(1)?))
+        })
+        .unwrap();
+    let effect = messages::receive(&mut bia.store, &ana.endpoint, prekey, &bytes).unwrap();
+    assert_eq!(
+        effect,
+        Effect::Typing(bia.group().unwrap().id, "Ana".into())
+    );
+
+    // Sem ninguém online, nada sai.
+    ana.store.conn().execute("DELETE FROM outbox", []).unwrap();
+    assert!(!messages::typing(&mut ana.store, group.id, &[]).unwrap());
+}
+
+#[test]
+fn a_group_message_is_read_when_every_member_read_it() {
+    let (mut ana, mut bia, mut caio) = three();
+    let ids = [ana.contact(&bia), ana.contact(&caio)];
+    let group = create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let sent = messages::send_text(&mut ana.store, group.id, "piu", None).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let status = |d: &Device| messages::by_id(d.store.conn(), sent.id).unwrap().status;
+    assert_eq!(status(&ana), Status::Delivered);
+
+    // Bia lê: ainda falta Caio.
+    let g = bia.group().unwrap().id;
+    assert!(messages::mark_read(&mut bia.store, g).unwrap());
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    assert_eq!(status(&ana), Status::Delivered);
+
+    // Caio lê, e Bia (que não é a autora) não recebe recibo dele.
+    let g = caio.group().unwrap().id;
+    messages::mark_read(&mut caio.store, g).unwrap();
+    let to: Vec<i64> = {
+        let mut stmt = caio
+            .store
+            .conn()
+            .prepare("SELECT contact_id FROM outbox")
+            .unwrap();
+        stmt.query_map([], |r| r.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
+    assert_eq!(to, [caio.contact(&ana)]);
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    assert_eq!(status(&ana), Status::Read);
+}
+
+#[test]
+fn a_removed_member_does_not_hold_back_the_read_mark() {
+    let (mut ana, mut bia, mut caio) = three();
+    let ids = [ana.contact(&bia), ana.contact(&caio)];
+    let group = create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let sent = messages::send_text(&mut ana.store, group.id, "piu", None).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    remove(&mut ana.store, group.id, &caio.key()).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+
+    let g = bia.group().unwrap().id;
+    messages::mark_read(&mut bia.store, g).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    assert_eq!(
+        messages::by_id(ana.store.conn(), sent.id).unwrap().status,
+        Status::Read
+    );
+}
+
+#[test]
+fn group_read_receipts_follow_the_setting() {
+    let (mut ana, mut bia, mut caio) = three();
+    let ids = [ana.contact(&bia), ana.contact(&caio)];
+    let group = create(&mut ana.store, "Bando", &ids).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    let sent = messages::send_text(&mut ana.store, group.id, "piu", None).unwrap();
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    for d in [&mut bia, &mut caio] {
+        let mut s = messages::settings(d.store.conn()).unwrap();
+        s.read_receipts = false;
+        messages::set_settings(d.store.conn(), s).unwrap();
+        let g = d.group().unwrap().id;
+        messages::mark_read(&mut d.store, g).unwrap();
+    }
+    post(&mut [&mut ana, &mut bia, &mut caio]);
+    assert_eq!(
+        messages::by_id(ana.store.conn(), sent.id).unwrap().status,
+        Status::Delivered
+    );
+}

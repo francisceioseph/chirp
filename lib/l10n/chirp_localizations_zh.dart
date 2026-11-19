@@ -275,6 +275,11 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String get typing => '正在输入…';
 
   @override
+  String typingName(String name) {
+    return '$name 正在输入…';
+  }
+
+  @override
   String get messageDeleted => '此消息已删除';
 
   @override

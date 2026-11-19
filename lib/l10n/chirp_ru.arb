@@ -82,6 +82,7 @@
   "nudgeReceived": "{name} привлекает ваше внимание",
   "nudgePreview": "Привлекает внимание",
   "typing": "печатает…",
+  "typingName": "{name} печатает…",
   "messageDeleted": "Сообщение удалено",
   "messageEdited": "изменено",
   "statusPending": "Ожидает доставки",

@@ -291,6 +291,11 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
   String get typing => 'digitando…';
 
   @override
+  String typingName(String name) {
+    return '$name está digitando…';
+  }
+
+  @override
   String get messageDeleted => 'Mensagem apagada';
 
   @override
