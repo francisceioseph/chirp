@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:psito_chirp/l10n/chirp_localizations.dart';
 import 'package:psito_chirp/src/core/chirp_core.dart';
+import 'package:psito_chirp/src/ui/organisms/network_card.dart';
 
 import 'helpers.dart';
 
@@ -106,6 +107,45 @@ void main() {
       await tapShown(tester, find.text(l10n.bluetoothToggle));
       expect(store.network.bluetooth, isFalse);
       expect(find.text(l10n.bluetoothUnavailable), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'sem a licença do sistema, o Bluetooth fica desligado e diz por quê',
+    (tester) async {
+      final (core, _) = await withProfile();
+      final store = core.store!;
+      var asked = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: [
+            ChirpLocalizations.delegate,
+            ...GlobalMaterialLocalizations.delegates,
+          ],
+          supportedLocales: ChirpLocalizations.supportedLocales,
+          locale: const Locale('pt'),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: NetworkCard(
+                store: store,
+                bluetooth: true,
+                askBluetooth: () async {
+                  asked++;
+                  return false;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text(l10n.bluetoothToggle));
+      await tester.tap(find.text(l10n.bluetoothToggle));
+      await tester.pumpAndSettle();
+      expect(asked, 1);
+      expect(store.network.bluetooth, isFalse);
+      expect(store.networkRestarts, 0);
+      expect(find.text(l10n.bluetoothDenied), findsOneWidget);
     },
   );
 

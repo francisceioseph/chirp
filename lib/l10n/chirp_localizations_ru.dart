@@ -540,6 +540,10 @@ class ChirpLocalizationsRu extends ChirpLocalizations {
       'Bluetooth не запустился. Проверьте, что он включён в системе.';
 
   @override
+  String get bluetoothDenied =>
+      'Psito Chirp нужно разрешение на Bluetooth. Его можно дать в настройках системы.';
+
+  @override
   String get reachTitle => 'Соединение';
 
   @override

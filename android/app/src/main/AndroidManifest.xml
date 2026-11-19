@@ -11,6 +11,17 @@
     <!-- As notas de voz: o sistema pergunta na primeira gravação. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     
+    <!-- O Bluetooth LE (fase 8), só quando quem usa liga: no Android 12 ou mais novo,
+         as licenças do Bluetooth, sem localização; no 10 e no 11, o sistema exige a
+         localização para procurar. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+                     android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" 
                      android:usesPermissionFlags="neverForLocation" />
     <application

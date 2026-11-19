@@ -33,3 +33,26 @@ A saída pedida: dois celulares sem rede nenhuma trocam mensagens e fotos pequen
 - Os arquivos (as fotos pequenas da saída) pelo Bluetooth: hoje o arquivo baixa pela rede.
 - O aperto de mão de um contato novo pelo Bluetooth (o QR frente a frente sem rede).
 - Android (parte 2), Apple e Windows (parte 3).
+
+## Parte 2: Android
+
+### Feito
+
+- **Núcleo** (`ble/android.rs`, `ble/blocking.rs`): o rádio do Android é o `ChirpBle` do app, chamado pelo JNI. A classe e a JVM ficam guardadas no `nativeInit`, que o app chama ao criar o motor do Flutter (na thread do Java, a única em que a classe do app aparece); o app avisa das conexões que chegam (`onIncoming`) e dos anúncios vistos (`onSighting`). Cada `BluetoothSocket` vira um `Link` por duas threads que levam os bytes entre ele e um `tokio::io::duplex`, e por cima vai o mesmo Noise do Linux. Os bytes não passam pelo Dart.
+- **Android** (`ChirpBle.kt`): o anúncio conectável, só com os dados de serviço (sem nome nem potência: as flags e os dados enchem os 31 bytes); a busca filtrada pelo serviço, que segue com a tela apagada; o canal L2CAP sem pareamento (`listenUsingInsecureL2capChannel` e `createInsecureL2capChannel`, Android 10 ou mais novo), conectando ao aparelho visto na busca, com o tipo de endereço certo. A regra do R8 guarda a classe, que só o JNI usa.
+- **Licenças**: no Android 12 ou mais novo, `BLUETOOTH_SCAN` (com `neverForLocation`), `BLUETOOTH_ADVERTISE` e `BLUETOOTH_CONNECT`; no 10 e no 11, a localização, que o sistema exige para procurar. O app pergunta ao ligar o Bluetooth no cartão Rede, e sem a licença o interruptor fica desligado e diz por quê. Um texto novo nos sete idiomas.
+
+### Conferido
+
+- Rust: o soquete bloqueante levando os bytes nos dois sentidos, e fechar de um lado fechando o outro (o `ChirpBle` não roda no computador). O `clippy` também para o `aarch64-linux-android`.
+- Dart: sem a licença, o Bluetooth fica desligado e o cartão diz por quê.
+- O APK compila no CI.
+
+### Falta (da parte 2)
+
+- **Dois aparelhos de verdade**: nada disto rodou num celular ainda. É o teste que falta para as partes 1 e 2: dois Android, ou um Android e este computador.
+- No Android 9 ou mais velho, o Bluetooth fica indisponível (sem o canal L2CAP sem pareamento).
+- Com o app em segundo plano por muito tempo, o Android pode diminuir a busca; o serviço em primeiro plano de hoje é o de mensagens.
+- Os arquivos e o aperto de mão de um contato novo pelo Bluetooth, como na parte 1.
+- Apple e Windows (parte 3).
+

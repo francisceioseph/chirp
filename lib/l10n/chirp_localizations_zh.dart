@@ -511,6 +511,9 @@ class ChirpLocalizationsZh extends ChirpLocalizations {
   String get bluetoothUnavailable => '蓝牙没有启动。请检查系统中蓝牙是否已打开。';
 
   @override
+  String get bluetoothDenied => 'Psito Chirp 需要使用蓝牙的权限。你可以在系统设置中允许。';
+
+  @override
   String get reachTitle => '连接';
 
   @override

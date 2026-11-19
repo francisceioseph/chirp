@@ -156,6 +156,7 @@
   "bluetoothToggle": "Bluetooth",
   "bluetoothHelp": "Para hablar con contactos cercanos, hasta unas decenas de metros, sin ninguna red. Mientras esté activo, quien busque cerca sabrá que hay alguien con Chirp, pero no quién: solo tus contactos te reconocen. Gasta más batería.",
   "bluetoothUnavailable": "El Bluetooth no se activó. Comprueba que esté activado en el sistema.",
+  "bluetoothDenied": "Psito Chirp necesita permiso para usar Bluetooth. Puedes permitirlo en los ajustes del sistema.",
   "reachTitle": "Conexión",
   "reachLan": "En la red local",
   "reachDirect": "Por internet, directo",

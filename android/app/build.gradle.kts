@@ -45,6 +45,11 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName(if (release) "release" else "debug")
+            // O R8 não vê quem o núcleo chama pelo JNI (o ChirpBle).
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

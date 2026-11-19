@@ -536,6 +536,10 @@ class ChirpLocalizationsPt extends ChirpLocalizations {
       'O Bluetooth não ligou. Veja se ele está ligado no sistema.';
 
   @override
+  String get bluetoothDenied =>
+      'O Psito Chirp precisa de permissão para usar o Bluetooth. Dá para permitir nos ajustes do sistema.';
+
+  @override
   String get reachTitle => 'Conexão';
 
   @override

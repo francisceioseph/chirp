@@ -701,6 +701,7 @@ dependencies = [
  "hmac",
  "image",
  "iroh",
+ "jni 0.21.1",
  "libsignal-protocol",
  "mdns-sd",
  "ogg",

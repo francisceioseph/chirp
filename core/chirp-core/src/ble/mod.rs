@@ -8,8 +8,9 @@
 //!   procura sabe que há um Chirp por perto. Por isso o Bluetooth começa desligado.
 //! - **O canal** é um L2CAP CoC (o fluxo que o rádio de cada sistema dá), e por cima
 //!   dele o Noise ([`secure`]); por cima do Noise, os mesmos frames do iroh.
-//! - **O rádio** é a [`Radio`]: no Linux, o BlueZ ([`bluez`]); nos outros sistemas,
-//!   o código nativo do app (fase 8, parte 2). Os testes usam um rádio na memória.
+//! - **O rádio** é a [`Radio`]: no Linux, o BlueZ ([`bluez`]); no Android, o
+//!   `ChirpBle` do app pelo JNI ([`android`], com os soquetes em [`blocking`]). Os
+//!   testes usam um rádio na memória.
 
 use std::collections::BTreeMap;
 
@@ -22,13 +23,18 @@ use tokio::sync::mpsc;
 use crate::discovery;
 use crate::error::CoreResult;
 
+#[cfg(target_os = "android")]
+pub mod android;
+pub mod blocking;
 #[cfg(target_os = "linux")]
 pub mod bluez;
 #[cfg(test)]
 pub mod memory;
 pub mod secure;
 
-/// O serviço do Chirp no Bluetooth.
+/// O serviço do Chirp no Bluetooth. No Android, quem anuncia é o `ChirpBle.kt`, com o
+/// mesmo UUID (um teste confere).
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub const SERVICE_UUID: u128 = 0x3200ffb9_0d62_480b_bc00_63ec5fe3365c;
 /// O token no anúncio.
 pub const TOKEN_LEN: usize = 8;
@@ -162,6 +168,22 @@ mod tests {
         assert_eq!(parse_advert(&data), Some((t, 0x0081)));
         assert_eq!(parse_advert(&data[1..]), None);
         assert_eq!(parse_advert(&advert(&t, 0)), None);
+    }
+
+    #[test]
+    fn the_android_app_advertises_the_same_service() {
+        let kotlin =
+            include_str!("../../../../android/app/src/main/kotlin/org/psito/chirp/ChirpBle.kt");
+        let uuid = format!("{SERVICE_UUID:032x}");
+        let dashed = format!(
+            "{}-{}-{}-{}-{}",
+            &uuid[0..8],
+            &uuid[8..12],
+            &uuid[12..16],
+            &uuid[16..20],
+            &uuid[20..]
+        );
+        assert!(kotlin.contains(&format!("UUID.fromString(\"{dashed}\")")));
     }
 
     fn hex(text: &str) -> Vec<u8> {

@@ -259,7 +259,13 @@ impl Node {
                 .ok()
                 .map(|r| Arc::new(r) as Arc<dyn Radio>)
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(target_os = "android")]
+        {
+            ble::android::Android::open()
+                .ok()
+                .map(|r| Arc::new(r) as Arc<dyn Radio>)
+        }
+        #[cfg(not(any(target_os = "linux", target_os = "android")))]
         {
             None
         }

@@ -156,6 +156,7 @@
   "bluetoothToggle": "蓝牙",
   "bluetoothHelp": "无需任何网络，与附近（几十米内）的联系人交谈。开启期间，附近扫描的人能知道这里有人在用 Chirp，但不知道是谁：只有你的联系人能认出你。会更耗电。",
   "bluetoothUnavailable": "蓝牙没有启动。请检查系统中蓝牙是否已打开。",
+  "bluetoothDenied": "Psito Chirp 需要使用蓝牙的权限。你可以在系统设置中允许。",
   "reachTitle": "连接",
   "reachLan": "在本地网络",
   "reachDirect": "通过互联网直连",

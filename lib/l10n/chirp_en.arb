@@ -234,6 +234,10 @@
   "bluetoothToggle": "Bluetooth",
   "bluetoothHelp": "To talk with contacts nearby, up to a few tens of meters, with no network at all. While it is on, anyone scanning nearby can tell that someone with Chirp is around, but not who: only your contacts recognize you. Uses more battery.",
   "bluetoothUnavailable": "Bluetooth did not start. Check that it is on in the system.",
+  "bluetoothDenied": "Psito Chirp needs permission to use Bluetooth. You can allow it in the system settings.",
+  "@bluetoothDenied": {
+    "description": "Android refused the Bluetooth permissions when turning Bluetooth on."
+  },
   "reachTitle": "Connection",
   "reachLan": "On the local network",
   "reachDirect": "Over the internet, direct",

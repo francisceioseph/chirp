@@ -1044,6 +1044,12 @@ abstract class ChirpLocalizations {
   /// **'Bluetooth did not start. Check that it is on in the system.'**
   String get bluetoothUnavailable;
 
+  /// Android refused the Bluetooth permissions when turning Bluetooth on.
+  ///
+  /// In en, this message translates to:
+  /// **'Psito Chirp needs permission to use Bluetooth. You can allow it in the system settings.'**
+  String get bluetoothDenied;
+
   /// No description provided for @reachTitle.
   ///
   /// In en, this message translates to:

@@ -539,6 +539,10 @@ class ChirpLocalizationsDe extends ChirpLocalizations {
       'Bluetooth wurde nicht gestartet. Prüfe, ob es im System eingeschaltet ist.';
 
   @override
+  String get bluetoothDenied =>
+      'Psito Chirp braucht die Berechtigung für Bluetooth. Du kannst sie in den Systemeinstellungen erteilen.';
+
+  @override
   String get reachTitle => 'Verbindung';
 
   @override

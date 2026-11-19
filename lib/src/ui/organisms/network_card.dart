@@ -1,30 +1,40 @@
 // lib/src/ui/organisms/network_card.dart
 //
 // A rede (docs/PLANO.md, 7.3): a local sempre ligada, a internet e os servidores de
-// retransmissão, cada um com o que revela, e o Bluetooth (fase 8, por enquanto só no
-// Linux). Mudar religa a rede com o novo; um retransmissor que o núcleo recusa volta
+// retransmissão, cada um com o que revela, e o Bluetooth (fase 8, no Linux e no
+// Android, que pergunta a licença ao ligar). Mudar religa a rede com o novo; um retransmissor que o núcleo recusa volta
 // com o aviso.
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:material_ui/material_ui.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../core/chirp_core.dart';
+import '../../platform/bluetooth.dart';
 import '../failure_text.dart';
 
 class NetworkCard extends StatefulWidget {
-  NetworkCard({super.key, required this.store, bool? bluetooth})
-    : bluetooth = bluetooth ?? Platform.isLinux;
+  NetworkCard({
+    super.key,
+    required this.store,
+    bool? bluetooth,
+    Future<bool> Function()? askBluetooth,
+  }) : bluetooth = bluetooth ?? bluetoothSupported,
+       askBluetooth = askBluetooth ?? _askBluetooth;
 
   final ProfileStore store;
 
-  /// Se o sistema tem o Bluetooth do Chirp (hoje, o Linux).
+  /// Se o sistema tem o Bluetooth do Chirp (o Linux e o Android).
   final bool bluetooth;
+
+  /// Pede a licença do sistema antes de ligar.
+  final Future<bool> Function() askBluetooth;
 
   @override
   State<NetworkCard> createState() => _NetworkCardState();
 }
+
+Future<bool> _askBluetooth() => askBluetooth();
 
 class _NetworkCardState extends State<NetworkCard> {
   NetworkSettings? _settings;
@@ -82,6 +92,23 @@ class _NetworkCardState extends State<NetworkCard> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Ligar pede a licença antes; sem ela, fica desligado e diz por quê.
+  Future<void> _toggleBluetooth(NetworkSettings settings, bool on) async {
+    if (on) {
+      setState(() => _busy = true);
+      final allowed = await widget.askBluetooth();
+      if (!mounted) return;
+      setState(() => _busy = false);
+      if (!allowed) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(context.l10n.bluetoothDenied)));
+        return;
+      }
+    }
+    await _save(settings.copyWith(bluetooth: on));
   }
 
   Future<void> _addRelay(NetworkSettings settings) async {
@@ -220,7 +247,7 @@ class _NetworkCardState extends State<NetworkCard> {
                 value: settings.bluetooth,
                 onChanged: _busy
                     ? null
-                    : (on) => _save(settings.copyWith(bluetooth: on)),
+                    : (on) => _toggleBluetooth(settings, on),
               ),
               if (settings.bluetooth &&
                   _status.bluetooth == BluetoothState.unavailable)

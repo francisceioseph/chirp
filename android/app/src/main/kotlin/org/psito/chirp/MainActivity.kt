@@ -27,6 +27,9 @@ class MainActivity : FlutterActivity() {
     // O pedido do microfone em andamento (a resposta vem no onRequestPermissionsResult).
     private var micAnswer: MethodChannel.Result? = null
 
+    // O mesmo para as licenças do Bluetooth.
+    private var bluetoothAnswer: MethodChannel.Result? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         current = WeakReference(this)
@@ -55,6 +58,8 @@ class MainActivity : FlutterActivity() {
                     // Pela tela aberta agora (fraca: o motor dura mais que ela).
                     "askMicrophone" ->
                         current?.get()?.askMicrophone(result) ?: result.success(false)
+                    "askBluetooth" ->
+                        current?.get()?.askBluetooth(result) ?: result.success(false)
                     else -> result.notImplemented()
                 }
             }
@@ -64,6 +69,8 @@ class MainActivity : FlutterActivity() {
         if (current?.get() === this) current = null
         micAnswer?.success(false)
         micAnswer = null
+        bluetoothAnswer?.success(false)
+        bluetoothAnswer = null
         super.onDestroy()
     }
 
@@ -83,15 +90,45 @@ class MainActivity : FlutterActivity() {
         requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), MIC_REQUEST)
     }
 
+    // As licenças do Bluetooth (ChirpBle.permissions): o sistema pergunta ao ligar.
+    private fun askBluetooth(result: MethodChannel.Result) {
+        if (!ChirpBle.supported()) {
+            result.success(false)
+            return
+        }
+        if (ChirpBle.granted(this)) {
+            result.success(true)
+            return
+        }
+        if (bluetoothAnswer != null) {
+            result.success(false)
+            return
+        }
+        bluetoothAnswer = result
+        requestPermissions(ChirpBle.permissions(), BLUETOOTH_REQUEST)
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode != MIC_REQUEST) return
-        micAnswer?.success(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
-        micAnswer = null
+        when (requestCode) {
+            MIC_REQUEST -> {
+                micAnswer?.success(
+                    grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED,
+                )
+                micAnswer = null
+            }
+            BLUETOOTH_REQUEST -> {
+                bluetoothAnswer?.success(
+                    grantResults.isNotEmpty() &&
+                        grantResults.all { it == PackageManager.PERMISSION_GRANTED },
+                )
+                bluetoothAnswer = null
+            }
+        }
     }
 
     private fun batteryRestricted(context: Context): Boolean {
@@ -120,11 +157,14 @@ class MainActivity : FlutterActivity() {
         private const val CHANNEL = "org.psito.chirp/background"
         private const val ENGINE = "chirp"
         private const val MIC_REQUEST = 7
+        private const val BLUETOOTH_REQUEST = 8
         private var current: WeakReference<MainActivity>? = null
 
         fun engine(context: Context): FlutterEngine {
             val cache = FlutterEngineCache.getInstance()
             cache.get(ENGINE)?.let { return it }
+            // Antes do Dart: o núcleo acha o rádio do app quando ligar a rede.
+            ChirpBle.init(context)
             val engine = FlutterEngine(context.applicationContext)
             engine.dartExecutor.executeDartEntrypoint(
                 DartExecutor.DartEntrypoint.createDefault(),

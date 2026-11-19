@@ -156,6 +156,7 @@
   "bluetoothToggle": "Bluetooth",
   "bluetoothHelp": "Para conversar com contatos por perto, até algumas dezenas de metros, sem rede nenhuma. Enquanto estiver ligado, quem procurar por perto sabe que há alguém com o Chirp ali, mas não quem: só os seus contatos reconhecem você. Gasta mais bateria.",
   "bluetoothUnavailable": "O Bluetooth não ligou. Veja se ele está ligado no sistema.",
+  "bluetoothDenied": "O Psito Chirp precisa de permissão para usar o Bluetooth. Dá para permitir nos ajustes do sistema.",
   "reachTitle": "Conexão",
   "reachLan": "Na rede local",
   "reachDirect": "Pela internet, direto",
